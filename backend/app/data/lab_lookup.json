@@ -1,0 +1,223 @@
+{
+  "_comment": "Lab test canonical name lookup table. Keys are lowercase raw test name variants as they appear on lab reports. To add a new test: add a new key-value pair. The normalizer loads this file at startup -- no code changes needed.",
+  "_instructions": "Add new rows in the format: \"raw variant lowercase\": {\"canonical\": \"Display Name\", \"loinc\": \"LOINC-code-or-null\"}",
+
+  "hemoglobin": {"canonical": "Hemoglobin", "loinc": "718-7"},
+  "hgb": {"canonical": "Hemoglobin", "loinc": "718-7"},
+  "hb": {"canonical": "Hemoglobin", "loinc": "718-7"},
+
+  "white blood cell count": {"canonical": "White Blood Cell Count", "loinc": "6690-2"},
+  "wbc": {"canonical": "White Blood Cell Count", "loinc": "6690-2"},
+  "wbc count": {"canonical": "White Blood Cell Count", "loinc": "6690-2"},
+  "total leucocyte count": {"canonical": "White Blood Cell Count", "loinc": "6690-2"},
+  "tlc": {"canonical": "White Blood Cell Count", "loinc": "6690-2"},
+
+  "red blood cell count": {"canonical": "Red Blood Cell Count", "loinc": "789-8"},
+  "rbc": {"canonical": "Red Blood Cell Count", "loinc": "789-8"},
+  "rbc count": {"canonical": "Red Blood Cell Count", "loinc": "789-8"},
+
+  "platelet count": {"canonical": "Platelet Count", "loinc": "777-3"},
+  "platelets": {"canonical": "Platelet Count", "loinc": "777-3"},
+  "plt": {"canonical": "Platelet Count", "loinc": "777-3"},
+  "thrombocyte count": {"canonical": "Platelet Count", "loinc": "777-3"},
+
+  "hematocrit": {"canonical": "Hematocrit", "loinc": "4544-3"},
+  "hct": {"canonical": "Hematocrit", "loinc": "4544-3"},
+  "packed cell volume": {"canonical": "Hematocrit", "loinc": "4544-3"},
+  "pcv": {"canonical": "Hematocrit", "loinc": "4544-3"},
+
+  "mean corpuscular volume": {"canonical": "Mean Corpuscular Volume", "loinc": "787-2"},
+  "mcv": {"canonical": "Mean Corpuscular Volume", "loinc": "787-2"},
+
+  "mean corpuscular hemoglobin": {"canonical": "Mean Corpuscular Hemoglobin", "loinc": "785-6"},
+  "mch": {"canonical": "Mean Corpuscular Hemoglobin", "loinc": "785-6"},
+
+  "mean corpuscular hemoglobin concentration": {"canonical": "Mean Corpuscular Hemoglobin Concentration", "loinc": "786-4"},
+  "mchc": {"canonical": "Mean Corpuscular Hemoglobin Concentration", "loinc": "786-4"},
+
+  "red cell distribution width": {"canonical": "Red Cell Distribution Width", "loinc": "788-0"},
+  "rdw": {"canonical": "Red Cell Distribution Width", "loinc": "788-0"},
+  "rdw-cv": {"canonical": "Red Cell Distribution Width", "loinc": "788-0"},
+
+  "neutrophils": {"canonical": "Neutrophils", "loinc": "770-8"},
+  "neutrophil count": {"canonical": "Neutrophils", "loinc": "770-8"},
+  "segs": {"canonical": "Neutrophils", "loinc": "770-8"},
+
+  "lymphocytes": {"canonical": "Lymphocytes", "loinc": "736-9"},
+  "lymphocyte count": {"canonical": "Lymphocytes", "loinc": "736-9"},
+
+  "monocytes": {"canonical": "Monocytes", "loinc": "5905-5"},
+  "monocyte count": {"canonical": "Monocytes", "loinc": "5905-5"},
+
+  "eosinophils": {"canonical": "Eosinophils", "loinc": "713-8"},
+  "eosinophil count": {"canonical": "Eosinophils", "loinc": "713-8"},
+
+  "basophils": {"canonical": "Basophils", "loinc": "706-2"},
+  "basophil count": {"canonical": "Basophils", "loinc": "706-2"},
+
+  "glucose": {"canonical": "Blood Glucose", "loinc": "2345-7"},
+  "blood glucose": {"canonical": "Blood Glucose", "loinc": "2345-7"},
+  "fasting blood glucose": {"canonical": "Blood Glucose (Fasting)", "loinc": "1558-6"},
+  "fbg": {"canonical": "Blood Glucose (Fasting)", "loinc": "1558-6"},
+  "fbs": {"canonical": "Blood Glucose (Fasting)", "loinc": "1558-6"},
+  "random blood sugar": {"canonical": "Blood Glucose (Random)", "loinc": "2345-7"},
+  "rbs": {"canonical": "Blood Glucose (Random)", "loinc": "2345-7"},
+  "hba1c": {"canonical": "Hemoglobin A1c", "loinc": "4548-4"},
+  "glycated hemoglobin": {"canonical": "Hemoglobin A1c", "loinc": "4548-4"},
+  "glycosylated hemoglobin": {"canonical": "Hemoglobin A1c", "loinc": "4548-4"},
+
+  "serum creatinine": {"canonical": "Creatinine (Serum)", "loinc": "2160-0"},
+  "creatinine": {"canonical": "Creatinine (Serum)", "loinc": "2160-0"},
+  "s. creatinine": {"canonical": "Creatinine (Serum)", "loinc": "2160-0"},
+
+  "blood urea nitrogen": {"canonical": "Blood Urea Nitrogen", "loinc": "3094-0"},
+  "bun": {"canonical": "Blood Urea Nitrogen", "loinc": "3094-0"},
+  "urea": {"canonical": "Urea", "loinc": "22664-7"},
+  "serum urea": {"canonical": "Urea", "loinc": "22664-7"},
+  "blood urea": {"canonical": "Urea", "loinc": "22664-7"},
+
+  "uric acid": {"canonical": "Uric Acid", "loinc": "3084-1"},
+  "serum uric acid": {"canonical": "Uric Acid", "loinc": "3084-1"},
+
+  "egfr": {"canonical": "eGFR", "loinc": "98979-8"},
+  "estimated gfr": {"canonical": "eGFR", "loinc": "98979-8"},
+  "glomerular filtration rate": {"canonical": "eGFR", "loinc": "98979-8"},
+
+  "sodium": {"canonical": "Sodium", "loinc": "2951-2"},
+  "serum sodium": {"canonical": "Sodium", "loinc": "2951-2"},
+  "na": {"canonical": "Sodium", "loinc": "2951-2"},
+
+  "potassium": {"canonical": "Potassium", "loinc": "2823-3"},
+  "serum potassium": {"canonical": "Potassium", "loinc": "2823-3"},
+  "k": {"canonical": "Potassium", "loinc": "2823-3"},
+
+  "chloride": {"canonical": "Chloride", "loinc": "2075-0"},
+  "serum chloride": {"canonical": "Chloride", "loinc": "2075-0"},
+  "cl": {"canonical": "Chloride", "loinc": "2075-0"},
+
+  "bicarbonate": {"canonical": "Bicarbonate", "loinc": "1963-8"},
+  "co2": {"canonical": "Bicarbonate", "loinc": "1963-8"},
+  "hco3": {"canonical": "Bicarbonate", "loinc": "1963-8"},
+
+  "total cholesterol": {"canonical": "Total Cholesterol", "loinc": "2093-3"},
+  "cholesterol": {"canonical": "Total Cholesterol", "loinc": "2093-3"},
+
+  "ldl cholesterol": {"canonical": "LDL Cholesterol", "loinc": "2089-1"},
+  "ldl": {"canonical": "LDL Cholesterol", "loinc": "2089-1"},
+  "low density lipoprotein": {"canonical": "LDL Cholesterol", "loinc": "2089-1"},
+
+  "hdl cholesterol": {"canonical": "HDL Cholesterol", "loinc": "2085-9"},
+  "hdl": {"canonical": "HDL Cholesterol", "loinc": "2085-9"},
+  "high density lipoprotein": {"canonical": "HDL Cholesterol", "loinc": "2085-9"},
+
+  "triglycerides": {"canonical": "Triglycerides", "loinc": "2571-8"},
+  "tg": {"canonical": "Triglycerides", "loinc": "2571-8"},
+  "trigs": {"canonical": "Triglycerides", "loinc": "2571-8"},
+
+  "vldl": {"canonical": "VLDL Cholesterol", "loinc": "13457-7"},
+  "vldl cholesterol": {"canonical": "VLDL Cholesterol", "loinc": "13457-7"},
+
+  "tsh": {"canonical": "TSH", "loinc": "3016-3"},
+  "thyroid stimulating hormone": {"canonical": "TSH", "loinc": "3016-3"},
+
+  "t3": {"canonical": "Triiodothyronine (T3)", "loinc": "3053-6"},
+  "triiodothyronine": {"canonical": "Triiodothyronine (T3)", "loinc": "3053-6"},
+
+  "t4": {"canonical": "Thyroxine (T4)", "loinc": "3026-2"},
+  "thyroxine": {"canonical": "Thyroxine (T4)", "loinc": "3026-2"},
+
+  "free t3": {"canonical": "Free T3", "loinc": "3051-0"},
+  "ft3": {"canonical": "Free T3", "loinc": "3051-0"},
+
+  "free t4": {"canonical": "Free T4", "loinc": "3024-7"},
+  "ft4": {"canonical": "Free T4", "loinc": "3024-7"},
+
+  "alanine aminotransferase": {"canonical": "ALT", "loinc": "1742-6"},
+  "alt": {"canonical": "ALT", "loinc": "1742-6"},
+  "sgpt": {"canonical": "ALT", "loinc": "1742-6"},
+
+  "aspartate aminotransferase": {"canonical": "AST", "loinc": "1920-8"},
+  "ast": {"canonical": "AST", "loinc": "1920-8"},
+  "sgot": {"canonical": "AST", "loinc": "1920-8"},
+
+  "alkaline phosphatase": {"canonical": "Alkaline Phosphatase", "loinc": "6768-6"},
+  "alp": {"canonical": "Alkaline Phosphatase", "loinc": "6768-6"},
+
+  "gamma-glutamyl transferase": {"canonical": "GGT", "loinc": "2324-2"},
+  "ggt": {"canonical": "GGT", "loinc": "2324-2"},
+  "gamma gt": {"canonical": "GGT", "loinc": "2324-2"},
+
+  "total bilirubin": {"canonical": "Bilirubin (Total)", "loinc": "1975-2"},
+  "bilirubin total": {"canonical": "Bilirubin (Total)", "loinc": "1975-2"},
+  "t. bilirubin": {"canonical": "Bilirubin (Total)", "loinc": "1975-2"},
+
+  "direct bilirubin": {"canonical": "Bilirubin (Direct)", "loinc": "1968-7"},
+  "bilirubin direct": {"canonical": "Bilirubin (Direct)", "loinc": "1968-7"},
+  "d. bilirubin": {"canonical": "Bilirubin (Direct)", "loinc": "1968-7"},
+
+  "indirect bilirubin": {"canonical": "Bilirubin (Indirect)", "loinc": "1971-1"},
+
+  "total protein": {"canonical": "Total Protein", "loinc": "2885-2"},
+  "serum total protein": {"canonical": "Total Protein", "loinc": "2885-2"},
+
+  "albumin": {"canonical": "Albumin", "loinc": "1751-7"},
+  "serum albumin": {"canonical": "Albumin", "loinc": "1751-7"},
+
+  "calcium": {"canonical": "Calcium", "loinc": "17861-6"},
+  "serum calcium": {"canonical": "Calcium", "loinc": "17861-6"},
+  "ca": {"canonical": "Calcium", "loinc": "17861-6"},
+
+  "phosphorus": {"canonical": "Phosphorus", "loinc": "2777-1"},
+  "serum phosphorus": {"canonical": "Phosphorus", "loinc": "2777-1"},
+  "phosphate": {"canonical": "Phosphorus", "loinc": "2777-1"},
+
+  "magnesium": {"canonical": "Magnesium", "loinc": "2601-3"},
+  "serum magnesium": {"canonical": "Magnesium", "loinc": "2601-3"},
+  "mg": {"canonical": "Magnesium", "loinc": "2601-3"},
+
+  "iron": {"canonical": "Serum Iron", "loinc": "2498-4"},
+  "serum iron": {"canonical": "Serum Iron", "loinc": "2498-4"},
+  "s. iron": {"canonical": "Serum Iron", "loinc": "2498-4"},
+
+  "ferritin": {"canonical": "Ferritin", "loinc": "2276-4"},
+  "serum ferritin": {"canonical": "Ferritin", "loinc": "2276-4"},
+
+  "tibc": {"canonical": "TIBC", "loinc": "2500-7"},
+  "total iron binding capacity": {"canonical": "TIBC", "loinc": "2500-7"},
+
+  "vitamin d": {"canonical": "Vitamin D (25-OH)", "loinc": "1989-3"},
+  "25-oh vitamin d": {"canonical": "Vitamin D (25-OH)", "loinc": "1989-3"},
+  "25-hydroxyvitamin d": {"canonical": "Vitamin D (25-OH)", "loinc": "1989-3"},
+  "vit d": {"canonical": "Vitamin D (25-OH)", "loinc": "1989-3"},
+
+  "vitamin b12": {"canonical": "Vitamin B12", "loinc": "2132-9"},
+  "b12": {"canonical": "Vitamin B12", "loinc": "2132-9"},
+  "cobalamin": {"canonical": "Vitamin B12", "loinc": "2132-9"},
+
+  "folic acid": {"canonical": "Folate", "loinc": "2284-8"},
+  "folate": {"canonical": "Folate", "loinc": "2284-8"},
+  "serum folate": {"canonical": "Folate", "loinc": "2284-8"},
+
+  "c-reactive protein": {"canonical": "CRP", "loinc": "1988-5"},
+  "crp": {"canonical": "CRP", "loinc": "1988-5"},
+  "hs-crp": {"canonical": "hsCRP", "loinc": "71426-1"},
+  "high sensitivity crp": {"canonical": "hsCRP", "loinc": "71426-1"},
+
+  "erythrocyte sedimentation rate": {"canonical": "ESR", "loinc": "4537-7"},
+  "esr": {"canonical": "ESR", "loinc": "4537-7"},
+
+  "prothrombin time": {"canonical": "Prothrombin Time", "loinc": "5902-2"},
+  "pt": {"canonical": "Prothrombin Time", "loinc": "5902-2"},
+
+  "inr": {"canonical": "INR", "loinc": "6301-6"},
+  "international normalized ratio": {"canonical": "INR", "loinc": "6301-6"},
+
+  "activated partial thromboplastin time": {"canonical": "aPTT", "loinc": "14979-9"},
+  "aptt": {"canonical": "aPTT", "loinc": "14979-9"},
+  "ptt": {"canonical": "aPTT", "loinc": "14979-9"},
+
+  "urine protein": {"canonical": "Urine Protein", "loinc": "2888-6"},
+  "urine glucose": {"canonical": "Urine Glucose", "loinc": "25428-4"},
+  "urine creatinine": {"canonical": "Urine Creatinine", "loinc": "2161-8"},
+  "microalbumin urine": {"canonical": "Urine Microalbumin", "loinc": "14957-5"}
+}

@@ -12,11 +12,19 @@ HOW TO ADD NEW TEST NAMES TO THE LOOKUP TABLE:
      at import time (or you can call reload_lookup() to hot-reload in tests).
   4. Use lowercase for the key; the normalizer lowercases input before matching.
 
-Matching algorithm:
-  - rapidfuzz.process.extractOne with token_sort_ratio scorer
-  - Threshold: 80 / 100  (raise if you see false positives)
-  - token_sort_ratio is chosen over simple ratio because lab test names often
-    have word-order variations (e.g. "Total Cholesterol" vs "Cholesterol Total")
+Matching algorithm (three-tier, evaluated in order):
+  Tier 1 -- Exact match: lowercase query == lookup key exactly.
+            Always accepted regardless of length. Zero false-positives.
+  Tier 2 -- Short-name near-exact fuzzy: for queries of length <= SHORT_NAME_MAX_LEN
+            (7 chars), require score >= SHORT_NAME_THRESHOLD (97/100).
+            Rationale: single-char differences between short abbreviations
+            (e.g. PCT vs PT, PDW-CV vs RDW-CV) are clinically unrelated tests
+            but score 80-90 on fuzzy metrics. Requiring near-exact (97+) means
+            only genuine abbreviation aliases are accepted; ambiguous ones are
+            left unmapped rather than silently misidentified.
+  Tier 3 -- Long-name fuzzy: for queries longer than SHORT_NAME_MAX_LEN,
+            the standard threshold (80/100) applies. Longer names have enough
+            character mass that a score of 80 implies genuine similarity.
 """
 
 import json
@@ -30,7 +38,20 @@ from rapidfuzz import process as rf_process, fuzz
 logger = logging.getLogger(__name__)
 
 _LOOKUP_PATH = Path(__file__).parent.parent / "data" / "lab_lookup.json"
-_FUZZY_THRESHOLD = 80  # out of 100
+_FUZZY_THRESHOLD = 80        # standard threshold for names > SHORT_NAME_MAX_LEN chars
+
+# Short abbreviation safety thresholds.
+# WHY: A one-character difference between short abbreviations (e.g. PCT vs PT,
+# PDW-CV vs RDW-CV) scores 80-90 on token_sort_ratio because there is very
+# little character mass to distinguish them. But these abbreviations map to
+# clinically unrelated tests -- accepting a fuzzy match here produces a silent
+# wrong canonical_name (Bug 1: PCT->Prothrombin Time, Bug 2: PDW-CV->RDW).
+# For short strings we therefore require near-exact scoring (97+), which only
+# genuine alias variants clear (e.g. "hgb" matching "hb" scores 100 on
+# token_sort_ratio). Anything below 97 for a short name is left unmapped
+# (null canonical_test_name) rather than guessed.
+SHORT_NAME_MAX_LEN = 7       # <= this length triggers strict threshold
+SHORT_NAME_THRESHOLD = 97    # near-exact required for short abbreviations
 
 # Module-level cache -- loaded once at import, call reload_lookup() to refresh
 _lookup: dict = {}
@@ -72,6 +93,11 @@ def normalize_test_name(raw_name: str) -> "dict[str, Any]":
     """
     Fuzzy-match a raw test name string against the lookup table.
 
+    Matching is three-tier (see module docstring for full rationale):
+      1. Exact match (always accepted)
+      2. Short name (<=7 chars): near-exact score required (>=97)
+      3. Long name (>7 chars): standard score threshold (>=80)
+
     Returns:
     {
         "canonical_name": str | None,
@@ -81,38 +107,62 @@ def normalize_test_name(raw_name: str) -> "dict[str, Any]":
         "matched": bool
     }
     """
+    _no_match = {
+        "canonical_name": None, "loinc_code": None,
+        "match_key": None, "match_score": None, "matched": False,
+    }
+
     if not _lookup:
-        return {
-            "canonical_name": None, "loinc_code": None,
-            "match_key": None, "match_score": None, "matched": False,
-        }
+        return _no_match
 
     query = raw_name.strip().lower()
     if not query:
+        return _no_match
+
+    # ------------------------------------------------------------------
+    # Tier 1: Exact match -- highest priority, zero false-positives.
+    # Catches cases like 'wbc', 'hgb', 'pct', 'pdw-cv' where the lookup
+    # table has an exact lowercase alias.
+    # ------------------------------------------------------------------
+    if query in _lookup:
+        entry = _lookup[query]
+        logger.debug("Exact match '%s' -> '%s'", raw_name, entry["canonical"])
         return {
-            "canonical_name": None, "loinc_code": None,
-            "match_key": None, "match_score": None, "matched": False,
+            "canonical_name": entry.get("canonical"),
+            "loinc_code": entry.get("loinc"),
+            "match_key": query,
+            "match_score": 100.0,
+            "matched": True,
         }
+
+    # ------------------------------------------------------------------
+    # Tier 2 / 3: Fuzzy match with length-aware threshold.
+    # Short abbreviations (<=7 chars) require near-exact score (97+) to
+    # avoid single-character collisions between unrelated tests.
+    # Longer names use the standard 80/100 threshold.
+    # ------------------------------------------------------------------
+    is_short = len(query) <= SHORT_NAME_MAX_LEN
+    cutoff = SHORT_NAME_THRESHOLD if is_short else _FUZZY_THRESHOLD
 
     result = rf_process.extractOne(
         query,
         _lookup.keys(),
         scorer=fuzz.token_sort_ratio,
-        score_cutoff=_FUZZY_THRESHOLD,
+        score_cutoff=cutoff,
     )
 
     if result is None:
-        logger.debug("No fuzzy match for '%s' (threshold=%d)", raw_name, _FUZZY_THRESHOLD)
-        return {
-            "canonical_name": None, "loinc_code": None,
-            "match_key": None, "match_score": None, "matched": False,
-        }
+        logger.debug(
+            "No fuzzy match for '%s' (len=%d, threshold=%d)",
+            raw_name, len(query), cutoff,
+        )
+        return _no_match
 
     matched_key, score, _ = result
     entry = _lookup[matched_key]
     logger.debug(
-        "Matched '%s' -> '%s' via key='%s' score=%.1f",
-        raw_name, entry["canonical"], matched_key, score,
+        "Fuzzy match '%s' -> '%s' via key='%s' score=%.1f (threshold=%d)",
+        raw_name, entry["canonical"], matched_key, score, cutoff,
     )
 
     return {

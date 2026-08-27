@@ -216,13 +216,11 @@ export function DashboardPage() {
              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                <DoodleIcon name="heartbeat" className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                <DoodleIcon name="heartbeat" className="w-4 h-4" />
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                In Development
-              </span>
+              <span className="badge-status">In Development</span>
             </div>
 
             <h3 className="text-base font-bold">Longitudinal Health Index</h3>
@@ -248,13 +246,11 @@ export function DashboardPage() {
              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                <DoodleIcon name="dna" className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                <DoodleIcon name="dna" className="w-4 h-4" />
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                In Development
-              </span>
+              <span className="badge-status">In Development</span>
             </div>
 
             <h3 className="text-base font-bold">Predictive Risk Matrix</h3>
@@ -289,13 +285,11 @@ export function DashboardPage() {
              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                <DoodleIcon name="stethoscope" className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                <DoodleIcon name="stethoscope" className="w-4 h-4" />
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                In Development
-              </span>
+              <span className="badge-status">In Development</span>
             </div>
 
             <h3 className="text-base font-bold">Clinical Recommendations</h3>

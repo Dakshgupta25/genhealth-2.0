@@ -125,16 +125,16 @@ export function DoctorPortalPage() {
       <div className="p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white"
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
                style={{ backgroundColor: 'var(--brand-primary)' }}>
-            <DoodleIcon name="doctor" className="w-5 h-5" />
+            <DoodleIcon name="doctor" className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
                 Clinical Diagnostic Portal
               </h1>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200">
+              <span className="badge-status" style={{ backgroundColor: 'rgba(139,92,246,0.12)', color: '#9F7AEA' }}>
                 Doctor Mode
               </span>
             </div>
@@ -188,15 +188,15 @@ export function DoctorPortalPage() {
               <button
                 key={d.id}
                 onClick={() => setSelectedDiseaseId(d.id)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center space-x-2 border ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 border ${
                   isSelected
                     ? 'shadow-md text-white'
-                    : 'hover:opacity-80'
+                    : 'hover:opacity-90'
                 }`}
                 style={{
                   backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-card)',
                   borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-card)',
-                  color: isSelected ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+                  color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
                 }}
               >
                 <DoodleIcon name="stethoscope" className="w-3.5 h-3.5" />

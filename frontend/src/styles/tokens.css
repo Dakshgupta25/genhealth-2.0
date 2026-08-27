@@ -19,8 +19,11 @@
   --border-focus: #3B5284;
   --border-card: rgba(216, 226, 240, 0.8);
 
-  --brand-primary: #1E293B;
+  /* Brand colors — light mode */
+  --brand-primary: #1E293B;         /* Primary buttons: deep navy, always legible with white text */
   --brand-primary-hover: #0F172A;
+  --brand-nav-active: #2D3F60;      /* Nav active pill: rich indigo-navy, white text readable */
+  --brand-accent-indigo: #4F6FAA;   /* Soft lavender-indigo for accent tints */
   --brand-lavender: #7C8BA6;
   --brand-periwinkle: #94A3B8;
   --brand-soft-blue: #D6E4F0;
@@ -65,19 +68,24 @@
   --border-focus: #60A5FA;
   --border-card: #202D45;
 
-  --brand-primary: #E2E8F0;
-  --brand-primary-hover: #FFFFFF;
+  /* Brand colors — dark mode
+     CRITICAL: --brand-primary must be a DARK fill so white text is legible on top.
+     In dark mode we use a rich indigo-blue (not near-white) for all primary buttons. */
+  --brand-primary: #2D4A7A;         /* Indigo-blue button fill — white text always visible */
+  --brand-primary-hover: #3A5A8F;
+  --brand-nav-active: #2D4A7A;      /* Nav active pill — same indigo, white label readable */
+  --brand-accent-indigo: #4F6FAA;
   --brand-lavender: #94A3B8;
   --brand-periwinkle: #64748B;
-  --brand-soft-blue: #1E293B;
+  --brand-soft-blue: rgba(93, 143, 209, 0.15);  /* Subtle tint, not heavy solid fill */
   --brand-pill-bg: #1E293B;
 
   --status-normal: #34D399;
-  --status-normal-bg: rgba(16, 185, 129, 0.15);
+  --status-normal-bg: rgba(16, 185, 129, 0.12);
   --status-warning: #FBBF24;
-  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-warning-bg: rgba(245, 158, 11, 0.12);
   --status-critical: #F87171;
-  --status-critical-bg: rgba(239, 68, 68, 0.15);
+  --status-critical-bg: rgba(239, 68, 68, 0.12);
 
   --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
   --shadow-hover: 0 10px 25px -3px rgba(0, 0, 0, 0.5);

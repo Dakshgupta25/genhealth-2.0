@@ -174,6 +174,14 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       );
+    case 'logo-pulse':
+      // Primary app logo mark: minimal single-stroke pulse line in a rounded square frame
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M4 12h3.5l2-5 3 9 2.5-6 1.5 3H20" />
+        </svg>
+      );
     default:
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth}>

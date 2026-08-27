@@ -44,7 +44,7 @@ export function AppShell({ children }) {
       >
         <div className="absolute top-4 right-6 flex items-center space-x-2 text-xs font-mono text-slate-300/80">
           <DoodleIcon name="heartbeat" className="w-4 h-4 text-sky-400" />
-          <span>GenHealth 2.0</span>
+          <span>GenHealth AI</span>
         </div>
       </div>
 
@@ -52,23 +52,19 @@ export function AppShell({ children }) {
       <header className="relative z-10 border-b transition-colors duration-200"
               style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'transparent' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm"
+          <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/')}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
                  style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--text-on-accent)' }}>
-              <DoodleIcon name="pill" className="w-5 h-5" />
+              <DoodleIcon name="logo-pulse" className="w-6 h-6" strokeWidth={1.5} />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-                  GenHealth
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
-                  v2.0
+                  GenHealth <span style={{ color: 'var(--text-accent)' }}>AI</span>
                 </span>
               </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Clinical AI & Diagnostic Intelligence
+                Clinical AI &amp; Diagnostic Intelligence
               </p>
             </div>
           </div>
@@ -82,7 +78,7 @@ export function AppShell({ children }) {
         <div className="lg:col-span-8 xl:col-span-9 flex flex-col space-y-6">
           
           {/* Primary Navigation Bar: Order: Dashboard -> Upload -> Family Tree -> Doctor Portal */}
-          <nav className="p-1.5 rounded-2xl flex flex-wrap items-center gap-1.5 border shadow-sm transition-all"
+          <nav className="p-1 rounded-xl flex flex-wrap items-center gap-1 border shadow-sm transition-all"
                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
@@ -90,14 +86,14 @@ export function AppShell({ children }) {
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-[1.02] ${
                     isActive
                       ? 'shadow-sm text-white'
-                      : 'hover:opacity-80'
+                      : 'hover:opacity-90'
                   }`}
                   style={{
-                    backgroundColor: isActive ? 'var(--brand-primary)' : 'transparent',
-                    color: isActive ? 'var(--text-on-accent)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--brand-nav-active)' : 'transparent',
+                    color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
                   }}
                 >
                   <DoodleIcon name={item.icon} className="w-4 h-4" />
@@ -128,9 +124,9 @@ export function AppShell({ children }) {
                   <DoodleIcon name="hospital" className="w-3.5 h-3.5" />
                   <span>Hospital Scope</span>
                 </label>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
-                  Active Filter
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                      style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
+                  Active
                 </span>
               </div>
               <select

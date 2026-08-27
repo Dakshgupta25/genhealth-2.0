@@ -171,10 +171,10 @@ export function UploadPage() {
           <div className="p-8 rounded-3xl border shadow-sm space-y-3"
                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white"
-                   style={{ backgroundColor: 'var(--brand-primary)' }}>
-                <DoodleIcon name="upload" className="w-5 h-5" />
-              </div>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
+                 style={{ backgroundColor: 'var(--brand-primary)' }}>
+              <DoodleIcon name="upload" className="w-4 h-4" />
+            </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
                   Ingest Medical Lab Document
@@ -192,15 +192,15 @@ export function UploadPage() {
             {/* Option 1: File Upload */}
             <div
               onClick={() => { setUploadTab('file'); fileInputRef.current?.click(); }}
-              className={`p-6 rounded-3xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
-                uploadTab === 'file' ? 'ring-2 ring-indigo-500/50' : ''
+              className={`p-6 rounded-2xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
+                uploadTab === 'file' ? 'ring-1 ring-indigo-400/40' : ''
               }`}
               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                  <DoodleIcon name="file" className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                  <DoodleIcon name="file" className="w-4 h-4" />
                 </div>
                 <h3 className="text-base font-bold">File Upload</h3>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -215,15 +215,15 @@ export function UploadPage() {
             {/* Option 2: Live Camera Capture */}
             <div
               onClick={() => { setUploadTab('camera'); setViewMode('camera'); }}
-              className={`p-6 rounded-3xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
-                uploadTab === 'camera' ? 'ring-2 ring-indigo-500/50' : ''
+              className={`p-6 rounded-2xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
+                uploadTab === 'camera' ? 'ring-1 ring-indigo-400/40' : ''
               }`}
               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                  <DoodleIcon name="camera" className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                  <DoodleIcon name="camera" className="w-4 h-4" />
                 </div>
                 <h3 className="text-base font-bold">Live Camera Capture</h3>
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>

@@ -78,15 +78,15 @@ export function LoginPage() {
         
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-2xl items-center justify-center shadow-md mb-2"
+          <div className="inline-flex w-12 h-12 rounded-xl items-center justify-center shadow-md mb-2"
                style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--text-on-accent)' }}>
-            <DoodleIcon name="pill" className="w-6 h-6" />
+            <DoodleIcon name="logo-pulse" className="w-7 h-7" strokeWidth={1.5} />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-            GenHealth 2.0
+            GenHealth <span style={{ color: 'var(--text-accent)' }}>AI</span>
           </h1>
           <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Clinical AI & Health Intelligence Platform
+            Clinical AI &amp; Health Intelligence Platform
           </p>
         </div>
 

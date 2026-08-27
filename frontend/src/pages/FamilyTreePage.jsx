@@ -117,9 +117,9 @@ export function FamilyTreePage() {
       <div className="p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white"
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
                style={{ backgroundColor: 'var(--brand-primary)' }}>
-            <DoodleIcon name="tree" className="w-5 h-5" />
+            <DoodleIcon name="tree" className="w-4 h-4" />
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -135,7 +135,7 @@ export function FamilyTreePage() {
           type="button"
           onClick={() => { setLinkModalOpen(true); setModalError(''); }}
           id="open-link-family-modal-btn"
-          className="px-5 py-3 rounded-2xl text-xs font-bold text-white shadow-md flex items-center space-x-2 transition-all active:scale-95"
+          className="px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center space-x-2 transition-all active:scale-95"
           style={{ backgroundColor: 'var(--brand-primary)' }}
         >
           <DoodleIcon name="plus" className="w-4 h-4" />
@@ -166,9 +166,9 @@ export function FamilyTreePage() {
             
             {/* TIER 1: Parents / Previous Generation */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                   style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-accent)' }}>
-                <span>Tier 1 • Parents & Ascendants</span>
+              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
+                <span>Tier 1 · Parents & Ascendants</span>
               </div>
 
               {parentRelatives.length > 0 ? (
@@ -196,9 +196,9 @@ export function FamilyTreePage() {
 
             {/* TIER 2: Primary User & Peers (Spouse & Siblings) */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                   style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-accent)' }}>
-                <span>Tier 2 • Self, Spouse & Siblings</span>
+              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
+                <span>Tier 2 · Self, Spouse & Siblings</span>
               </div>
 
               <div className="flex flex-wrap justify-center items-center gap-6 pt-2">
@@ -231,9 +231,9 @@ export function FamilyTreePage() {
 
             {/* TIER 3: Children / Descendants */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
-                   style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-accent)' }}>
-                <span>Tier 3 • Children & Descendants</span>
+              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
+                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
+                <span>Tier 3 · Children & Descendants</span>
               </div>
 
               {childRelatives.length > 0 ? (

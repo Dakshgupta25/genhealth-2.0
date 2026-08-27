@@ -1,7 +1,25 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
   body {
-    @apply bg-slate-950 text-slate-100 antialiased font-sans min-h-screen selection:bg-indigo-500 selection:text-white;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+    font-weight: 700;
   }
 }
+

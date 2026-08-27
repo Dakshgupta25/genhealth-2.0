@@ -1,0 +1,75 @@
+[
+  {
+    "id": "diabetes",
+    "name": "Diabetes & Metabolic Syndrome",
+    "category": "Endocrine",
+    "description": "Evaluation of blood glucose regulation, glycemic control, and insulin sensitivity.",
+    "primary_tests": [
+      "Fasting Blood Sugar",
+      "Post Prandial Blood Sugar",
+      "HbA1c",
+      "Urine Glucose"
+    ]
+  },
+  {
+    "id": "cardiovascular",
+    "name": "Cardiovascular & Lipid Disorders",
+    "category": "Cardiology",
+    "description": "Atherosclerotic cardiovascular risk profiling, lipid fractions, and coronary biomarkers.",
+    "primary_tests": [
+      "Total Cholesterol",
+      "HDL Cholesterol",
+      "LDL Cholesterol",
+      "Triglycerides",
+      "VLDL Cholesterol"
+    ]
+  },
+  {
+    "id": "anemia",
+    "name": "Anemia & Hematologic Disorders",
+    "category": "Hematology",
+    "description": "Red blood cell indices, oxygen-carrying capacity, and coagulation markers.",
+    "primary_tests": [
+      "Hemoglobin",
+      "Hematocrit",
+      "Red Blood Cell Count",
+      "Platelet Count",
+      "Mean Corpuscular Volume"
+    ]
+  },
+  {
+    "id": "renal",
+    "name": "Renal & Kidney Disease",
+    "category": "Nephrology",
+    "description": "Glomerular filtration status, nitrogenous waste clearance, and renal parenchyma health.",
+    "primary_tests": [
+      "Creatinine",
+      "Blood Urea Nitrogen",
+      "Uric Acid"
+    ]
+  },
+  {
+    "id": "hepatic",
+    "name": "Hepatic / Liver Function",
+    "category": "Gastroenterology",
+    "description": "Hepatocellular integrity, biliary excretion, and liver enzyme profiles.",
+    "primary_tests": [
+      "Total Bilirubin",
+      "Direct Bilirubin",
+      "SGOT",
+      "SGPT",
+      "Alkaline Phosphatase"
+    ]
+  },
+  {
+    "id": "thyroid",
+    "name": "Thyroid Disorders",
+    "category": "Endocrine",
+    "description": "Thyroid hormone synthesis, pituitary-thyroid feedback loop, and metabolic regulation.",
+    "primary_tests": [
+      "TSH",
+      "Free T3",
+      "Free T4"
+    ]
+  }
+]

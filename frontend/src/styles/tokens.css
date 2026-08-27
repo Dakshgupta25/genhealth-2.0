@@ -1,0 +1,84 @@
+:root {
+  /* Minimal Medical Doodle Design Tokens */
+
+  /* Light Theme: Soft periwinkle/lavender-blue background with deep navy text */
+  --bg-primary: #EEF2F9;
+  --bg-secondary: #E4EBF5;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFC;
+  --bg-input: #FFFFFF;
+  --bg-accent-corner: #0E1626;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-accent: #3B5284;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: #D8E2F0;
+  --border-focus: #3B5284;
+  --border-card: rgba(216, 226, 240, 0.8);
+
+  --brand-primary: #1E293B;
+  --brand-primary-hover: #0F172A;
+  --brand-lavender: #7C8BA6;
+  --brand-periwinkle: #94A3B8;
+  --brand-soft-blue: #D6E4F0;
+  --brand-pill-bg: #E2E8F0;
+
+  --status-normal: #10B981;
+  --status-normal-bg: #ECFDF5;
+  --status-warning: #F59E0B;
+  --status-warning-bg: #FFFBEB;
+  --status-critical: #EF4444;
+  --status-critical-bg: #FEF2F2;
+
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --shadow-hover: 0 10px 25px -3px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="dark"], .dark {
+  /* Inverted Palette: Deep Navy background with soft lavender/periwinkle text & cards */
+  --bg-primary: #0B1120;
+  --bg-secondary: #131D31;
+  --bg-card: #182238;
+  --bg-card-hover: #1E2B47;
+  --bg-input: #111A2E;
+  --bg-accent-corner: #1E293B;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-accent: #93C5FD;
+  --text-on-accent: #FFFFFF;
+
+  --border-subtle: #24324D;
+  --border-focus: #60A5FA;
+  --border-card: #202D45;
+
+  --brand-primary: #E2E8F0;
+  --brand-primary-hover: #FFFFFF;
+  --brand-lavender: #94A3B8;
+  --brand-periwinkle: #64748B;
+  --brand-soft-blue: #1E293B;
+  --brand-pill-bg: #1E293B;
+
+  --status-normal: #34D399;
+  --status-normal-bg: rgba(16, 185, 129, 0.15);
+  --status-warning: #FBBF24;
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-critical: #F87171;
+  --status-critical-bg: rgba(239, 68, 68, 0.15);
+
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  --shadow-hover: 0 10px 25px -3px rgba(0, 0, 0, 0.5);
+}

@@ -30,13 +30,14 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Path as FPath, Query, UploadFile, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.report import Report
 from app.models.report_result import ReportResult
 from app.pipeline.orchestrator import run_pipeline
+from app.pipeline import normalizer
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Lab Reports"])
 
@@ -50,7 +51,7 @@ _ALLOWED_MIME_TYPES = {
 
 
 # ---------------------------------------------------------------------------
-# Response schemas
+# Schemas
 # ---------------------------------------------------------------------------
 
 class IngestionResponse(BaseModel):
@@ -85,6 +86,25 @@ class TrendDataPoint(BaseModel):
     reference_range: "str | None"
     abnormality_flag: str
     report_date: str
+
+
+class MeasurementInputItem(BaseModel):
+    raw_test_name: str
+    value: str
+    unit: "str | None" = None
+    reference_range: "str | None" = None
+    canonical_test_name: "str | None" = None
+    abnormality_flag: "str | None" = None
+
+
+class UpdateReportResultsRequest(BaseModel):
+    results: list[MeasurementInputItem]
+
+
+class ManualReportCreateRequest(BaseModel):
+    user_id: uuid.UUID
+    original_filename: "str | None" = "Manual Entry"
+    results: list[MeasurementInputItem]
 
 
 # ---------------------------------------------------------------------------
@@ -247,3 +267,186 @@ def get_test_trend(
         }
         for rr, created_at in rows
     ]
+
+
+@router.put(
+    "/{report_id}/results",
+    response_model=list[ReportResultResponse],
+    summary="Update and commit edited measurements for a report",
+)
+def update_report_results(
+    report_id: uuid.UUID = FPath(...),
+    payload: UpdateReportResultsRequest = ...,
+    db: Session = Depends(get_db),
+) -> list:
+    # Reasoning:
+    # Allows the patient or clinician to edit extracted test values, delete incorrect rows,
+    # and add missing measurements prior to saving. Normalizes updated table rows to recalculate
+    # canonical names and abnormality flags, ensuring consistent longitudinal tracking.
+    report_stmt = select(Report).where(Report.id == report_id)
+    report = db.execute(report_stmt).scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    # Delete existing results for this report and replace with user-verified items
+    db.execute(delete(ReportResult).where(ReportResult.report_id == report_id))
+
+    new_results: list[ReportResult] = []
+    for item in payload.results:
+        # Run normalizer on the updated measurement
+        norm = normalizer.process_table_row({
+            "test_name": item.raw_test_name,
+            "value": item.value,
+            "unit": item.unit,
+            "reference_range": item.reference_range,
+        })
+        
+        canonical_name = item.canonical_test_name or norm["canonical_test_name"]
+        abnormality_flag = item.abnormality_flag or norm["abnormality_flag"]
+
+        new_results.append(
+            ReportResult(
+                report_id=report_id,
+                raw_test_name=item.raw_test_name,
+                value=item.value,
+                unit=item.unit,
+                reference_range=item.reference_range,
+                canonical_test_name=canonical_name,
+                loinc_code=norm["loinc_code"],
+                match_score=norm["match_score"],
+                numeric_value=norm["numeric_value"],
+                abnormality_flag=abnormality_flag,
+            )
+        )
+
+    db.add_all(new_results)
+    report.status = "done"
+    db.commit()
+
+    return [
+        {
+            "id": str(r.id),
+            "raw_test_name": r.raw_test_name,
+            "canonical_test_name": r.canonical_test_name,
+            "loinc_code": r.loinc_code,
+            "value": r.value,
+            "numeric_value": r.numeric_value,
+            "unit": r.unit,
+            "reference_range": r.reference_range,
+            "abnormality_flag": r.abnormality_flag,
+            "match_score": r.match_score,
+            "extracted_at": r.extracted_at.isoformat() if r.extracted_at else "",
+        }
+        for r in new_results
+    ]
+
+
+@router.post(
+    "/manual",
+    response_model=IngestionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Save manually entered medical measurements",
+)
+def create_manual_report(
+    payload: ManualReportCreateRequest,
+    db: Session = Depends(get_db),
+) -> IngestionResponse:
+    # Reasoning:
+    # Supports manual measurement entry converging on the exact same database schema
+    # (reports + report_results) as OCR/Gemini extraction. Each item is normalized to assign
+    # LOINC mappings, canonical test names, and abnormality ranges automatically.
+    report = Report(
+        user_id=payload.user_id,
+        original_filename=payload.original_filename or "Manual Entry",
+        file_mime_type="manual/entry",
+        status="done",
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+
+    result_rows: list[ReportResult] = []
+    for item in payload.results:
+        norm = normalizer.process_table_row({
+            "test_name": item.raw_test_name,
+            "value": item.value,
+            "unit": item.unit,
+            "reference_range": item.reference_range,
+        })
+        
+        result_rows.append(
+            ReportResult(
+                report_id=report.id,
+                raw_test_name=item.raw_test_name,
+                value=item.value,
+                unit=item.unit,
+                reference_range=item.reference_range,
+                canonical_test_name=item.canonical_test_name or norm["canonical_test_name"],
+                loinc_code=norm["loinc_code"],
+                match_score=norm["match_score"],
+                numeric_value=norm["numeric_value"],
+                abnormality_flag=item.abnormality_flag or norm["abnormality_flag"],
+            )
+        )
+
+    db.add_all(result_rows)
+    db.commit()
+
+    return IngestionResponse(
+        report_id=str(report.id),
+        status="done",
+        result_count=len(result_rows),
+        entity_count=0,
+        suppressed_entity_count=0,
+        model_used="manual_entry",
+        error=None,
+    )
+
+
+class UserReportSummaryResponse(BaseModel):
+    id: uuid.UUID
+    original_filename: str
+    file_mime_type: str
+    status: str
+    created_at: str
+    result_count: int
+
+
+@router.get(
+    "/users/{user_id}/recent",
+    response_model=list[UserReportSummaryResponse],
+    summary="Get recent lab reports uploaded by a user",
+)
+def get_user_recent_reports(
+    user_id: uuid.UUID = FPath(...),
+    db: Session = Depends(get_db),
+) -> list[UserReportSummaryResponse]:
+    # Reasoning:
+    # Fetches the user's latest ingested lab reports sorted by creation date (newest first),
+    # counting associated test measurements for the dashboard clinical summary.
+    stmt = (
+        select(Report)
+        .where(Report.user_id == user_id)
+        .order_by(Report.created_at.desc())
+        .limit(10)
+    )
+    reports = db.execute(stmt).scalars().all()
+
+    summaries = []
+    for rep in reports:
+        count_stmt = select(ReportResult).where(ReportResult.report_id == rep.id)
+        results = db.execute(count_stmt).scalars().all()
+        summaries.append(
+            UserReportSummaryResponse(
+                id=rep.id,
+                original_filename=rep.original_filename,
+                file_mime_type=rep.file_mime_type,
+                status=rep.status,
+                created_at=rep.created_at.isoformat() if rep.created_at else "",
+                result_count=len(results),
+            )
+        )
+
+    return summaries
+
+

@@ -38,7 +38,18 @@ app.include_router(family.router)
 app.include_router(clinical.router)
 
 
+@app.get("/")
+def root():
+    return {
+        "service": "GenHealth AI API",
+        "status": "online",
+        "version": "2.0.0",
+        "docs_url": "/docs",
+    }
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DoodleIcon from '../common/DoodleIcon';
 
 /**
@@ -13,9 +13,9 @@ export function EditableResultTable({
   saving = false,
 }) {
 
-  const [rows, setRows] = useState(() => {
-    if (initialRows && initialRows.length > 0) {
-      return initialRows.map((r, idx) => ({
+  const formatInitialRows = (items) => {
+    if (items && items.length > 0) {
+      return items.map((r, idx) => ({
         id: r.id || `row-${idx}-${Date.now()}`,
         raw_test_name: r.raw_test_name || r.test_name || '',
         value: r.value !== undefined && r.value !== null ? String(r.value) : '',
@@ -25,7 +25,6 @@ export function EditableResultTable({
         abnormality_flag: r.abnormality_flag || 'unknown',
       }));
     }
-    // Default single blank row for manual mode
     return [
       {
         id: `row-new-${Date.now()}`,
@@ -37,7 +36,15 @@ export function EditableResultTable({
         abnormality_flag: 'unknown',
       },
     ];
-  });
+  };
+
+  const [rows, setRows] = useState(() => formatInitialRows(initialRows));
+
+  useEffect(() => {
+    if (initialRows && initialRows.length > 0) {
+      setRows(formatInitialRows(initialRows));
+    }
+  }, [initialRows]);
 
   const [validationError, setValidationError] = useState('');
 

@@ -20,6 +20,7 @@ export function UploadPage() {
   const [extractedRows, setExtractedRows] = useState([]);
   const [pipelineSummary, setPipelineSummary] = useState(null);
   
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [errorMessage, setErrorMessage] = useState('');
@@ -60,21 +61,27 @@ export function UploadPage() {
     setProcessingStage(1);
 
     // Simulate progressive status stages while backend 3-stage pipeline runs
-    const stageTimer1 = setTimeout(() => setProcessingStage(2), 2000);
-    const stageTimer2 = setTimeout(() => setProcessingStage(3), 5000);
-    const stageTimer3 = setTimeout(() => setProcessingStage(4), 8000);
+    const stageTimer1 = setTimeout(() => setProcessingStage(2), 1500);
+    const stageTimer2 = setTimeout(() => setProcessingStage(3), 4000);
+    const stageTimer3 = setTimeout(() => setProcessingStage(4), 6500);
 
     try {
       // Send multipart upload to the real backend ingestion pipeline
       const summary = await ingestReportFile(file, userId);
+      
+      if (summary.status === 'failed' || summary.error) {
+        throw new Error(summary.error || 'Pipeline extraction failed.');
+      }
+
       setPipelineSummary(summary);
       setReportId(summary.report_id);
 
       // Fetch the extracted ReportResult rows for user review
       const results = await getReportResults(summary.report_id);
-      setExtractedRows(results);
+      setExtractedRows(results && results.length > 0 ? results : []);
       setViewMode('review');
     } catch (err) {
+      console.error('Upload / Extraction error:', err);
       const detail = err.response?.data?.detail;
       setErrorMessage(
         typeof detail === 'string'
@@ -87,6 +94,9 @@ export function UploadPage() {
       clearTimeout(stageTimer2);
       clearTimeout(stageTimer3);
       setIsProcessing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -377,6 +387,7 @@ export function UploadPage() {
       {viewMode === 'review' && (
         <div className="space-y-6">
           <EditableResultTable
+            key={reportId || (uploadTab === 'manual' ? 'manual' : 'review')}
             initialRows={extractedRows}
             reportId={reportId}
             isManual={uploadTab === 'manual'}

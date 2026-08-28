@@ -1,41 +1,19 @@
-# genhealth-ai
+# GenHealth 2.0
 
-`genhealth-ai` is a high-performance Python backend service built with FastAPI designed for intelligent health data analysis, medical record processing, and AI-driven clinical workflow automation.
+`GenHealth 2.0` is an AI-driven clinical health platform combining intelligent medical report ingestion, longitudinal biomarker tracking, family health inheritance mapping, and doctor portal management.
 
-### Prerequisites
+### One-Click Launch (Backend + Frontend)
 
-- Python 3.11+ installed
+You can run both the FastAPI Backend and Vite Frontend together with a single click or command:
 
-### Environment Setup
+- **Option 1 (Windows Double-Click)**: Double-click [`start.bat`](file:///c:/Users/hp/Desktop/genhealth-2.0/start.bat) in the project root.
+- **Option 2 (Python)**: Run `python start.py` from the root directory.
+- **Option 3 (PowerShell)**: Run `.\start.ps1` in PowerShell.
+- **Option 4 (npm)**: Run `npm start` or `npm run dev` from the root directory.
 
-1. **Clone the repository** (if not already local):
-   ```bash
-   git clone <repository-url>
-   cd genhealth-ai
-   ```
+This will automatically:
+1. Start the FastAPI backend on `http://127.0.0.1:8000` (API Docs at `/docs`).
+2. Start the Vite React frontend on `http://localhost:5173`.
+3. Open your browser directly to `http://localhost:5173`.
 
-2. **Create a virtual environment**:
-   ```bash
-   python -m venv .venv
-   ```
-
-3. **Activate the virtual environment**:
-   - **Windows (PowerShell)**:
-     ```powershell
-     .\.venv\Scripts\Activate.ps1
-     ```
-   - **Windows (CMD)**:
-     ```cmd
-     .\.venv\Scripts\activate.bat
-     ```
-   - **macOS / Linux**:
-     ```bash
-     source .venv/bin/activate
-     ```
-
-4. **Install dependencies**:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
 

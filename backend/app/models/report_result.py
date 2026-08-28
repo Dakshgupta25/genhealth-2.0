@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, UUID, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, UUID, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -59,6 +59,14 @@ class ReportResult(Base):
         nullable=False,
         default="unknown",
         server_default="unknown",
+    )
+
+    # If identical measure with same value was uploaded on the same date for this user
+    is_duplicate_same_date: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="0",
     )
 
     extracted_at: Mapped[datetime] = mapped_column(

@@ -75,6 +75,7 @@ class ReportResultResponse(BaseModel):
     reference_range: "str | None"
     abnormality_flag: str
     match_score: "float | None"
+    is_duplicate_same_date: bool = False
     extracted_at: str
 
 
@@ -213,7 +214,8 @@ def get_report_results(
             "reference_range": r.reference_range,
             "abnormality_flag": r.abnormality_flag,
             "match_score": r.match_score,
-            "extracted_at": r.extracted_at.isoformat(),
+            "is_duplicate_same_date": bool(r.is_duplicate_same_date),
+            "extracted_at": r.extracted_at.isoformat() if r.extracted_at else "",
         }
         for r in rows
     ]
@@ -225,8 +227,7 @@ def get_report_results(
     summary="Health trend: one test across all user reports over time",
     description=(
         "Core health-tracking query. Returns all values for a single canonical "
-        "test name (e.g. 'Hemoglobin') across all reports for this user, "
-        "sorted by report date (newest first)."
+        "test name across all reports for this user, excluding same-date duplicates."
     ),
 )
 def get_test_trend(
@@ -235,22 +236,14 @@ def get_test_trend(
     db: Session = Depends(get_db),
 ) -> list:
     """
-    Health tracking over time query.
-
-    Equivalent SQL:
-      SELECT rr.canonical_test_name, rr.numeric_value, rr.unit,
-             rr.reference_range, rr.abnormality_flag, r.created_at
-      FROM report_results rr
-      JOIN reports r ON rr.report_id = r.id
-      WHERE r.user_id = :user_id
-        AND rr.canonical_test_name = :canonical_test_name
-      ORDER BY r.created_at DESC;
+    Health tracking over time query. Excludes same-date duplicates so longitudinal trends remain accurate.
     """
     stmt = (
         select(ReportResult, Report.created_at)
         .join(Report, ReportResult.report_id == Report.id)
         .where(Report.user_id == user_id)
         .where(ReportResult.canonical_test_name == canonical_test_name)
+        .where(ReportResult.is_duplicate_same_date == False)
         .order_by(Report.created_at.desc())
     )
     rows = db.execute(stmt).all()
@@ -281,8 +274,8 @@ def update_report_results(
 ) -> list:
     # Reasoning:
     # Allows the patient or clinician to edit extracted test values, delete incorrect rows,
-    # and add missing measurements prior to saving. Normalizes updated table rows to recalculate
-    # canonical names and abnormality flags, ensuring consistent longitudinal tracking.
+    # and add missing measurements prior to saving. Normalizes updated table rows and flags
+    # same-date duplicates to prevent storing redundant measures in longitudinal database tables.
     report_stmt = select(Report).where(Report.id == report_id)
     report = db.execute(report_stmt).scalar_one_or_none()
     if not report:
@@ -291,31 +284,53 @@ def update_report_results(
     # Delete existing results for this report and replace with user-verified items
     db.execute(delete(ReportResult).where(ReportResult.report_id == report_id))
 
-    new_results: list[ReportResult] = []
+    normalized_items: list[dict] = []
     for item in payload.results:
-        # Run normalizer on the updated measurement
         norm = normalizer.process_table_row({
             "test_name": item.raw_test_name,
             "value": item.value,
             "unit": item.unit,
             "reference_range": item.reference_range,
         })
-        
         canonical_name = item.canonical_test_name or norm["canonical_test_name"]
         abnormality_flag = item.abnormality_flag or norm["abnormality_flag"]
 
+        normalized_items.append({
+            "raw_test_name": item.raw_test_name,
+            "value": item.value,
+            "unit": item.unit,
+            "reference_range": item.reference_range,
+            "canonical_test_name": canonical_name,
+            "loinc_code": norm["loinc_code"],
+            "match_score": norm["match_score"],
+            "numeric_value": norm["numeric_value"],
+            "abnormality_flag": abnormality_flag,
+        })
+
+    from app.pipeline.deduplication import check_and_flag_measurements
+    flagged = check_and_flag_measurements(
+        db=db,
+        user_id=report.user_id,
+        report_id=report.id,
+        report_created_at=report.created_at,
+        measurement_items=normalized_items,
+    )
+
+    new_results: list[ReportResult] = []
+    for item in flagged:
         new_results.append(
             ReportResult(
                 report_id=report_id,
-                raw_test_name=item.raw_test_name,
-                value=item.value,
-                unit=item.unit,
-                reference_range=item.reference_range,
-                canonical_test_name=canonical_name,
-                loinc_code=norm["loinc_code"],
-                match_score=norm["match_score"],
-                numeric_value=norm["numeric_value"],
-                abnormality_flag=abnormality_flag,
+                raw_test_name=item["raw_test_name"],
+                value=item["value"],
+                unit=item["unit"],
+                reference_range=item["reference_range"],
+                canonical_test_name=item["canonical_test_name"],
+                loinc_code=item["loinc_code"],
+                match_score=item["match_score"],
+                numeric_value=item["numeric_value"],
+                abnormality_flag=item["abnormality_flag"],
+                is_duplicate_same_date=item.get("is_duplicate_same_date", False),
             )
         )
 
@@ -335,6 +350,7 @@ def update_report_results(
             "reference_range": r.reference_range,
             "abnormality_flag": r.abnormality_flag,
             "match_score": r.match_score,
+            "is_duplicate_same_date": bool(r.is_duplicate_same_date),
             "extracted_at": r.extracted_at.isoformat() if r.extracted_at else "",
         }
         for r in new_results
@@ -351,10 +367,6 @@ def create_manual_report(
     payload: ManualReportCreateRequest,
     db: Session = Depends(get_db),
 ) -> IngestionResponse:
-    # Reasoning:
-    # Supports manual measurement entry converging on the exact same database schema
-    # (reports + report_results) as OCR/Gemini extraction. Each item is normalized to assign
-    # LOINC mappings, canonical test names, and abnormality ranges automatically.
     report = Report(
         user_id=payload.user_id,
         original_filename=payload.original_filename or "Manual Entry",
@@ -365,7 +377,7 @@ def create_manual_report(
     db.commit()
     db.refresh(report)
 
-    result_rows: list[ReportResult] = []
+    normalized_items: list[dict] = []
     for item in payload.results:
         norm = normalizer.process_table_row({
             "test_name": item.raw_test_name,
@@ -373,19 +385,42 @@ def create_manual_report(
             "unit": item.unit,
             "reference_range": item.reference_range,
         })
-        
+        normalized_items.append({
+            "raw_test_name": item.raw_test_name,
+            "value": item.value,
+            "unit": item.unit,
+            "reference_range": item.reference_range,
+            "canonical_test_name": item.canonical_test_name or norm["canonical_test_name"],
+            "loinc_code": norm["loinc_code"],
+            "match_score": norm["match_score"],
+            "numeric_value": norm["numeric_value"],
+            "abnormality_flag": item.abnormality_flag or norm["abnormality_flag"],
+        })
+
+    from app.pipeline.deduplication import check_and_flag_measurements
+    flagged = check_and_flag_measurements(
+        db=db,
+        user_id=report.user_id,
+        report_id=report.id,
+        report_created_at=report.created_at,
+        measurement_items=normalized_items,
+    )
+
+    result_rows: list[ReportResult] = []
+    for item in flagged:
         result_rows.append(
             ReportResult(
                 report_id=report.id,
-                raw_test_name=item.raw_test_name,
-                value=item.value,
-                unit=item.unit,
-                reference_range=item.reference_range,
-                canonical_test_name=item.canonical_test_name or norm["canonical_test_name"],
-                loinc_code=norm["loinc_code"],
-                match_score=norm["match_score"],
-                numeric_value=norm["numeric_value"],
-                abnormality_flag=item.abnormality_flag or norm["abnormality_flag"],
+                raw_test_name=item["raw_test_name"],
+                value=item["value"],
+                unit=item["unit"],
+                reference_range=item["reference_range"],
+                canonical_test_name=item["canonical_test_name"],
+                loinc_code=item["loinc_code"],
+                match_score=item["match_score"],
+                numeric_value=item["numeric_value"],
+                abnormality_flag=item["abnormality_flag"],
+                is_duplicate_same_date=item.get("is_duplicate_same_date", False),
             )
         )
 
@@ -412,6 +447,10 @@ class UserReportSummaryResponse(BaseModel):
     result_count: int
 
 
+class UpdateReportNameRequest(BaseModel):
+    original_filename: str
+
+
 @router.get(
     "/users/{user_id}/recent",
     response_model=list[UserReportSummaryResponse],
@@ -419,16 +458,18 @@ class UserReportSummaryResponse(BaseModel):
 )
 def get_user_recent_reports(
     user_id: uuid.UUID = FPath(...),
+    limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> list[UserReportSummaryResponse]:
     # Reasoning:
-    # Fetches the user's latest ingested lab reports sorted by creation date (newest first),
-    # counting associated test measurements for the dashboard clinical summary.
+    # Fetches only successfully extracted lab reports (status == 'done') sorted by creation date (newest first),
+    # ensuring failed or incomplete extractions never clutter the patient's medical history.
     stmt = (
         select(Report)
         .where(Report.user_id == user_id)
+        .where(Report.status == "done")
         .order_by(Report.created_at.desc())
-        .limit(10)
+        .limit(limit)
     )
     reports = db.execute(stmt).scalars().all()
 
@@ -436,17 +477,58 @@ def get_user_recent_reports(
     for rep in reports:
         count_stmt = select(ReportResult).where(ReportResult.report_id == rep.id)
         results = db.execute(count_stmt).scalars().all()
-        summaries.append(
-            UserReportSummaryResponse(
-                id=rep.id,
-                original_filename=rep.original_filename,
-                file_mime_type=rep.file_mime_type,
-                status=rep.status,
-                created_at=rep.created_at.isoformat() if rep.created_at else "",
-                result_count=len(results),
+        # Only include reports that have extracted result measures
+        if len(results) > 0:
+            summaries.append(
+                UserReportSummaryResponse(
+                    id=rep.id,
+                    original_filename=rep.original_filename,
+                    file_mime_type=rep.file_mime_type,
+                    status=rep.status,
+                    created_at=rep.created_at.isoformat() if rep.created_at else "",
+                    result_count=len(results),
+                )
             )
-        )
 
     return summaries
+
+
+@router.patch(
+    "/{report_id}/name",
+    response_model=UserReportSummaryResponse,
+    summary="Update and rename a lab report",
+)
+def update_report_name(
+    report_id: uuid.UUID = FPath(...),
+    payload: UpdateReportNameRequest = ...,
+    db: Session = Depends(get_db),
+) -> UserReportSummaryResponse:
+    # Reasoning:
+    # Allows patients or clinicians to customize and rename uploaded report documents at any time.
+    new_name = payload.original_filename.strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Report name cannot be empty.")
+
+    report_stmt = select(Report).where(Report.id == report_id)
+    report = db.execute(report_stmt).scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found.")
+
+    report.original_filename = new_name
+    db.commit()
+    db.refresh(report)
+
+    count_stmt = select(ReportResult).where(ReportResult.report_id == report.id)
+    results = db.execute(count_stmt).scalars().all()
+
+    return UserReportSummaryResponse(
+        id=report.id,
+        original_filename=report.original_filename,
+        file_mime_type=report.file_mime_type,
+        status=report.status,
+        created_at=report.created_at.isoformat() if report.created_at else "",
+        result_count=len(results),
+    )
+
 
 

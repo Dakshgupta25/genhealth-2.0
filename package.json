@@ -1,0 +1,12 @@
+{
+  "name": "genhealth-2.0",
+  "version": "2.0.0",
+  "private": true,
+  "description": "GenHealth 2.0 AI Clinical Health Platform",
+  "scripts": {
+    "start": "python start.py",
+    "dev": "python start.py",
+    "backend": "cd backend && uvicorn app.main:app --reload --port 8000",
+    "frontend": "cd frontend && npm run dev"
+  }
+}

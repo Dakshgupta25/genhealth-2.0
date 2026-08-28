@@ -90,14 +90,28 @@ def run_pipeline(
         )
 
         # ---------------------------------------------------------------
-        # Stage 2a: Normalization (fuzzy match + abnormality flag)
+        # Stage 2a: Normalization (fuzzy match + abnormality flag) + Deduplication
         # ---------------------------------------------------------------
         logger.info("[Stage 2a] Normalizing %d table rows", len(tables))
         now = datetime.now(tz=timezone.utc)
-        result_rows: list = []
+        normalized_list: list = []
 
         for row in tables:
             norm = normalizer.process_table_row(row)
+            normalized_list.append(norm)
+
+        # Check and flag duplicate measures on the same calendar date
+        from app.pipeline.deduplication import check_and_flag_measurements
+        flagged_list = check_and_flag_measurements(
+            db=db,
+            user_id=user_id,
+            report_id=report_id,
+            report_created_at=report.created_at or now,
+            measurement_items=normalized_list,
+        )
+
+        result_rows: list = []
+        for norm in flagged_list:
             result_rows.append(ReportResult(
                 report_id=report_id,
                 raw_test_name=norm["raw_test_name"],
@@ -109,6 +123,7 @@ def run_pipeline(
                 match_score=norm["match_score"],
                 numeric_value=norm["numeric_value"],
                 abnormality_flag=norm["abnormality_flag"],
+                is_duplicate_same_date=norm.get("is_duplicate_same_date", False),
                 extracted_at=now,
             ))
 

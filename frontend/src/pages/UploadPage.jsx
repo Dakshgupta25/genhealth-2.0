@@ -1,13 +1,16 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useUpload } from '../context/UploadContext';
 import DoodleIcon from '../components/common/DoodleIcon';
 import CameraCapture from '../components/upload/CameraCapture';
 import EditableResultTable from '../components/upload/EditableResultTable';
+import UploadHistory from '../components/upload/UploadHistory';
 
 export function UploadPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { userId } = useAuth();
 
   const {
     viewMode,
@@ -256,6 +259,9 @@ export function UploadPage() {
               Select Document
             </button>
           </div>
+
+          {/* Upload History with Clickable Measures Table */}
+          <UploadHistory userId={userId} />
         </div>
       )}
 

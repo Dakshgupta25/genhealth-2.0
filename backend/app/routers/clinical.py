@@ -95,6 +95,7 @@ def get_family_test_history(
         .join(ReportResult, ReportResult.report_id == Report.id)
         .where(FamilyRelationship.user_id == user_id)
         .where(ReportResult.canonical_test_name == canonical_test_name)
+        .where(ReportResult.is_duplicate_same_date == False)
         .order_by(Report.created_at.desc())
     )
     rows = db.execute(stmt).all()
@@ -128,7 +129,8 @@ def get_patient_disease_summary(
 ) -> List[PatientBiomarkerSummary]:
     # Reasoning:
     # Cross-references the disease test registry against the patient's longitudinal report history
-    # and returns the most recent measurement for every biomarker pertinent to that disease condition.
+    # and returns the most recent measurement for every biomarker pertinent to that disease condition,
+    # excluding same-date duplicates.
     if not _DISEASE_MAPPING_PATH.exists():
         raise HTTPException(status_code=500, detail="Disease mapping data missing.")
     
@@ -148,6 +150,7 @@ def get_patient_disease_summary(
             .join(Report, ReportResult.report_id == Report.id)
             .where(Report.user_id == user_id)
             .where(ReportResult.canonical_test_name == test_name)
+            .where(ReportResult.is_duplicate_same_date == False)
             .order_by(Report.created_at.desc())
             .limit(1)
         )

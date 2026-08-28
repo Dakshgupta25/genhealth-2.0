@@ -71,3 +71,17 @@ export async function getUserRecentReports(userId) {
   return response.data;
 }
 
+/**
+ * Rename an existing lab report.
+ * @param {string} reportId UUID
+ * @param {string} originalFilename
+ * @returns {Promise<{ id: string, original_filename: string, file_mime_type: string, status: string, created_at: string, result_count: number }>}
+ */
+export async function updateReportName(reportId, originalFilename) {
+  const response = await apiClient.patch(`/api/v1/reports/${reportId}/name`, {
+    original_filename: originalFilename,
+  });
+  return response.data;
+}
+
+

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from sqlalchemy import text
 from app.config import settings
 from app.database import engine, Base
 import app.models  # Ensure all models are registered
@@ -13,11 +14,14 @@ from app.routers import clinical
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure all tables exist in database on startup
+    # Ensure all tables and columns exist in database on startup
     try:
         Base.metadata.create_all(bind=engine)
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE report_results ADD COLUMN IF NOT EXISTS is_duplicate_same_date BOOLEAN DEFAULT FALSE;"))
+            conn.commit()
     except Exception as e:
-        print(f"Warning: Could not connect to database on startup: {e}")
+        print(f"Warning: Could not connect or migrate database on startup: {e}")
     yield
 
 

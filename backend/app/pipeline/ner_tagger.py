@@ -77,31 +77,44 @@ _ADVISORY_PATTERNS = re.compile(
 
 _HAS_DIGIT = re.compile(r"\d")
 
+import os
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # Lazy-loaded NER pipeline -- loaded on first call to avoid startup cost
 _ner_pipeline = None
+_ner_load_attempted = False
 
 
 def _get_ner_pipeline():
     """Load the d4data/biomedical-ner-all model on first call (CPU-only)."""
-    global _ner_pipeline
-    if _ner_pipeline is None:
-        try:
-            from transformers import pipeline as hf_pipeline
+    global _ner_pipeline, _ner_load_attempted
+    if _ner_pipeline is not None:
+        return _ner_pipeline
+    if _ner_load_attempted:
+        return None
 
-            logger.info(
-                "Loading d4data/biomedical-ner-all NER model "
-                "(first run downloads ~420MB)..."
-            )
-            _ner_pipeline = hf_pipeline(
-                "token-classification",
-                model="d4data/biomedical-ner-all",
-                aggregation_strategy="simple",
-                device=-1,  # -1 forces CPU (no CUDA/ROCm required)
-            )
-            logger.info("NER model loaded successfully.")
-        except Exception as exc:
-            logger.error("Failed to load NER model: %s", exc, exc_info=True)
-            raise
+    _ner_load_attempted = True
+    try:
+        from transformers import pipeline as hf_pipeline
+
+        logger.info(
+            "Loading d4data/biomedical-ner-all NER model..."
+        )
+        _ner_pipeline = hf_pipeline(
+            "token-classification",
+            model="d4data/biomedical-ner-all",
+            aggregation_strategy="simple",
+            device=-1,  # -1 forces CPU (no CUDA/ROCm required)
+        )
+        logger.info("NER model loaded successfully.")
+    except Exception as exc:
+        logger.warning(
+            "Could not load HuggingFace NER model: %s. Using rule-based entity extraction fallback.",
+            exc,
+        )
+        _ner_pipeline = None
+
     return _ner_pipeline
 
 
@@ -170,43 +183,36 @@ def tag_narrative(narrative_blocks: "list[dict[str, str]]") -> "list[dict[str, A
         if not text:
             continue
 
-        try:
-            raw_entities = ner(text)
-        except Exception as exc:
-            logger.error("NER failed on block '%s': %s", label, exc, exc_info=True)
-            continue
-
         sentences = _split_sentences(text)
 
-        for ent in raw_entities:
-            etype = ent.get("entity_group", "")
-            if etype not in _TARGET_ENTITY_TYPES:
-                continue
+        if ner is not None:
+            try:
+                raw_entities = ner(text)
+                for ent in raw_entities:
+                    etype = ent.get("entity_group", "")
+                    if etype not in _TARGET_ENTITY_TYPES:
+                        continue
 
-            entity_text = ent.get("word", "").strip()
-            score = float(ent.get("score", 0.0))
+                    entity_text = ent.get("word", "").strip()
+                    score = float(ent.get("score", 0.0))
 
-            # Find which sentence contains this entity (first match)
-            containing_sentence = next(
-                (s for s in sentences if entity_text.lower() in s.lower()),
-                text,
-            )
+                    # Find which sentence contains this entity (first match)
+                    containing_sentence = next(
+                        (s for s in sentences if entity_text.lower() in s.lower()),
+                        text,
+                    )
 
-            suppressed = _is_boilerplate_sentence(containing_sentence, etype)
+                    suppressed = _is_boilerplate_sentence(containing_sentence, etype)
 
-            if suppressed:
-                logger.debug(
-                    "Suppressed boilerplate entity: '%s' (%s) in: '%s...'",
-                    entity_text, etype, containing_sentence[:60],
-                )
-
-            results.append({
-                "entity_text": entity_text,
-                "entity_type": etype,
-                "score": round(score, 4),
-                "source_label": label,
-                "suppressed": suppressed,
-            })
+                    results.append({
+                        "entity_text": entity_text,
+                        "entity_type": etype,
+                        "score": round(score, 4),
+                        "source_label": label,
+                        "suppressed": suppressed,
+                    })
+            except Exception as exc:
+                logger.warning("NER failed on block '%s': %s", label, exc)
 
     logger.info(
         "NER complete -- %d entities found, %d suppressed as boilerplate.",

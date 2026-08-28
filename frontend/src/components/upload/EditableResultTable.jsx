@@ -10,6 +10,7 @@ export function EditableResultTable({
   isManual = false,
   onSave,
   onCancel,
+  onChange,
   saving = false,
 }) {
 
@@ -49,43 +50,48 @@ export function EditableResultTable({
   const [validationError, setValidationError] = useState('');
 
   const handleCellChange = (id, field, val) => {
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: val } : r))
-    );
+    setRows((prev) => {
+      const next = prev.map((r) => (r.id === id ? { ...r, [field]: val } : r));
+      if (onChange) onChange(next);
+      return next;
+    });
   };
 
   const handleAddRow = () => {
-    setRows((prev) => [
-      ...prev,
-      {
-        id: `row-new-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        raw_test_name: '',
-        value: '',
-        unit: '',
-        reference_range: '',
-        canonical_test_name: '',
-        abnormality_flag: 'unknown',
-      },
-    ]);
+    setRows((prev) => {
+      const next = [
+        ...prev,
+        {
+          id: `row-new-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          raw_test_name: '',
+          value: '',
+          unit: '',
+          reference_range: '',
+          canonical_test_name: '',
+          abnormality_flag: 'unknown',
+        },
+      ];
+      if (onChange) onChange(next);
+      return next;
+    });
   };
 
   const handleDeleteRow = (id) => {
     setRows((prev) => {
       const filtered = prev.filter((r) => r.id !== id);
-      if (filtered.length === 0) {
-        return [
-          {
-            id: `row-blank-${Date.now()}`,
-            raw_test_name: '',
-            value: '',
-            unit: '',
-            reference_range: '',
-            canonical_test_name: '',
-            abnormality_flag: 'unknown',
-          },
-        ];
-      }
-      return filtered;
+      const next = filtered.length === 0 ? [
+        {
+          id: `row-blank-${Date.now()}`,
+          raw_test_name: '',
+          value: '',
+          unit: '',
+          reference_range: '',
+          canonical_test_name: '',
+          abnormality_flag: 'unknown',
+        },
+      ] : filtered;
+      if (onChange) onChange(next);
+      return next;
     });
   };
 

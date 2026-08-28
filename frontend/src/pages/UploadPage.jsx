@@ -1,30 +1,36 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { ingestReportFile, getReportResults, updateReportResults, createManualReport } from '../api/reports';
+import { useUpload } from '../context/UploadContext';
 import DoodleIcon from '../components/common/DoodleIcon';
 import CameraCapture from '../components/upload/CameraCapture';
 import EditableResultTable from '../components/upload/EditableResultTable';
 
 export function UploadPage() {
-  const { userId } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // View modes: 'select' | 'camera' | 'processing' | 'review' | 'success'
-  const [viewMode, setViewMode] = useState('select');
-  const [uploadTab, setUploadTab] = useState('file'); // 'file' | 'camera' | 'manual'
-  
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [reportId, setReportId] = useState(null);
-  const [extractedRows, setExtractedRows] = useState([]);
-  const [pipelineSummary, setPipelineSummary] = useState(null);
-  
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [errorMessage, setErrorMessage] = useState('');
-  const [processingStage, setProcessingStage] = useState(0);
+  const {
+    viewMode,
+    setViewMode,
+    uploadTab,
+    setUploadTab,
+    selectedFile,
+    reportId,
+    extractedRows,
+    setExtractedRows,
+    pipelineSummary,
+    isProcessing,
+    isSaving,
+    errorMessage,
+    setErrorMessage,
+    processingStage,
+    processFileUpload,
+    retryUpload,
+    handleCameraCapture,
+    handleManualEntryInit,
+    handleSaveCommit,
+    resetFlow,
+  } = useUpload();
 
   // Supported MIME types matching backend _ALLOWED_MIME_TYPES
   const acceptedFileExtensions = ".jpg,.jpeg,.png,.gif,.webp,.pdf";
@@ -33,6 +39,9 @@ export function UploadPage() {
     const file = e.target.files?.[0];
     if (file) {
       processFileUpload(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -48,128 +57,73 @@ export function UploadPage() {
     e.preventDefault();
   };
 
-  const processFileUpload = async (file) => {
-    if (!userId) {
-      setErrorMessage('User session not found. Please log in again.');
-      return;
-    }
-
-    setSelectedFile(file);
-    setViewMode('processing');
-    setIsProcessing(true);
-    setErrorMessage('');
-    setProcessingStage(1);
-
-    // Simulate progressive status stages while backend 3-stage pipeline runs
-    const stageTimer1 = setTimeout(() => setProcessingStage(2), 1500);
-    const stageTimer2 = setTimeout(() => setProcessingStage(3), 4000);
-    const stageTimer3 = setTimeout(() => setProcessingStage(4), 6500);
-
-    try {
-      // Send multipart upload to the real backend ingestion pipeline
-      const summary = await ingestReportFile(file, userId);
-      
-      if (summary.status === 'failed' || summary.error) {
-        throw new Error(summary.error || 'Pipeline extraction failed.');
-      }
-
-      setPipelineSummary(summary);
-      setReportId(summary.report_id);
-
-      // Fetch the extracted ReportResult rows for user review
-      const results = await getReportResults(summary.report_id);
-      setExtractedRows(results && results.length > 0 ? results : []);
-      setViewMode('review');
-    } catch (err) {
-      console.error('Upload / Extraction error:', err);
-      const detail = err.response?.data?.detail;
-      setErrorMessage(
-        typeof detail === 'string'
-          ? detail
-          : err.message || 'Pipeline processing failed. Please check the document format.'
-      );
-      setViewMode('select');
-    } finally {
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-      clearTimeout(stageTimer3);
-      setIsProcessing(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleCameraCapture = (file) => {
-    processFileUpload(file);
-  };
-
-  const handleManualEntryInit = () => {
-    setUploadTab('manual');
-    setReportId(null);
-    setExtractedRows([
-      {
-        id: `manual-init-1`,
-        raw_test_name: '',
-        value: '',
-        unit: '',
-        reference_range: '',
-        canonical_test_name: '',
-        abnormality_flag: 'unknown',
-      },
-    ]);
-    setViewMode('review');
-  };
-
-  const handleSaveCommit = async (reviewedRows) => {
-    setIsSaving(true);
-    setErrorMessage('');
-
-    try {
-      if (uploadTab === 'manual') {
-        // Create new manual report record
-        const response = await createManualReport({
-          user_id: userId,
-          original_filename: `Manual Entry - ${new Date().toLocaleDateString()}`,
-          results: reviewedRows,
-        });
-        setReportId(response.report_id);
-        setPipelineSummary(response);
-      } else if (reportId) {
-        // Save & update existing report results
-        await updateReportResults(reportId, reviewedRows);
-      }
-      setViewMode('success');
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      setErrorMessage(
-        typeof detail === 'string'
-          ? detail
-          : err.message || 'Failed to save medical measures.'
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const resetFlow = () => {
-    setSelectedFile(null);
-    setReportId(null);
-    setExtractedRows([]);
-    setPipelineSummary(null);
-    setErrorMessage('');
-    setViewMode('select');
-    setUploadTab('file');
-  };
-
   return (
     <div className="space-y-6">
       
-      {/* Error Notification */}
+      {/* Error Notification with Retry & Dismiss */}
       {errorMessage && (
-        <div className="p-4 rounded-2xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300 flex items-center justify-between">
-          <span>⚠️ {errorMessage}</span>
-          <button onClick={() => setErrorMessage('')} className="font-bold underline ml-2">Dismiss</button>
+        <div className="p-4 rounded-2xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-base">⚠️</span>
+            <div>
+              <span className="font-bold">{errorMessage}</span>
+              {selectedFile && (
+                <span className="block text-[11px] opacity-80 mt-0.5">
+                  File: <span className="font-mono">{selectedFile.name}</span>
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
+            {selectedFile && (
+              <button
+                type="button"
+                id="retry-upload-btn"
+                onClick={retryUpload}
+                disabled={isProcessing}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:scale-95 transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
+              >
+                <DoodleIcon name="sparkles" className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+            )}
+            <button
+              type="button"
+              id="dismiss-error-btn"
+              onClick={() => setErrorMessage('')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Unsaved draft banner if user is in 'select' view but has reviewed rows */}
+      {viewMode === 'select' && extractedRows.length > 0 && (
+        <div className="p-4 rounded-2xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-base">📋</span>
+            <span>
+              You have an unsaved review in progress with <strong>{extractedRows.length}</strong> measurements.
+            </span>
+          </div>
+          <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('review')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 transition-all shadow-sm"
+            >
+              Resume Review →
+            </button>
+            <button
+              type="button"
+              onClick={resetFlow}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
+            >
+              Discard
+            </button>
+          </div>
         </div>
       )}
 
@@ -392,6 +346,7 @@ export function UploadPage() {
             reportId={reportId}
             isManual={uploadTab === 'manual'}
             saving={isSaving}
+            onChange={setExtractedRows}
             onSave={handleSaveCommit}
             onCancel={resetFlow}
           />

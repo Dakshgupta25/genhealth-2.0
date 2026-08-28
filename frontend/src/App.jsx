@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { UploadProvider } from './context/UploadContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AppShell from './components/layout/AppShell';
 
@@ -74,9 +75,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <UploadProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </UploadProvider>
       </AuthProvider>
     </ThemeProvider>
   );

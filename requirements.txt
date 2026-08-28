@@ -8,3 +8,6 @@ python-jose[cryptography]
 pwdlib[bcrypt]
 pytest
 python-dotenv
+google-genai
+rapidfuzz
+python-multipart

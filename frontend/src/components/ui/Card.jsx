@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * GenHealth AI - Card Primitive Collection
- * Standardized 12px/16px radius, 1px border, subtle elevation, clean background
+ * Standardized 12px/16px radius, 1px border, subtle elevation, warm clinical surface
  */
 export function Card({
   children,
@@ -18,12 +18,12 @@ export function Card({
   };
 
   const interactiveStyles = interactive
-    ? 'hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-xs transition-all duration-150 cursor-pointer'
+    ? 'hover:border-[#B2C2B8] dark:hover:border-[#3BB298]/40 hover:shadow-xs transition-all duration-150 cursor-pointer'
     : '';
 
   return (
     <div
-      className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 shadow-xs ${
+      className={`bg-white dark:bg-[#141C19] border border-[#D0D9D0] dark:border-[#2A3B34] shadow-xs ${
         radiusStyles[radius] || radiusStyles.lg
       } ${interactiveStyles} ${className}`}
       {...props}
@@ -47,7 +47,7 @@ export function CardHeader({ children, className = '', ...props }) {
 export function CardTitle({ children, className = '', ...props }) {
   return (
     <h3
-      className={`text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50 ${className}`}
+      className={`text-base sm:text-lg font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE] ${className}`}
       {...props}
     >
       {children}
@@ -58,7 +58,7 @@ export function CardTitle({ children, className = '', ...props }) {
 export function CardDescription({ children, className = '', ...props }) {
   return (
     <p
-      className={`text-xs text-slate-500 dark:text-slate-400 leading-relaxed ${className}`}
+      className={`text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed ${className}`}
       {...props}
     >
       {children}
@@ -77,7 +77,7 @@ export function CardContent({ children, className = '', ...props }) {
 export function CardFooter({ children, className = '', ...props }) {
   return (
     <div
-      className={`p-5 sm:p-6 pt-0 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-3 ${className}`}
+      className={`p-5 sm:p-6 pt-0 border-t border-[#EDF1ED] dark:border-[#1A2421] flex items-center justify-between gap-3 ${className}`}
       {...props}
     >
       {children}

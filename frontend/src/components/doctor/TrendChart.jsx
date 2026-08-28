@@ -11,8 +11,8 @@ export function TrendChart({
   if (loading) {
     return (
       <Card radius="lg" className="p-8 flex flex-col items-center justify-center space-y-3 min-h-[260px] text-center">
-        <div className="w-8 h-8 rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
-        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+        <div className="w-8 h-8 rounded-full border-2 border-[#1D7A68] border-t-[#0D5446] animate-spin" />
+        <p className="text-xs text-[#586D66] dark:text-[#7C9184] font-medium">
           Loading longitudinal biomarker trajectory...
         </p>
       </Card>
@@ -81,7 +81,7 @@ export function TrendChart({
       case 'normal':
         return '#10B981';
       default:
-        return '#0891B2';
+        return '#0D5446';
     }
   };
 
@@ -89,34 +89,34 @@ export function TrendChart({
 
   return (
     <Card radius="lg" className="overflow-hidden shadow-sm">
-      <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
+      <CardHeader className="border-b border-[#EDF1ED] dark:border-[#1A2421] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="flex items-center space-x-2">
               <CardTitle className="text-base">{title}</CardTitle>
               {unit && (
-                <span className="text-xs px-2 py-0.5 rounded-md font-mono font-semibold bg-slate-100 text-cyan-700 dark:bg-slate-800 dark:text-cyan-300">
+                <span className="text-xs px-2 py-0.5 rounded-md font-mono font-semibold bg-[#EDF1ED] text-[#0D5446] dark:bg-[#1A2421] dark:text-[#3BB298]">
                   {unit}
                 </span>
               )}
             </div>
             <CardDescription className="text-xs">
-              Longitudinal trend across <span className="font-semibold text-slate-800 dark:text-slate-200">{sorted.length}</span> recorded lab measures
+              Longitudinal trend across <span className="font-semibold text-[#11231E] dark:text-[#ECF2EE]">{sorted.length}</span> recorded lab measures
             </CardDescription>
           </div>
 
           <div className="flex items-center space-x-3 text-[11px] font-medium self-start sm:self-center">
             <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span className="text-slate-500 dark:text-slate-400">Normal</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+              <span className="text-[#586D66] dark:text-[#7C9184]">Normal</span>
             </span>
             <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-              <span className="text-slate-500 dark:text-slate-400">High</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+              <span className="text-[#586D66] dark:text-[#7C9184]">High</span>
             </span>
             <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <span className="text-slate-500 dark:text-slate-400">Low</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+              <span className="text-[#586D66] dark:text-[#7C9184]">Low</span>
             </span>
           </div>
         </div>
@@ -136,7 +136,7 @@ export function TrendChart({
               x2={width - padX}
               y2={padY}
               stroke="currentColor"
-              className="text-slate-200 dark:text-slate-800"
+              className="text-[#D0D9D0] dark:text-[#2A3B34]"
               strokeDasharray="4 4"
             />
             <line
@@ -145,7 +145,7 @@ export function TrendChart({
               x2={width - padX}
               y2={height / 2}
               stroke="currentColor"
-              className="text-slate-200 dark:text-slate-800"
+              className="text-[#D0D9D0] dark:text-[#2A3B34]"
               strokeDasharray="4 4"
             />
             <line
@@ -154,26 +154,26 @@ export function TrendChart({
               x2={width - padX}
               y2={height - padY}
               stroke="currentColor"
-              className="text-slate-300 dark:text-slate-700"
+              className="text-[#D0D9D0] dark:text-[#2A3B34]"
             />
 
             {/* Y Axis Labels */}
-            <text x={padX - 8} y={padY + 4} textAnchor="end" className="text-[10px] fill-slate-400 font-mono">
+            <text x={padX - 8} y={padY + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
               {yMax}
             </text>
-            <text x={padX - 8} y={height / 2 + 4} textAnchor="end" className="text-[10px] fill-slate-400 font-mono">
+            <text x={padX - 8} y={height / 2 + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
               {Math.round((yMax + yMin) / 2)}
             </text>
-            <text x={padX - 8} y={height - padY + 4} textAnchor="end" className="text-[10px] fill-slate-400 font-mono">
+            <text x={padX - 8} y={height - padY + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
               {yMin}
             </text>
 
-            {/* Clinical Trend Line Path (Clinical Cyan) */}
+            {/* Clinical Trend Line Path (Clinical Evergreen) */}
             {points.length > 1 && (
               <path
                 d={pathD}
                 fill="none"
-                stroke="#0891B2"
+                stroke="#1D7A68"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -196,7 +196,7 @@ export function TrendChart({
                   x={p.x}
                   y={p.y - 9}
                   textAnchor="middle"
-                  className="text-[10px] font-bold font-mono fill-slate-800 dark:fill-slate-100"
+                  className="text-[10px] font-bold font-mono fill-[#11231E] dark:fill-[#ECF2EE]"
                 >
                   {p.value}
                 </text>
@@ -204,7 +204,7 @@ export function TrendChart({
                   x={p.x}
                   y={height - padY + 16}
                   textAnchor="middle"
-                  className="text-[9px] fill-slate-400 font-mono"
+                  className="text-[9px] fill-[#7C9184] font-mono"
                 >
                   {new Date(p.report_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </text>
@@ -215,9 +215,9 @@ export function TrendChart({
 
         {/* Latest Value Footnote */}
         {latestPoint && (
-          <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400">
-              Latest reading: <strong className="font-mono text-slate-900 dark:text-slate-100">{latestPoint.value} {unit}</strong> on {new Date(latestPoint.report_date).toLocaleDateString()}
+          <div className="mt-2 pt-2 border-t border-[#EDF1ED] dark:border-[#1A2421] flex items-center justify-between text-xs">
+            <span className="text-[#586D66] dark:text-[#7C9184]">
+              Latest reading: <strong className="font-mono text-[#11231E] dark:text-[#ECF2EE]">{latestPoint.value} {unit}</strong> on {new Date(latestPoint.report_date).toLocaleDateString()}
             </span>
             <Badge status={latestPoint.abnormality_flag === 'normal' ? 'normal' : latestPoint.abnormality_flag === 'low' ? 'warning' : 'critical'} size="sm">
               {latestPoint.abnormality_flag || 'Status'}

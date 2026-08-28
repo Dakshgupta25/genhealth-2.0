@@ -128,19 +128,19 @@ export function DoctorPortalPage() {
       <Card radius="xl">
         <div className="p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 shadow-xs">
-              <DoodleIcon name="doctor" className="w-4 h-4 text-cyan-400" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#0D5446] text-white dark:bg-[#1A2421] dark:border dark:border-[#2A3B34] shadow-xs">
+              <DoodleIcon name="doctor" className="w-4 h-4 text-emerald-300 dark:text-[#3BB298]" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE]">
                   Clinical Diagnostic Portal
                 </h1>
                 <Badge status="purple" size="sm">
                   Doctor Mode
                 </Badge>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
                 Evaluate patients by pathology, inspect longitudinal biomarker curves, and surface hereditary risks
               </p>
             </div>
@@ -162,7 +162,7 @@ export function DoctorPortalPage() {
               type="submit"
               variant="primary"
               size="sm"
-              leftIcon={<DoodleIcon name="user" className="w-3.5 h-3.5 text-cyan-400" />}
+              leftIcon={<DoodleIcon name="user" className="w-3.5 h-3.5 text-emerald-300 dark:text-[#3BB298]" />}
             >
               Load Patient
             </Button>
@@ -173,11 +173,11 @@ export function DoctorPortalPage() {
       {/* 2. Disease Selection Pathology Tabs */}
       <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
             Clinical Pathology Panels
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Evaluating Patient ID: <code className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{patientId ? `${patientId.substring(0, 13)}...` : 'None'}</code>
+          <span className="text-xs text-[#586D66] dark:text-[#7C9184]">
+            Evaluating Patient ID: <code className="font-mono text-[#0D5446] dark:text-[#3BB298] font-bold">{patientId ? `${patientId.substring(0, 13)}...` : 'None'}</code>
           </span>
         </div>
 
@@ -202,13 +202,13 @@ export function DoctorPortalPage() {
 
       {/* Disease Detail Category & Subtitle */}
       {activeDisease && (
-        <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="p-3.5 rounded-lg bg-[#EDF1ED] dark:bg-[#1A2421] border border-[#D6DDD6] dark:border-[#2A3B34] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <span className="font-bold text-cyan-700 dark:text-cyan-300">
+            <span className="font-bold text-[#0D5446] dark:text-[#3BB298]">
               Category: {activeDisease.category}
             </span>
-            <span className="text-slate-400 hidden sm:inline">•</span>
-            <span className="text-slate-600 dark:text-slate-400">
+            <span className="text-[#8BA196] hidden sm:inline">•</span>
+            <span className="text-[#334740] dark:text-[#B2C2B8]">
               {activeDisease.description}
             </span>
           </div>
@@ -221,10 +221,10 @@ export function DoctorPortalPage() {
         {/* LEFT: Disease Primary Biomarkers List (5 Cols) */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
               Relevant Disease Biomarkers
             </h3>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-[#8BA196] font-mono">
               {activeDisease?.primary_tests?.length || 0} tests
             </span>
           </div>
@@ -232,8 +232,8 @@ export function DoctorPortalPage() {
           <div className="space-y-2.5">
             {loadingPanel ? (
               <Card radius="md" className="p-6 text-center space-y-2">
-                <div className="w-5 h-5 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
-                <p className="text-xs text-slate-400">Loading pathology markers...</p>
+                <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1D7A68] border-t-[#0D5446] animate-spin" />
+                <p className="text-xs text-[#586D66]">Loading pathology markers...</p>
               </Card>
             ) : activeDisease?.primary_tests?.map((testName) => {
               const summary = diseaseSummaries.find((s) => s.canonical_test_name === testName);
@@ -248,14 +248,14 @@ export function DoctorPortalPage() {
                   onClick={() => setSelectedTestName(testName)}
                   className={`p-3.5 transition-all ${
                     isSelected
-                      ? 'border-cyan-500/60 ring-1 ring-cyan-500/20 bg-slate-50/70 dark:bg-slate-800/50 shadow-xs'
-                      : 'hover:border-slate-300 dark:hover:border-slate-700'
+                      ? 'border-[#0D5446]/60 ring-1 ring-[#0D5446]/20 bg-[#F5F7F5] dark:bg-[#1A2421]/60 shadow-xs'
+                      : 'hover:border-[#B2C2B8] dark:hover:border-[#3BB298]/40'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={testName}>
+                        <h4 className="text-xs font-bold text-[#11231E] dark:text-[#ECF2EE] truncate" title={testName}>
                           {testName}
                         </h4>
                         {statusMeta && (
@@ -265,14 +265,14 @@ export function DoctorPortalPage() {
                         )}
                       </div>
                       
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                      <p className="text-[11px] text-[#586D66] dark:text-[#7C9184] font-mono">
                         {summary
                           ? `Latest: ${summary.latest_value} ${summary.unit || ''} (Ref: ${summary.reference_range || 'N/A'})`
                           : 'No recorded values for patient'}
                       </p>
                     </div>
 
-                    <span className={`text-xs font-bold shrink-0 ${isSelected ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}`}>
+                    <span className={`text-xs font-bold shrink-0 ${isSelected ? 'text-[#0D5446] dark:text-[#3BB298]' : 'text-[#8BA196]'}`}>
                       {isSelected ? '● Active' : '→'}
                     </span>
                   </div>
@@ -295,10 +295,10 @@ export function DoctorPortalPage() {
 
           {/* Cross-Family Medical History Table */}
           <Card radius="lg" className="overflow-hidden shadow-sm space-y-0">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
+            <CardHeader className="border-b border-[#EDF1ED] dark:border-[#1A2421] pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]">
                     <DoodleIcon name="tree" className="w-3.5 h-3.5" />
                   </div>
                   <CardTitle className="text-sm">
@@ -316,15 +316,15 @@ export function DoctorPortalPage() {
 
             {loadingFamily ? (
               <div className="p-8 text-center space-y-2">
-                <div className="w-5 h-5 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
-                <p className="text-xs text-slate-400">Scanning family records...</p>
+                <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1D7A68] border-t-[#0D5446] animate-spin" />
+                <p className="text-xs text-[#586D66]">Scanning family records...</p>
               </div>
             ) : familyHistory.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      <th className="py-2.5 px-3.5 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)] min-w-[150px]">
+                    <tr className="border-b border-[#EDF1ED] dark:border-[#1A2421] bg-[#EDF1ED]/90 dark:bg-[#1A2421]/90 text-[10px] font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
+                      <th className="py-2.5 px-3.5 sticky left-0 bg-[#EDF1ED] dark:bg-[#1A2421] z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)] min-w-[150px]">
                         Relative &amp; Kinship
                       </th>
                       <th className="py-2.5 px-3.5 min-w-[110px]">Report Date</th>
@@ -332,14 +332,14 @@ export function DoctorPortalPage() {
                       <th className="py-2.5 px-3.5 text-center min-w-[90px]">Status Flag</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                  <tbody className="divide-y divide-[#EDF1ED] dark:divide-[#1A2421]">
                     {familyHistory.map((item, idx) => {
                       const statusMeta = getAbnormalityMeta(item.abnormality_flag);
                       return (
-                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors h-11">
-                          <td className="py-2.5 px-3.5 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
+                        <tr key={idx} className="hover:bg-[#F5F7F5] dark:hover:bg-[#1A2421]/60 transition-colors h-11">
+                          <td className="py-2.5 px-3.5 sticky left-0 bg-white dark:bg-[#141C19] z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
                             <div className="flex items-center space-x-2">
-                              <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                              <span className="font-bold text-[#11231E] dark:text-[#ECF2EE] text-xs">
                                 {item.relative_name}
                               </span>
                               <Badge status="neutral" size="sm">
@@ -348,12 +348,12 @@ export function DoctorPortalPage() {
                             </div>
                           </td>
 
-                          <td className="py-2.5 px-3.5 font-mono text-slate-500 dark:text-slate-400 text-xs">
+                          <td className="py-2.5 px-3.5 font-mono text-[#586D66] dark:text-[#7C9184] text-xs">
                             {new Date(item.report_date).toLocaleDateString()}
                           </td>
 
-                          <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900 dark:text-slate-100 text-xs">
-                            {item.value} <span className="font-normal text-slate-500 text-[11px]">{item.unit || ''}</span>
+                          <td className="py-2.5 px-3.5 font-mono font-bold text-[#11231E] dark:text-[#ECF2EE] text-xs">
+                            {item.value} <span className="font-normal text-[#586D66] text-[11px]">{item.unit || ''}</span>
                           </td>
 
                           <td className="py-2.5 px-3.5 text-center">

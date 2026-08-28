@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * GenHealth AI - Button Primitive
- * Variants: primary, secondary, outline, ghost, danger, teal
+ * Variants: primary (clinical evergreen), secondary, outline, ghost, danger, teal
  * Sizes: sm (32px), md (40px), lg (48px)
  */
 export function Button({
@@ -29,19 +29,19 @@ export function Button({
 
   const variantStyles = {
     primary:
-      'bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-900 shadow-xs dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700 dark:border dark:border-slate-700',
+      'bg-[#0D5446] text-white hover:bg-[#0A4337] focus-visible:ring-[#0D5446] shadow-xs dark:bg-[#227D6B] dark:text-white dark:hover:bg-[#2A947F] dark:border dark:border-[#3BB298]/30',
     secondary:
-      'bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-400 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
+      'bg-[#EDF1ED] text-[#11231E] hover:bg-[#E3EFE9] focus-visible:ring-[#1D7A68] dark:bg-[#1A2421] dark:text-[#ECF2EE] dark:hover:bg-[#23312B] dark:border dark:border-[#2A3B34]',
     outline:
-      'border border-slate-200 text-slate-800 bg-white hover:bg-slate-50 hover:border-slate-300 focus-visible:ring-slate-400 shadow-xs dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200 dark:hover:bg-slate-800/80',
+      'border border-[#D0D9D0] text-[#11231E] bg-white hover:bg-[#F5F7F5] hover:border-[#B2C2B8] focus-visible:ring-[#1D7A68] shadow-xs dark:bg-[#141C19] dark:border-[#2A3B34] dark:text-[#ECF2EE] dark:hover:bg-[#1A2421]',
     ghost:
-      'text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800',
+      'text-[#334740] hover:text-[#11231E] hover:bg-[#EDF1ED] focus-visible:ring-[#1D7A68] dark:text-[#B2C2B8] dark:hover:text-white dark:hover:bg-[#1A2421]',
     danger:
-      'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 shadow-xs dark:bg-red-600 dark:hover:bg-red-700',
+      'bg-[#991B1B] text-white hover:bg-[#7F1D1D] focus-visible:ring-[#991B1B] shadow-xs dark:bg-[#991B1B] dark:hover:bg-[#B91C1C]',
     dangerSubtle:
-      'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 focus-visible:ring-red-500 dark:bg-red-950/40 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-900/60',
+      'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] hover:bg-[#FCD2D2] focus-visible:ring-[#991B1B] dark:bg-[#2B1212] dark:border-[#4C1D1D] dark:text-[#F87171] dark:hover:bg-[#3B1919]',
     teal:
-      'bg-cyan-600 text-white hover:bg-cyan-700 focus-visible:ring-cyan-600 shadow-xs dark:bg-cyan-600 dark:hover:bg-cyan-500',
+      'bg-[#1D7A68] text-white hover:bg-[#166052] focus-visible:ring-[#1D7A68] shadow-xs dark:bg-[#227D6B] dark:hover:bg-[#2A947F]',
   };
 
   return (

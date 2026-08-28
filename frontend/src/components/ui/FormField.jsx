@@ -18,7 +18,7 @@ export function FormField({
       {label && (
         <label
           htmlFor={htmlFor}
-          className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center justify-between"
+          className="text-xs font-bold uppercase tracking-wider text-[#334740] dark:text-[#B2C2B8] flex items-center justify-between"
         >
           <span>
             {label}
@@ -33,7 +33,7 @@ export function FormField({
           <span>{error}</span>
         </p>
       ) : helperText ? (
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+        <p className="text-[11px] text-[#586D66] dark:text-[#7C9184] leading-tight">
           {helperText}
         </p>
       ) : null}
@@ -49,6 +49,7 @@ export function Input({
   placeholder,
   disabled = false,
   required = false,
+  mono = false,
   isMono = false,
   error = false,
   leftIcon = null,
@@ -56,10 +57,12 @@ export function Input({
   className = '',
   ...props
 }) {
+  const useMono = mono || isMono;
+
   return (
     <div className="relative flex items-center">
       {leftIcon && (
-        <div className="absolute left-3 flex items-center pointer-events-none text-slate-400">
+        <div className="absolute left-3 flex items-center pointer-events-none text-[#586D66] dark:text-[#7C9184]">
           {leftIcon}
         </div>
       )}
@@ -72,14 +75,14 @@ export function Input({
         disabled={disabled}
         required={required}
         className={`w-full h-10 px-3.5 rounded-lg border text-sm transition-colors duration-150 outline-none
-          bg-white text-slate-900 border-slate-200 placeholder:text-slate-400
-          focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20
-          dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800 dark:placeholder:text-slate-500
-          dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20
-          disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:cursor-not-allowed
+          bg-white text-[#11231E] border-[#D6DDD6] placeholder:text-[#8BA196]
+          focus:border-[#0D5446] focus:ring-2 focus:ring-[#1D7A68]/20
+          dark:bg-[#0F1714] dark:text-[#ECF2EE] dark:border-[#23312B] dark:placeholder:text-[#7C9184]
+          dark:focus:border-[#3BB298] dark:focus:ring-[#3BB298]/20
+          disabled:opacity-50 disabled:bg-[#EDF1ED] dark:disabled:bg-[#1A2421] disabled:cursor-not-allowed
           ${leftIcon ? 'pl-9' : ''}
           ${rightIcon ? 'pr-9' : ''}
-          ${isMono ? 'font-mono text-xs' : ''}
+          ${useMono ? 'font-mono text-xs' : ''}
           ${
             error
               ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-800'
@@ -89,7 +92,7 @@ export function Input({
         {...props}
       />
       {rightIcon && (
-        <div className="absolute right-3 flex items-center pointer-events-none text-slate-400">
+        <div className="absolute right-3 flex items-center pointer-events-none text-[#586D66] dark:text-[#7C9184]">
           {rightIcon}
         </div>
       )}
@@ -117,10 +120,10 @@ export function Select({
         disabled={disabled}
         required={required}
         className={`w-full h-10 px-3.5 pr-8 rounded-lg border text-sm font-medium transition-colors duration-150 outline-none appearance-none cursor-pointer
-          bg-white text-slate-900 border-slate-200
-          focus:border-cyan-600 focus:ring-2 focus:ring-cyan-500/20
-          dark:bg-slate-950 dark:text-slate-100 dark:border-slate-800
-          dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20
+          bg-white text-[#11231E] border-[#D6DDD6]
+          focus:border-[#0D5446] focus:ring-2 focus:ring-[#1D7A68]/20
+          dark:bg-[#0F1714] dark:text-[#ECF2EE] dark:border-[#23312B]
+          dark:focus:border-[#3BB298] dark:focus:ring-[#3BB298]/20
           disabled:opacity-50 disabled:cursor-not-allowed
           ${
             error
@@ -132,7 +135,7 @@ export function Select({
       >
         {children}
       </select>
-      <div className="absolute right-3 pointer-events-none text-slate-400">
+      <div className="absolute right-3 pointer-events-none text-[#586D66] dark:text-[#7C9184]">
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="6 9 12 15 18 9" />
         </svg>

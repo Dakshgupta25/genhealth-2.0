@@ -53,8 +53,8 @@ export function FamilyTreeNode({
       radius="lg"
       className={`w-full max-w-[270px] text-left transition-all duration-150 ${
         isSelf
-          ? 'border-cyan-500/60 ring-1 ring-cyan-500/20 bg-slate-50/60 dark:bg-slate-800/40 shadow-xs'
-          : 'hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
+          ? 'border-[#0D5446]/60 ring-1 ring-[#0D5446]/20 bg-[#F5F7F5] dark:bg-[#1A2421]/60 shadow-xs'
+          : 'hover:border-[#B2C2B8] dark:hover:border-[#3BB298]/40 shadow-xs'
       }`}
     >
       <div className="p-4 sm:p-4.5 space-y-3.5">
@@ -65,8 +65,8 @@ export function FamilyTreeNode({
             <div
               className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                 isSelf
-                  ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-cyan-400 shadow-xs'
-                  : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300'
+                  ? 'bg-[#0D5446] text-white dark:bg-[#1A2421] dark:text-[#3BB298] shadow-xs'
+                  : 'bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]'
               }`}
             >
               {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
@@ -85,7 +85,7 @@ export function FamilyTreeNode({
               size="sm"
               onClick={() => onUnlink(member.relationship_id, member.full_name)}
               title="Unlink from family tree"
-              className="w-7 h-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 shrink-0"
+              className="w-7 h-7 p-0 text-[#7C9184] hover:text-[#991B1B] hover:bg-[#FEE2E2] dark:hover:bg-[#2B1212] shrink-0"
             >
               <DoodleIcon name="trash" className="w-3.5 h-3.5" />
             </Button>
@@ -94,10 +94,10 @@ export function FamilyTreeNode({
 
         {/* User Identity Details */}
         <div className="space-y-0.5">
-          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={fullName}>
+          <h4 className="text-sm font-bold text-[#11231E] dark:text-[#ECF2EE] truncate" title={fullName}>
             {fullName}
           </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={member.email}>
+          <p className="text-[11px] text-[#586D66] dark:text-[#7C9184] truncate" title={member.email}>
             {member.email || 'No email registered'}
           </p>
         </div>
@@ -107,14 +107,14 @@ export function FamilyTreeNode({
           <div
             onClick={handleCopyId}
             title="Click to copy User ID"
-            className="p-2 rounded-lg text-[10px] font-mono border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-400 transition-colors select-all"
+            className="p-2 rounded-lg text-[10px] font-mono border border-[#D6DDD6] dark:border-[#23312B] bg-[#EDF1ED] dark:bg-[#0F1714] text-[#11231E] dark:text-[#ECF2EE] flex items-center justify-between cursor-pointer hover:border-[#0D5446] dark:hover:border-[#3BB298] transition-colors select-all"
           >
             <span className="truncate">{userId ? `ID: ${userId.substring(0, 13)}...` : 'ID N/A'}</span>
-            <span className="text-[10px] ml-1 font-sans text-slate-400 shrink-0 flex items-center">
+            <span className="text-[10px] ml-1 font-sans text-[#586D66] shrink-0 flex items-center">
               {copied ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Copied</span>
+                <span className="text-emerald-700 dark:text-[#4ADE80] font-semibold">✓ Copied</span>
               ) : (
-                <DoodleIcon name="copy" className="w-3 h-3 text-slate-400 ml-1" />
+                <DoodleIcon name="copy" className="w-3 h-3 text-[#586D66] ml-1" />
               )}
             </span>
           </div>

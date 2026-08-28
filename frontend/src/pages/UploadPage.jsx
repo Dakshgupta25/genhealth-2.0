@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useUpload } from '../context/UploadContext';
 import DoodleIcon from '../components/common/DoodleIcon';
 import CameraCapture from '../components/upload/CameraCapture';
@@ -9,25 +8,21 @@ import UploadHistory from '../components/upload/UploadHistory';
 import { Button, Card } from '../components/ui';
 
 export function UploadPage() {
-  const navigate = useNavigate();
-  const fileInputRef = useRef(null);
-  const { userId } = useAuth();
-
   const {
-    viewMode,
-    setViewMode,
     uploadTab,
     setUploadTab,
     selectedFile,
-    reportId,
     extractedRows,
     setExtractedRows,
+    reportId,
     pipelineSummary,
     isProcessing,
     isSaving,
     errorMessage,
     setErrorMessage,
     processingStage,
+    viewMode,
+    setViewMode,
     processFileUpload,
     retryUpload,
     handleCameraCapture,
@@ -36,23 +31,22 @@ export function UploadPage() {
     resetFlow,
   } = useUpload();
 
-  // Supported MIME types matching backend _ALLOWED_MIME_TYPES
-  const acceptedFileExtensions = ".jpg,.jpeg,.png,.gif,.webp,.pdf";
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const acceptedFileExtensions = '.pdf,.jpg,.jpeg,.png,.webp,.gif';
 
   const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       processFileUpload(file);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
       processFileUpload(file);
     }
   };
@@ -62,11 +56,11 @@ export function UploadPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-200">
       
-      {/* Error Notification with Retry & Dismiss */}
+      {/* Error Message Toast */}
       {errorMessage && (
-        <div className="p-4 rounded-xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-xl text-xs font-semibold bg-[#FEE2E2] dark:bg-[#2B1212] border border-[#FECACA] dark:border-[#4C1D1D] text-[#991B1B] dark:text-[#F87171] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center space-x-2.5">
             <span className="text-base">⚠️</span>
             <div>
@@ -105,7 +99,7 @@ export function UploadPage() {
 
       {/* Unsaved draft banner if user is in 'select' view but has reviewed rows */}
       {viewMode === 'select' && extractedRows.length > 0 && (
-        <div className="p-4 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-xl text-xs font-semibold bg-[#FEF3C7] dark:bg-[#291E0B] border border-[#FDE68A] dark:border-[#453314] text-[#92400E] dark:text-[#FBBF24] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center space-x-2.5">
             <span className="text-base">📋</span>
             <span>
@@ -139,14 +133,14 @@ export function UploadPage() {
           <Card radius="xl">
             <div className="p-6 sm:p-8 space-y-2">
               <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700">
-                  <DoodleIcon name="upload" className="w-4 h-4 text-cyan-400" />
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#0D5446] text-white dark:bg-[#1A2421] dark:border dark:border-[#2A3B34]">
+                  <DoodleIcon name="upload" className="w-4 h-4 text-emerald-300 dark:text-[#3BB298]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE]">
                     Ingest Clinical Lab Report
                   </h1>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
                     Extract unstructured test results with Gemini Flash, LOINC canonical matching, and biomedical NER
                   </p>
                 </div>
@@ -164,18 +158,18 @@ export function UploadPage() {
               onClick={() => { setUploadTab('file'); fileInputRef.current?.click(); }}
               className={`p-5 sm:p-6 flex flex-col justify-between space-y-4 ${
                 uploadTab === 'file'
-                  ? 'border-cyan-500/50 ring-1 ring-cyan-500/20 bg-slate-50/50 dark:bg-slate-800/40'
+                  ? 'border-[#0D5446]/50 ring-1 ring-[#0D5446]/20 bg-[#F5F7F5] dark:bg-[#1A2421]/60'
                   : ''
               }`}
             >
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]">
                   <DoodleIcon name="file" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-base font-bold text-[#11231E] dark:text-[#ECF2EE]">
                   File Upload
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed">
                   Select digital PDF or image reports (JPEG, PNG, GIF, WEBP) from your device storage.
                 </p>
               </div>
@@ -193,18 +187,18 @@ export function UploadPage() {
               onClick={() => { setUploadTab('camera'); setViewMode('camera'); }}
               className={`p-5 sm:p-6 flex flex-col justify-between space-y-4 ${
                 uploadTab === 'camera'
-                  ? 'border-cyan-500/50 ring-1 ring-cyan-500/20 bg-slate-50/50 dark:bg-slate-800/40'
+                  ? 'border-[#0D5446]/50 ring-1 ring-[#0D5446]/20 bg-[#F5F7F5] dark:bg-[#1A2421]/60'
                   : ''
               }`}
             >
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]">
                   <DoodleIcon name="camera" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-base font-bold text-[#11231E] dark:text-[#ECF2EE]">
                   Live Camera Scanner
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed">
                   Use device webcam or mobile camera to capture physical paper lab printouts directly.
                 </p>
               </div>
@@ -223,13 +217,13 @@ export function UploadPage() {
               className="p-5 sm:p-6 flex flex-col justify-between space-y-4"
             >
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#F3E8FF] text-[#6B21A8] dark:bg-[rgba(168,85,247,0.12)] dark:text-[#C084FC]">
                   <DoodleIcon name="pen" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-base font-bold text-[#11231E] dark:text-[#ECF2EE]">
                   Enter Manually
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed">
                   Directly input individual biomarker measurements, values, and bounds into a structured grid.
                 </p>
               </div>
@@ -255,16 +249,16 @@ export function UploadPage() {
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onClick={() => fileInputRef.current?.click()}
-            className="p-10 sm:p-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center space-y-4 cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-400 bg-white dark:bg-slate-900/60 transition-all shadow-xs"
+            className="p-10 sm:p-12 border-2 border-dashed border-[#D0D9D0] dark:border-[#2A3B34] rounded-2xl text-center space-y-4 cursor-pointer hover:border-[#0D5446] dark:hover:border-[#3BB298] bg-white dark:bg-[#141C19]/60 transition-all shadow-xs"
           >
-            <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400">
+            <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]">
               <DoodleIcon name="upload" className="w-6 h-6" />
             </div>
             <div className="space-y-1 max-w-sm mx-auto">
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-base font-bold text-[#11231E] dark:text-[#ECF2EE]">
                 Drag &amp; drop your lab report here
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
                 Supports PDF, JPEG, PNG, WEBP, and GIF formats up to 25MB
               </p>
             </div>
@@ -279,7 +273,7 @@ export function UploadPage() {
           </div>
 
           {/* Upload History with Clickable Measures Table */}
-          <UploadHistory userId={userId} />
+          <UploadHistory />
         </div>
       )}
 
@@ -298,38 +292,38 @@ export function UploadPage() {
             
             {/* Pulsing Spinner Icon */}
             <div className="relative w-16 h-16 mx-auto">
-              <div className="w-16 h-16 rounded-full border-3 border-cyan-200 border-t-cyan-600 animate-spin dark:border-cyan-950 dark:border-t-cyan-400" />
-              <div className="absolute inset-0 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+              <div className="w-16 h-16 rounded-full border-3 border-[#E3EFE9] border-t-[#0D5446] animate-spin dark:border-[#1A332B] dark:border-t-[#3BB298]" />
+              <div className="absolute inset-0 flex items-center justify-center text-[#0D5446] dark:text-[#3BB298]">
                 <DoodleIcon name="heartbeat" className="w-6 h-6" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+              <h2 className="text-xl font-bold text-[#11231E] dark:text-[#ECF2EE] tracking-tight">
                 Extracting &amp; Analyzing Lab Report
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Processing <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedFile?.name || 'your document'}</span> through the clinical intelligence pipeline.
+              <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
+                Processing <span className="font-semibold text-[#11231E] dark:text-[#ECF2EE]">{selectedFile?.name || 'your document'}</span> through the clinical intelligence pipeline.
               </p>
             </div>
 
             {/* Step Progress Multi-Stage Checklist */}
-            <div className="space-y-3 text-left p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs">
+            <div className="space-y-3 text-left p-5 rounded-xl bg-[#EDF1ED] dark:bg-[#1A2421] border border-[#D6DDD6] dark:border-[#2A3B34] text-xs">
               
               {/* Step 1 */}
               <div className="flex items-center space-x-3">
                 <span
                   className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
                     processingStage >= 2
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-[#0D5446] text-white'
                       : processingStage >= 1
-                      ? 'bg-cyan-600 text-white animate-pulse'
-                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-[#1D7A68] text-white animate-pulse'
+                      : 'bg-[#D6DDD6] text-[#586D66] dark:bg-[#23312B] dark:text-[#7C9184]'
                   }`}
                 >
                   {processingStage >= 2 ? '✓' : '1'}
                 </span>
-                <span className={processingStage >= 1 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                <span className={processingStage >= 1 ? 'font-semibold text-[#11231E] dark:text-[#ECF2EE]' : 'text-[#586D66] dark:text-[#7C9184]'}>
                   Stage 0: Document verification &amp; MIME validation
                 </span>
               </div>
@@ -339,15 +333,15 @@ export function UploadPage() {
                 <span
                   className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
                     processingStage >= 3
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-[#0D5446] text-white'
                       : processingStage === 2
-                      ? 'bg-cyan-600 text-white animate-pulse'
-                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-[#1D7A68] text-white animate-pulse'
+                      : 'bg-[#D6DDD6] text-[#586D66] dark:bg-[#23312B] dark:text-[#7C9184]'
                   }`}
                 >
                   {processingStage >= 3 ? '✓' : '2'}
                 </span>
-                <span className={processingStage >= 2 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                <span className={processingStage >= 2 ? 'font-semibold text-[#11231E] dark:text-[#ECF2EE]' : 'text-[#586D66] dark:text-[#7C9184]'}>
                   Stage 1: Gemini 2.5 Flash OCR &amp; tabular measure parsing
                 </span>
               </div>
@@ -357,15 +351,15 @@ export function UploadPage() {
                 <span
                   className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
                     processingStage >= 4
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-[#0D5446] text-white'
                       : processingStage === 3
-                      ? 'bg-cyan-600 text-white animate-pulse'
-                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-[#1D7A68] text-white animate-pulse'
+                      : 'bg-[#D6DDD6] text-[#586D66] dark:bg-[#23312B] dark:text-[#7C9184]'
                   }`}
                 >
                   {processingStage >= 4 ? '✓' : '3'}
                 </span>
-                <span className={processingStage >= 3 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                <span className={processingStage >= 3 ? 'font-semibold text-[#11231E] dark:text-[#ECF2EE]' : 'text-[#586D66] dark:text-[#7C9184]'}>
                   Stage 2a: RapidFuzz LOINC canonical normalizer
                 </span>
               </div>
@@ -375,15 +369,15 @@ export function UploadPage() {
                 <span
                   className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
                     processingStage > 4
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-[#0D5446] text-white'
                       : processingStage >= 4
-                      ? 'bg-cyan-600 text-white animate-pulse'
-                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                      ? 'bg-[#1D7A68] text-white animate-pulse'
+                      : 'bg-[#D6DDD6] text-[#586D66] dark:bg-[#23312B] dark:text-[#7C9184]'
                   }`}
                 >
                   {processingStage > 4 ? '✓' : '4'}
                 </span>
-                <span className={processingStage >= 4 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                <span className={processingStage >= 4 ? 'font-semibold text-[#11231E] dark:text-[#ECF2EE]' : 'text-[#586D66] dark:text-[#7C9184]'}>
                   Stage 2b: Biomedical NER &amp; entity relationship tagging
                 </span>
               </div>
@@ -410,21 +404,21 @@ export function UploadPage() {
       {viewMode === 'success' && (
         <Card radius="xl" className="max-w-lg mx-auto text-center shadow-lg">
           <div className="p-8 sm:p-10 space-y-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 shadow-inner">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-[#0D5446] bg-[#E3EFE9] dark:bg-[#1A332B] dark:text-[#3BB298] shadow-inner">
               <DoodleIcon name="check" className="w-7 h-7" />
             </div>
 
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+              <h2 className="text-xl font-bold text-[#11231E] dark:text-[#ECF2EE] tracking-tight">
                 Measurements Saved Successfully
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
                 {pipelineSummary?.result_count || extractedRows.length} clinical measures have been verified and indexed into your longitudinal database.
               </p>
             </div>
 
             {reportId && (
-              <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-300">
+              <div className="p-2.5 rounded-lg bg-[#EDF1ED] dark:bg-[#1A2421] border border-[#D6DDD6] dark:border-[#2A3B34] text-xs font-mono text-[#334740] dark:text-[#B2C2B8]">
                 Report Reference ID: {reportId}
               </div>
             )}

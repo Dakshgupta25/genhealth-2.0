@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { getFamilyMembers, linkFamilyMember, unlinkFamilyMember } from '../api/family';
 import DoodleIcon from '../components/common/DoodleIcon';
 import FamilyTreeNode from '../components/family/FamilyTreeNode';
+import { Button, Card, Modal, FormField, Input, Select } from '../components/ui';
 
 export function FamilyTreePage() {
   const { user, userId } = useAuth();
@@ -100,7 +101,7 @@ export function FamilyTreePage() {
     ['son', 'daughter', 'child'].includes(r.relationship_type?.toLowerCase())
   );
 
-  // Other / Uncategorized
+  // Other / Extended Relatives
   const otherRelatives = relatives.filter(
     (r) =>
       ![
@@ -111,68 +112,72 @@ export function FamilyTreePage() {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       
-      {/* Header Card */}
-      <div className="p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-               style={{ backgroundColor: 'var(--brand-primary)' }}>
-            <DoodleIcon name="tree" className="w-4 h-4" />
+      {/* 1. Header Card */}
+      <Card radius="xl">
+        <div className="p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 shadow-xs">
+              <DoodleIcon name="tree" className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                Family Health Tree
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Top-to-bottom visual genealogical hierarchy connecting relatives via unique User IDs
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              Family Health Tree
-            </h1>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Top-to-bottom visual genealogical hierarchy connecting relatives via unique User IDs.
-            </p>
-          </div>
+
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => { setLinkModalOpen(true); setModalError(''); }}
+            id="open-link-family-modal-btn"
+            leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5 text-cyan-400" />}
+          >
+            Link Family Member
+          </Button>
         </div>
+      </Card>
 
-        <button
-          type="button"
-          onClick={() => { setLinkModalOpen(true); setModalError(''); }}
-          id="open-link-family-modal-btn"
-          className="px-4 py-2.5 rounded-xl text-xs font-bold text-white shadow-md flex items-center space-x-2 transition-all active:scale-95"
-          style={{ backgroundColor: 'var(--brand-primary)' }}
-        >
-          <DoodleIcon name="plus" className="w-4 h-4" />
-          <span>Link Family Member</span>
-        </button>
-      </div>
-
+      {/* Status feedback message */}
       {statusMessage && (
-        <div className="p-4 rounded-2xl text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-300 flex items-center justify-between">
+        <div className="p-3.5 rounded-lg text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-300 flex items-center justify-between shadow-xs">
           <span>✓ {statusMessage}</span>
-          <button onClick={() => setStatusMessage('')} className="font-bold underline ml-2">Dismiss</button>
+          <button
+            onClick={() => setStatusMessage('')}
+            className="font-bold underline ml-2 hover:opacity-80"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
-      {/* Visual Top-to-Bottom Tree Canvas */}
-      <div className="p-8 md:p-12 rounded-3xl border shadow-sm space-y-12 relative overflow-hidden transition-all text-center"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        
+      {/* 2. Visual Top-to-Bottom Genealogical Canvas */}
+      <Card radius="xl" className="p-6 sm:p-10 md:p-12 text-center overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <div className="w-10 h-10 mx-auto rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-            <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-              Loading family health network...
+            <div className="w-8 h-8 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Loading genealogical health network...
             </p>
           </div>
         ) : (
-          <div className="space-y-14 relative z-10 max-w-5xl mx-auto">
+          <div className="space-y-10 relative z-10 max-w-5xl mx-auto">
             
-            {/* TIER 1: Parents / Previous Generation */}
+            {/* TIER 1: Parents / Ascendants */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
-                <span>Tier 1 · Parents & Ascendants</span>
+              <div className="flex items-center justify-center">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                  <span>Tier 1 · Parents &amp; Ascendants</span>
+                </div>
               </div>
 
               {parentRelatives.length > 0 ? (
-                <div className="flex flex-wrap justify-center gap-6 pt-2">
+                <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-2">
                   {parentRelatives.map((member) => (
                     <FamilyTreeNode
                       key={member.relationship_id}
@@ -182,27 +187,35 @@ export function FamilyTreePage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl border border-dashed max-w-xs mx-auto text-xs"
-                     style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  No parents linked yet. Click "Link Family Member" above.
+                <div className="p-5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 max-w-xs mx-auto text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                  <p>No parents linked yet.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setLinkModalOpen(true); setModalError(''); setRelationshipType('father'); }}
+                    leftIcon={<DoodleIcon name="plus" className="w-3 h-3" />}
+                  >
+                    Link Parent
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Visual Generational Connector 1 -> 2 */}
-            <div className="flex justify-center -my-6">
-              <div className="w-0.5 h-12 bg-indigo-300 dark:bg-indigo-800" />
+            {/* Genealogical Connector Line (Tier 1 -> Tier 2) */}
+            <div className="flex justify-center -my-3">
+              <div className="w-px h-10 bg-slate-300 dark:bg-slate-700" />
             </div>
 
             {/* TIER 2: Primary User & Peers (Spouse & Siblings) */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
-                <span>Tier 2 · Self, Spouse & Siblings</span>
+              <div className="flex items-center justify-center">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                  <span>Tier 2 · Self, Spouse &amp; Siblings</span>
+                </div>
               </div>
 
-              <div className="flex flex-wrap justify-center items-center gap-6 pt-2">
-                {/* Current User Node */}
+              <div className="flex flex-wrap justify-center items-stretch gap-4 sm:gap-6 pt-2">
+                {/* Primary User Node */}
                 <FamilyTreeNode
                   member={{
                     id: userId,
@@ -224,20 +237,21 @@ export function FamilyTreePage() {
               </div>
             </div>
 
-            {/* Visual Generational Connector 2 -> 3 */}
-            <div className="flex justify-center -my-6">
-              <div className="w-0.5 h-12 bg-indigo-300 dark:bg-indigo-800" />
+            {/* Genealogical Connector Line (Tier 2 -> Tier 3) */}
+            <div className="flex justify-center -my-3">
+              <div className="w-px h-10 bg-slate-300 dark:bg-slate-700" />
             </div>
 
             {/* TIER 3: Children / Descendants */}
             <div className="space-y-4">
-              <div className="inline-flex items-center space-x-2 px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
-                <span>Tier 3 · Children & Descendants</span>
+              <div className="flex items-center justify-center">
+                <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
+                  <span>Tier 3 · Children &amp; Descendants</span>
+                </div>
               </div>
 
               {childRelatives.length > 0 ? (
-                <div className="flex flex-wrap justify-center gap-6 pt-2">
+                <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-2">
                   {childRelatives.map((member) => (
                     <FamilyTreeNode
                       key={member.relationship_id}
@@ -247,20 +261,27 @@ export function FamilyTreePage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-5 rounded-2xl border border-dashed max-w-xs mx-auto text-xs"
-                     style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  No children linked yet.
+                <div className="p-5 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 max-w-xs mx-auto text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                  <p>No children linked yet.</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setLinkModalOpen(true); setModalError(''); setRelationshipType('son'); }}
+                    leftIcon={<DoodleIcon name="plus" className="w-3 h-3" />}
+                  >
+                    Link Child
+                  </Button>
                 </div>
               )}
             </div>
 
-            {/* Optional: Other Relatives */}
+            {/* Optional: Extended Relatives Section */}
             {otherRelatives.length > 0 && (
-              <div className="pt-8 border-t space-y-4" style={{ borderColor: 'var(--border-subtle)' }}>
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Extended Family & Others
+              <div className="pt-8 border-t border-slate-200 dark:border-slate-800 space-y-4">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Extended Family &amp; Additional Kinship
                 </span>
-                <div className="flex flex-wrap justify-center gap-6">
+                <div className="flex flex-wrap justify-center gap-4 sm:gap-6 pt-2">
                   {otherRelatives.map((member) => (
                     <FamilyTreeNode
                       key={member.relationship_id}
@@ -273,102 +294,82 @@ export function FamilyTreePage() {
             )}
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Modal: Link Family Member by Unique User ID */}
-      {linkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-5 animate-in fade-in"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)', color: 'var(--text-primary)' }}>
-            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }}>
-              <div className="flex items-center space-x-2">
-                <DoodleIcon name="tree" className="w-5 h-5" />
-                <h3 className="text-lg font-bold">Link Relative to Tree</h3>
-              </div>
-              <button 
-                onClick={() => setLinkModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="p-3.5 rounded-xl text-xs font-medium text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300">
-                {modalError}
-              </div>
-            )}
-
-            <form onSubmit={handleLinkSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Relative's Unique User ID (UUID)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
-                  value={targetUserId}
-                  onChange={(e) => setTargetUserId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-xs font-mono border outline-none transition-all focus:ring-2"
-                  style={{
-                    backgroundColor: 'var(--bg-input)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                  }}
-                />
-                <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  Ask your family member for their User ID shown in their GenHealth Profile side panel.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Relationship to You
-                </label>
-                <select
-                  value={relationshipType}
-                  onChange={(e) => setRelationshipType(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all focus:ring-2 font-medium"
-                  style={{
-                    backgroundColor: 'var(--bg-input)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <option value="father">Father (Previous Generation)</option>
-                  <option value="mother">Mother (Previous Generation)</option>
-                  <option value="brother">Brother (Same Generation)</option>
-                  <option value="sister">Sister (Same Generation)</option>
-                  <option value="spouse">Spouse / Partner (Same Generation)</option>
-                  <option value="son">Son (Next Generation)</option>
-                  <option value="daughter">Daughter (Next Generation)</option>
-                  <option value="other">Other Relative</option>
-                </select>
-              </div>
-
-              <div className="pt-2 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setLinkModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold border hover:opacity-80"
-                  style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={linking}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition-all active:scale-95 disabled:opacity-50"
-                  style={{ backgroundColor: 'var(--brand-primary)' }}
-                >
-                  {linking ? 'Linking...' : 'Connect Relative'}
-                </button>
-              </div>
-            </form>
+      {/* 3. Modal: Link Family Member by Unique User ID */}
+      <Modal
+        isOpen={linkModalOpen}
+        onClose={() => setLinkModalOpen(false)}
+        title="Link Relative to Family Tree"
+        subtitle="Connect medical records securely using the relative's Unique User ID"
+        icon={<DoodleIcon name="tree" className="w-4 h-4 text-cyan-500" />}
+        footer={
+          <div className="flex items-center justify-end space-x-2.5 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={() => setLinkModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              type="submit"
+              form="link-relative-form"
+              loading={linking}
+              leftIcon={<DoodleIcon name="check" className="w-3.5 h-3.5 text-cyan-400" />}
+            >
+              Connect Relative
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <form id="link-relative-form" onSubmit={handleLinkSubmit} className="space-y-4 text-left">
+          {modalError && (
+            <div className="p-3 rounded-lg text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex items-center space-x-2">
+              <span>⚠️</span>
+              <span>{modalError}</span>
+            </div>
+          )}
+
+          <FormField
+            label="Relative's Unique User ID (UUID)"
+            hint="Obtain this 36-character ID from your relative's profile menu in the top header."
+            required
+          >
+            <Input
+              type="text"
+              required
+              mono
+              placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+            />
+          </FormField>
+
+          <FormField
+            label="Kinship / Relationship Type"
+            hint="Defines the generational tier placement on your visual tree."
+            required
+          >
+            <Select
+              value={relationshipType}
+              onChange={(e) => setRelationshipType(e.target.value)}
+            >
+              <option value="father">Father (Previous Generation · Tier 1)</option>
+              <option value="mother">Mother (Previous Generation · Tier 1)</option>
+              <option value="brother">Brother (Same Generation · Tier 2)</option>
+              <option value="sister">Sister (Same Generation · Tier 2)</option>
+              <option value="spouse">Spouse / Partner (Same Generation · Tier 2)</option>
+              <option value="son">Son (Next Generation · Tier 3)</option>
+              <option value="daughter">Daughter (Next Generation · Tier 3)</option>
+              <option value="other">Other Kinship (Extended Section)</option>
+            </Select>
+          </FormField>
+        </form>
+      </Modal>
     </div>
   );
 }

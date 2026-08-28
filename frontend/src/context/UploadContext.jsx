@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useAuth } from './AuthContext';
 import { ingestReportFile, getReportResults, updateReportResults, createManualReport } from '../api/reports';
 

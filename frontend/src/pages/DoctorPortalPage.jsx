@@ -4,6 +4,7 @@ import { getDiseaseMappings, getPatientDiseaseSummary, getFamilyBiomarkerHistory
 import { getTestTrend } from '../api/reports';
 import DoodleIcon from '../components/common/DoodleIcon';
 import TrendChart from '../components/doctor/TrendChart';
+import { Button, Badge, Card, CardHeader, CardTitle, CardDescription, Input, EmptyState } from '../components/ui';
 
 export function DoctorPortalPage() {
   const { userId } = useAuth();
@@ -20,6 +21,7 @@ export function DoctorPortalPage() {
   const [trendData, setTrendData] = useState([]);
   const [familyHistory, setFamilyHistory] = useState([]);
   
+  const [loadingPanel, setLoadingPanel] = useState(false);
   const [loadingTrend, setLoadingTrend] = useState(false);
   const [loadingFamily, setLoadingFamily] = useState(false);
 
@@ -38,7 +40,6 @@ export function DoctorPortalPage() {
     }
     loadDiseases();
   }, []);
-
 
   // 2. Fetch Patient's latest values for selected disease
   const loadDiseasePanel = useCallback(async () => {
@@ -105,167 +106,177 @@ export function DoctorPortalPage() {
 
   const activeDisease = diseases.find((d) => d.id === selectedDiseaseId);
 
-  const getAbnormalityBadge = (flag) => {
+  const getAbnormalityMeta = (flag) => {
     switch (flag?.toLowerCase()) {
       case 'high':
-        return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border-red-200';
+        return { status: 'critical', label: 'High' };
       case 'low':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200';
+        return { status: 'warning', label: 'Low' };
       case 'normal':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200';
+        return { status: 'normal', label: 'Normal' };
+      case 'critical':
+        return { status: 'critical', label: 'Critical' };
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200';
+        return { status: 'neutral', label: flag || 'Review' };
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-200">
       
-      {/* Header Banner */}
-      <div className="p-8 rounded-3xl border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-               style={{ backgroundColor: 'var(--brand-primary)' }}>
-            <DoodleIcon name="doctor" className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                Clinical Diagnostic Portal
-              </h1>
-              <span className="badge-status" style={{ backgroundColor: 'rgba(139,92,246,0.12)', color: '#9F7AEA' }}>
-                Doctor Mode
-              </span>
+      {/* 1. Header Banner & Patient Context Switcher */}
+      <Card radius="xl">
+        <div className="p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 shadow-xs">
+              <DoodleIcon name="doctor" className="w-4 h-4 text-cyan-400" />
             </div>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Evaluate patients by pathology, inspect longitudinal curves, and surface hereditary risk indicators.
-            </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                  Clinical Diagnostic Portal
+                </h1>
+                <Badge status="purple" size="sm">
+                  Doctor Mode
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Evaluate patients by pathology, inspect longitudinal biomarker curves, and surface hereditary risks
+              </p>
+            </div>
           </div>
+
+          {/* Patient Context ID Selector */}
+          <form onSubmit={handlePatientSwitch} className="flex items-center space-x-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Input
+                type="text"
+                mono
+                placeholder="Patient UUID"
+                value={patientInput}
+                onChange={(e) => setPatientInput(e.target.value)}
+                className="text-xs"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              leftIcon={<DoodleIcon name="user" className="w-3.5 h-3.5 text-cyan-400" />}
+            >
+              Load Patient
+            </Button>
+          </form>
+        </div>
+      </Card>
+
+      {/* 2. Disease Selection Pathology Tabs */}
+      <div className="space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Clinical Pathology Panels
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            Evaluating Patient ID: <code className="font-mono text-cyan-600 dark:text-cyan-400 font-bold">{patientId ? `${patientId.substring(0, 13)}...` : 'None'}</code>
+          </span>
         </div>
 
-        {/* Patient Context ID Selector */}
-        <form onSubmit={handlePatientSwitch} className="flex items-center space-x-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <input
-              type="text"
-              placeholder="Patient User ID (UUID)"
-              value={patientInput}
-              onChange={(e) => setPatientInput(e.target.value)}
-              className="w-full px-3.5 py-2 rounded-xl text-xs font-mono border outline-none focus:ring-1"
-              style={{
-                backgroundColor: 'var(--bg-input)',
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all active:scale-95 shadow-sm shrink-0"
-            style={{ backgroundColor: 'var(--brand-primary)' }}
-          >
-            Load Patient
-          </button>
-        </form>
-      </div>
-
-      {/* Disease Selection Tabs */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-            Select Clinical Pathology Panel
-          </span>
-          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-            Evaluating Patient ID: <code className="font-mono text-indigo-500">{patientId ? patientId.substring(0, 13) + '...' : 'None'}</code>
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
+        {/* Pathology Selector Buttons */}
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {diseases.map((d) => {
             const isSelected = selectedDiseaseId === d.id;
             return (
-              <button
+              <Button
                 key={d.id}
+                variant={isSelected ? 'teal' : 'outline'}
+                size="sm"
                 onClick={() => setSelectedDiseaseId(d.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 border ${
-                  isSelected
-                    ? 'shadow-md text-white'
-                    : 'hover:opacity-90'
-                }`}
-                style={{
-                  backgroundColor: isSelected ? 'var(--brand-primary)' : 'var(--bg-card)',
-                  borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-card)',
-                  color: isSelected ? '#FFFFFF' : 'var(--text-secondary)',
-                }}
+                leftIcon={<DoodleIcon name="stethoscope" className="w-3.5 h-3.5" />}
               >
-                <DoodleIcon name="stethoscope" className="w-3.5 h-3.5" />
-                <span>{d.name}</span>
-              </button>
+                {d.name}
+              </Button>
             );
           })}
         </div>
       </div>
 
-      {/* Disease Detail Description */}
+      {/* Disease Detail Category & Subtitle */}
       {activeDisease && (
-        <div className="p-4 rounded-2xl border text-xs flex items-center justify-between"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-indigo-600 dark:text-indigo-400">Category: {activeDisease.category}</span>
-            <span>•</span>
-            <span style={{ color: 'var(--text-secondary)' }}>{activeDisease.description}</span>
+        <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="font-bold text-cyan-700 dark:text-cyan-300">
+              Category: {activeDisease.category}
+            </span>
+            <span className="text-slate-400 hidden sm:inline">•</span>
+            <span className="text-slate-600 dark:text-slate-400">
+              {activeDisease.description}
+            </span>
           </div>
         </div>
       )}
 
-      {/* 2-Column Grid: Disease Test Panel (Left) + Longitudinal Trend & Cross-Family History (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* 3. 2-Column Clinical Workbench Grid (5 Cols Biomarkers List, 7 Cols Trend & Cross-Family History) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* LEFT: Disease Primary Biomarkers List (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-            Relevant Disease Biomarkers
-          </h3>
+        <div className="lg:col-span-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Relevant Disease Biomarkers
+            </h3>
+            <span className="text-xs text-slate-400 font-mono">
+              {activeDisease?.primary_tests?.length || 0} tests
+            </span>
+          </div>
 
-          <div className="space-y-3">
-            {activeDisease?.primary_tests.map((testName) => {
+          <div className="space-y-2.5">
+            {loadingPanel ? (
+              <Card radius="md" className="p-6 text-center space-y-2">
+                <div className="w-5 h-5 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
+                <p className="text-xs text-slate-400">Loading pathology markers...</p>
+              </Card>
+            ) : activeDisease?.primary_tests?.map((testName) => {
               const summary = diseaseSummaries.find((s) => s.canonical_test_name === testName);
               const isSelected = selectedTestName === testName;
+              const statusMeta = summary ? getAbnormalityMeta(summary.abnormality_flag) : null;
 
               return (
-                <div
+                <Card
                   key={testName}
+                  radius="md"
+                  interactive
                   onClick={() => setSelectedTestName(testName)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all hover:scale-[1.01] flex items-center justify-between space-x-3 shadow-sm ${
-                    isSelected ? 'ring-2 ring-indigo-500/50 shadow-indigo-500/10' : ''
+                  className={`p-3.5 transition-all ${
+                    isSelected
+                      ? 'border-cyan-500/60 ring-1 ring-cyan-500/20 bg-slate-50/70 dark:bg-slate-800/50 shadow-xs'
+                      : 'hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
-                  style={{
-                    backgroundColor: 'var(--bg-card)',
-                    borderColor: 'var(--border-card)',
-                  }}
                 >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                        {testName}
-                      </h4>
-                      {summary && (
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${getAbnormalityBadge(summary.abnormality_flag)}`}>
-                          {summary.abnormality_flag}
-                        </span>
-                      )}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={testName}>
+                          {testName}
+                        </h4>
+                        {statusMeta && (
+                          <Badge status={statusMeta.status} size="sm">
+                            {statusMeta.label}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                        {summary
+                          ? `Latest: ${summary.latest_value} ${summary.unit || ''} (Ref: ${summary.reference_range || 'N/A'})`
+                          : 'No recorded values for patient'}
+                      </p>
                     </div>
-                    
-                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                      {summary ? `Latest: ${summary.latest_value} ${summary.unit || ''} (Ref: ${summary.reference_range || 'N/A'})` : 'No report records found for patient'}
-                    </p>
-                  </div>
 
-                  <span className="text-xs text-indigo-500 font-bold">
-                    {isSelected ? '● View' : '→'}
-                  </span>
-                </div>
+                    <span className={`text-xs font-bold shrink-0 ${isSelected ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}`}>
+                      {isSelected ? '● Active' : '→'}
+                    </span>
+                  </div>
+                </Card>
               );
             })}
           </div>
@@ -282,68 +293,90 @@ export function DoctorPortalPage() {
             loading={loadingTrend}
           />
 
-          {/* Cross-Family Medical History Panel */}
-          <div className="p-6 rounded-3xl border shadow-sm space-y-4"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <DoodleIcon name="tree" className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-sm font-bold">Cross-Family History for {selectedTestName}</h3>
+          {/* Cross-Family Medical History Table */}
+          <Card radius="lg" className="overflow-hidden shadow-sm space-y-0">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                    <DoodleIcon name="tree" className="w-3.5 h-3.5" />
+                  </div>
+                  <CardTitle className="text-sm">
+                    Cross-Family History: {selectedTestName}
+                  </CardTitle>
+                </div>
+                <Badge status="info" size="sm">
+                  {familyHistory.length} {familyHistory.length === 1 ? 'record' : 'records'}
+                </Badge>
               </div>
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full font-medium"
-                    style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
-                {familyHistory.length} relative readings
-              </span>
-            </div>
-
-            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Surfacing hereditary biomarker readings across the patient's linked family tree network.
-            </p>
+              <CardDescription className="text-xs">
+                Surfacing hereditary biomarker readings across the patient's linked genealogical network
+              </CardDescription>
+            </CardHeader>
 
             {loadingFamily ? (
-              <p className="text-xs text-slate-400 py-4 text-center">Checking family records...</p>
+              <div className="p-8 text-center space-y-2">
+                <div className="w-5 h-5 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
+                <p className="text-xs text-slate-400">Scanning family records...</p>
+              </div>
             ) : familyHistory.length > 0 ? (
-              <div className="divide-y rounded-2xl border overflow-hidden text-xs"
-                   style={{ borderColor: 'var(--border-subtle)' }}>
-                {familyHistory.map((item, idx) => (
-                  <div key={idx} className="p-3.5 flex items-center justify-between"
-                       style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold">{item.relative_name}</span>
-                        <span className="text-[10px] px-2 py-0.2 rounded-full font-bold uppercase bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                          {item.relationship_type}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400">
-                        Date: {new Date(item.report_date).toLocaleDateString()}
-                      </p>
-                    </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <th className="py-2.5 px-3.5 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)] min-w-[150px]">
+                        Relative &amp; Kinship
+                      </th>
+                      <th className="py-2.5 px-3.5 min-w-[110px]">Report Date</th>
+                      <th className="py-2.5 px-3.5 min-w-[110px]">Observed Value</th>
+                      <th className="py-2.5 px-3.5 text-center min-w-[90px]">Status Flag</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                    {familyHistory.map((item, idx) => {
+                      const statusMeta = getAbnormalityMeta(item.abnormality_flag);
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors h-11">
+                          <td className="py-2.5 px-3.5 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                                {item.relative_name}
+                              </span>
+                              <Badge status="neutral" size="sm">
+                                {item.relationship_type}
+                              </Badge>
+                            </div>
+                          </td>
 
-                    <div className="text-right space-y-0.5">
-                      <span className="font-bold font-mono text-sm">
-                        {item.value} {item.unit || ''}
-                      </span>
-                      <div>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${getAbnormalityBadge(item.abnormality_flag)}`}>
-                          {item.abnormality_flag}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                          <td className="py-2.5 px-3.5 font-mono text-slate-500 dark:text-slate-400 text-xs">
+                            {new Date(item.report_date).toLocaleDateString()}
+                          </td>
+
+                          <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900 dark:text-slate-100 text-xs">
+                            {item.value} <span className="font-normal text-slate-500 text-[11px]">{item.unit || ''}</span>
+                          </td>
+
+                          <td className="py-2.5 px-3.5 text-center">
+                            <Badge status={statusMeta.status} size="sm">
+                              {statusMeta.label}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <div className="p-6 rounded-2xl border border-dashed text-center text-xs space-y-1"
-                   style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                <p className="font-bold">No Family Readings Available</p>
-                <p className="text-[11px]">
-                  When linked relatives upload lab reports containing {selectedTestName}, their values will automatically surface here for cross-generational analysis.
-                </p>
+              <div className="p-6">
+                <EmptyState
+                  icon={<DoodleIcon name="dna" className="w-5 h-5" />}
+                  title="No Family Readings Available"
+                  description={`When linked relatives ingest lab reports containing ${selectedTestName}, their values will automatically surface here for cross-generational risk evaluation.`}
+                />
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </div>
     </div>

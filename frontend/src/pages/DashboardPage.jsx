@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getUserRecentReports, getReportResults } from '../api/reports';
 import { getFamilyMembers } from '../api/family';
 import DoodleIcon from '../components/common/DoodleIcon';
+import { Button, Badge, Card, CardHeader, CardTitle, CardDescription, CardContent, EmptyState } from '../components/ui';
 
 export function DashboardPage() {
   const { user, userId, selectedHospital } = useAuth();
@@ -45,268 +46,324 @@ export function DashboardPage() {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const getAbnormalityBadge = (flag) => {
+  const mapStatusToBadge = (flag) => {
     switch (flag?.toLowerCase()) {
       case 'high':
-        return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border-red-200';
+        return { status: 'critical', label: 'High' };
       case 'low':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200';
+        return { status: 'warning', label: 'Low' };
       case 'normal':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200';
+        return { status: 'normal', label: 'Normal' };
+      case 'critical':
+        return { status: 'critical', label: 'Critical' };
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200';
+        return { status: 'neutral', label: flag || 'Review' };
     }
   };
 
+  const latestReportDate =
+    recentReports.length > 0 && recentReports[0].created_at
+      ? new Date(recentReports[0].created_at).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : 'None recorded';
+
+  const hospitalScopeName =
+    selectedHospital === 'general' ? 'General / All Facilities' : selectedHospital;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       
-      {/* 1. HEALTH OVERVIEW HERO BANNER */}
-      <div className="p-8 md:p-10 rounded-3xl border shadow-sm relative overflow-hidden transition-all"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        <div className="max-w-2xl space-y-4 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-semibold"
-               style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-accent)' }}>
-            <DoodleIcon name="hospital" className="w-3.5 h-3.5" />
-            <span>Hospital Scope: {selectedHospital === 'general' ? 'General / All Facilities' : selectedHospital}</span>
+      {/* 1. COMPACT HEALTH OVERVIEW HERO BANNER */}
+      <Card radius="xl" className="overflow-hidden relative">
+        <div className="p-6 sm:p-8 space-y-6 relative z-10">
+          
+          {/* Top Row: Hospital Scope Badge & User Welcome */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-cyan-700 dark:text-cyan-300 border border-slate-200 dark:border-slate-700 w-fit">
+              <DoodleIcon name="hospital" className="w-3.5 h-3.5" />
+              <span>Scope: {hospitalScopeName}</span>
+            </div>
+
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              User ID: <code className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">{userId ? `${userId.substring(0, 8)}...` : 'N/A'}</code>
+            </span>
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            Health Overview & Diagnostics
-          </h1>
+          {/* Banner Title & Description */}
+          <div className="space-y-2 max-w-3xl">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              Health Overview &amp; Clinical Diagnostics
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Welcome, <strong className="text-slate-900 dark:text-slate-100 font-semibold">{user?.full_name || 'Patient'}</strong>. Monitor your longitudinal biomarker trends, ingest clinical lab sheets with AI entity extraction, and evaluate family health genetics.
+            </p>
+          </div>
 
-          <p className="text-sm md:text-base leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-            Welcome, <strong className="text-indigo-600 dark:text-indigo-400">{user?.full_name || 'Patient'}</strong>. Ingest lab documents, monitor longitudinal biomarker trends, and manage your connected family health records.
-          </p>
+          {/* Quick Metric Counters */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-2">
+            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 shrink-0">
+                <DoodleIcon name="file" className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Lab Reports
+                </span>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
+                  {recentReports.length} {recentReports.length === 1 ? 'record' : 'records'}
+                </p>
+              </div>
+            </div>
 
-          <div className="pt-2 flex flex-wrap gap-3">
-            <button
+            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
+                <DoodleIcon name="tree" className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Linked Relatives
+                </span>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
+                  {familyCount} {familyCount === 1 ? 'member' : 'members'}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 shrink-0">
+                <DoodleIcon name="calendar" className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Latest Ingestion
+                </span>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                  {latestReportDate}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action CTAs */}
+          <div className="pt-2 flex flex-wrap items-center gap-3">
+            <Button
+              variant="primary"
+              size="md"
               onClick={() => navigate('/upload')}
-              className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white shadow-md flex items-center space-x-2 transition-all active:scale-95"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
+              leftIcon={<DoodleIcon name="upload" className="w-4 h-4" />}
             >
-              <DoodleIcon name="upload" className="w-4 h-4" />
-              <span>Upload New Lab Report</span>
-            </button>
+              Upload New Lab Report
+            </Button>
 
-            <button
+            <Button
+              variant="outline"
+              size="md"
               onClick={() => navigate('/family-tree')}
-              className="px-5 py-2.5 rounded-2xl text-xs font-bold border transition-all hover:opacity-80 flex items-center space-x-2"
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
+              leftIcon={<DoodleIcon name="tree" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
             >
-              <DoodleIcon name="tree" className="w-4 h-4" />
-              <span>Family Tree ({familyCount} linked)</span>
-            </button>
+              Family Tree ({familyCount} linked)
+            </Button>
 
-            <button
+            <Button
+              variant="outline"
+              size="md"
               onClick={() => navigate('/doctor-portal')}
-              className="px-5 py-2.5 rounded-2xl text-xs font-bold border transition-all hover:opacity-80 flex items-center space-x-2"
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
+              leftIcon={<DoodleIcon name="stethoscope" className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
             >
-              <DoodleIcon name="stethoscope" className="w-4 h-4" />
-              <span>Doctor Portal</span>
-            </button>
+              Doctor Portal
+            </Button>
           </div>
         </div>
-
-        {/* Decorative doodle in hero background */}
-        <div className="absolute right-6 bottom-4 opacity-5 pointer-events-none">
-          <DoodleIcon name="heartbeat" className="w-56 h-56" />
-        </div>
-      </div>
+      </Card>
 
       {/* 2. MEASUREMENT SUMMARY (Real Data from Ingestion Pipeline) */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
-            <h2 className="text-lg font-bold">Measurement Summary</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Real extracted clinical measurements from your latest uploaded lab records
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+              Recent Clinical Measurements
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Extracted biomarker values and abnormality reference bounds from your latest lab records
             </p>
           </div>
           {recentReports.length > 0 && (
-            <span className="text-xs font-mono text-slate-400">
-              {recentReports.length} {recentReports.length === 1 ? 'report record' : 'report records'}
+            <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              Displaying latest {recentMeasurements.length} measures
             </span>
           )}
         </div>
 
         {loadingData ? (
-          <div className="p-8 rounded-3xl border shadow-sm text-center space-y-2"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            <div className="w-6 h-6 mx-auto rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />
-            <p className="text-xs text-slate-400">Loading measurement records...</p>
-          </div>
+          <Card radius="lg" className="p-8 text-center space-y-2">
+            <div className="w-6 h-6 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
+            <p className="text-xs text-slate-500 dark:text-slate-400">Loading clinical records...</p>
+          </Card>
         ) : recentMeasurements.length > 0 ? (
-          <div className="rounded-3xl border shadow-sm overflow-hidden"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+          <Card radius="lg" className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b font-bold tracking-wider uppercase text-[10px]"
-                      style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                    <th className="py-3 px-4">Biomarker Test</th>
-                    <th className="py-3 px-4">Canonical Mapping</th>
-                    <th className="py-3 px-4">Observed Value</th>
-                    <th className="py-3 px-4">Reference Range</th>
-                    <th className="py-3 px-4 text-center">Status</th>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="py-3 px-4 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)] min-w-[150px]">
+                      Biomarker Test
+                    </th>
+                    <th className="py-3 px-4 min-w-[140px]">Canonical Mapping</th>
+                    <th className="py-3 px-4 min-w-[120px]">Observed Value</th>
+                    <th className="py-3 px-4 min-w-[130px]">Reference Range</th>
+                    <th className="py-3 px-4 text-center min-w-[100px]">Status Flag</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-                  {recentMeasurements.map((m, idx) => (
-                    <tr key={idx} className="hover:bg-slate-500/5 transition-colors">
-                      <td className="py-3 px-4 font-bold" style={{ color: 'var(--text-primary)' }}>
-                        {m.raw_test_name}
-                      </td>
-                      <td className="py-3 px-4 italic text-slate-500 dark:text-slate-400">
-                        {m.canonical_test_name || 'Standard'}
-                      </td>
-                      <td className="py-3 px-4 font-mono font-bold">
-                        {m.value} {m.unit || ''}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-500">
-                        {m.reference_range || 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${getAbnormalityBadge(m.abnormality_flag)}`}>
-                          {m.abnormality_flag}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  {recentMeasurements.map((m, idx) => {
+                    const badgeInfo = mapStatusToBadge(m.abnormality_flag);
+                    return (
+                      <tr
+                        key={m.id || idx}
+                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 text-sm sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
+                          {m.raw_test_name || m.test_name || '—'}
+                        </td>
+                        <td className="py-3.5 px-4 italic text-slate-500 dark:text-slate-400">
+                          {m.canonical_test_name || 'Standard Mapping'}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-sm text-slate-900 dark:text-slate-50">
+                          {m.value !== undefined && m.value !== null ? m.value : '—'}{' '}
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                            {m.unit || ''}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-300">
+                          {m.reference_range || 'N/A'}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <Badge status={badgeInfo.status} size="sm">
+                            {badgeInfo.label}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
         ) : (
-          <div className="p-8 rounded-3xl border border-dashed text-center space-y-3"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
-            <div className="w-10 h-10 mx-auto rounded-2xl flex items-center justify-center"
-                 style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-              <DoodleIcon name="file" className="w-5 h-5" />
-            </div>
-            <h4 className="text-sm font-bold">No Lab Measurements Recorded Yet</h4>
-            <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--text-muted)' }}>
-              Upload your first lab report or enter measurements manually to start tracking your clinical biomarkers.
-            </p>
-            <button
-              onClick={() => navigate('/upload')}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
-            >
-              Upload Lab Document
-            </button>
-          </div>
+          <EmptyState
+            icon={<DoodleIcon name="file" className="w-5 h-5" />}
+            title="No Lab Measurements Recorded Yet"
+            description="Upload your first clinical lab report or enter measurements manually to start tracking your biomarkers."
+            action={
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate('/upload')}
+                leftIcon={<DoodleIcon name="upload" className="w-3.5 h-3.5" />}
+              >
+                Upload Lab Document
+              </Button>
+            }
+          />
         )}
       </div>
 
-      {/* 3. THREE-COLUMN STRUCTURED MODULES: Health Score, Predictions, Recommendations */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* 3. THREE-COLUMN STRUCTURED PREVIEW MODULES (Clear In-Development States) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         
-        {/* MODULE 1: Health Score & Index (Structure with Clear Empty State) */}
-        <div className="p-6 rounded-3xl border shadow-sm space-y-4 flex flex-col justify-between"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          <div className="space-y-3">
+        {/* MODULE 1: Longitudinal Health Index */}
+        <Card radius="lg" className="flex flex-col justify-between">
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
                 <DoodleIcon name="heartbeat" className="w-4 h-4" />
               </div>
-              <span className="badge-status">In Development</span>
+              <Badge status="neutral" size="sm">In Development</Badge>
             </div>
-
-            <h3 className="text-base font-bold">Longitudinal Health Index</h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <CardTitle className="pt-2">Longitudinal Health Index</CardTitle>
+            <CardDescription>
               Multi-dimensional composite scoring model derived from longitudinal blood biomarkers and vital indices.
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
 
-          {/* Structured Score Gauge Placeholder */}
-          <div className="p-6 rounded-2xl border text-center space-y-2"
-               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-            <div className="w-16 h-16 mx-auto rounded-full border-4 border-dashed border-indigo-300 dark:border-indigo-800 flex items-center justify-center">
-              <span className="text-xs font-mono font-bold text-slate-400">-- / 100</span>
+          <CardContent className="pt-2">
+            <div className="p-5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 text-center space-y-2">
+              <div className="w-14 h-14 mx-auto rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
+                <span className="text-xs font-mono font-bold text-slate-400">-- / 100</span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                Scoring calibration awaiting machine learning model validation.
+              </p>
             </div>
-            <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Scoring calibration awaiting machine learning pipeline activation.
-            </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* MODULE 2: Disease Predictions & Risk Matrix (Structure with Clear Empty State) */}
-        <div className="p-6 rounded-3xl border shadow-sm space-y-4 flex flex-col justify-between"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          <div className="space-y-3">
+        {/* MODULE 2: Predictive Risk Matrix */}
+        <Card radius="lg" className="flex flex-col justify-between">
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                 <DoodleIcon name="dna" className="w-4 h-4" />
               </div>
-              <span className="badge-status">In Development</span>
+              <Badge status="neutral" size="sm">In Development</Badge>
             </div>
+            <CardTitle className="pt-2">Predictive Risk Matrix</CardTitle>
+            <CardDescription>
+              Genetic &amp; biomarker risk modeling for metabolic, cardiovascular, and renal pathologies.
+            </CardDescription>
+          </CardHeader>
 
-            <h3 className="text-base font-bold">Predictive Risk Matrix</h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Genetic & biomarker risk modeling for metabolic, cardiovascular, and renal pathologies.
-            </p>
-          </div>
+          <CardContent className="pt-2">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Cardiovascular Risk:</span>
+                <span className="font-mono font-semibold">--</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Metabolic Syndrome:</span>
+                <span className="font-mono font-semibold">--</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                <span>Renal Progression:</span>
+                <span className="font-mono font-semibold">--</span>
+              </div>
+              <p className="text-[10px] pt-1 text-slate-400 italic">
+                AI predictive inference endpoints will populate this matrix once connected.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Structured Predictions Grid Placeholder */}
-          <div className="p-4 rounded-2xl border space-y-2 text-xs"
-               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-            <div className="flex items-center justify-between text-slate-400">
-              <span>Cardiovascular Risk:</span>
-              <span className="font-mono">--</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-400">
-              <span>Metabolic Syndrome:</span>
-              <span className="font-mono">--</span>
-            </div>
-            <div className="flex items-center justify-between text-slate-400">
-              <span>Kidney Progression:</span>
-              <span className="font-mono">--</span>
-            </div>
-            <p className="text-[10px] pt-1 text-slate-400 italic">
-              AI predictive inference endpoints will populate this matrix once trained.
-            </p>
-          </div>
-        </div>
-
-        {/* MODULE 3: Personalized Recommendations (Structure with Clear Empty State) */}
-        <div className="p-6 rounded-3xl border shadow-sm space-y-4 flex flex-col justify-between"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          <div className="space-y-3">
+        {/* MODULE 3: Clinical Recommendations */}
+        <Card radius="lg" className="flex flex-col justify-between">
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
                 <DoodleIcon name="stethoscope" className="w-4 h-4" />
               </div>
-              <span className="badge-status">In Development</span>
+              <Badge status="neutral" size="sm">In Development</Badge>
             </div>
-
-            <h3 className="text-base font-bold">Clinical Recommendations</h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <CardTitle className="pt-2">Clinical Recommendations</CardTitle>
+            <CardDescription>
               Evidence-based lifestyle, dietary, and diagnostic follow-up suggestions tailored to observed lab flags.
-            </p>
-          </div>
+            </CardDescription>
+          </CardHeader>
 
-          {/* Structured Guidance Placeholder */}
-          <div className="p-5 rounded-2xl border text-center space-y-2"
-               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-            <DoodleIcon name="pill" className="w-5 h-5 mx-auto text-slate-400" />
-            <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-              Personalized clinical guidance engine will activate once decision algorithms are connected.
-            </p>
-          </div>
-        </div>
+          <CardContent className="pt-2">
+            <div className="p-5 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/60 text-center space-y-2">
+              <div className="w-8 h-8 mx-auto rounded-lg flex items-center justify-center text-slate-400 bg-slate-100 dark:bg-slate-800">
+                <DoodleIcon name="pill" className="w-4 h-4" />
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                Personalized clinical guidance engine will activate once decision algorithms are connected.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );

@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import DoodleIcon from '../common/DoodleIcon';
+import { Modal } from '../ui/Modal';
+import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 
 export function AppShell({ children }) {
   const { user, userId, logout, selectedHospital, setSelectedHospital } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Primary Nav links in exact order: Dashboard -> Upload -> Family Tree -> Doctor Portal
   const navItems = [
@@ -20,7 +37,8 @@ export function AppShell({ children }) {
     { label: 'Doctor Portal', path: '/doctor-portal', icon: 'doctor' },
   ];
 
-  const handleCopyId = () => {
+  const handleCopyId = (e) => {
+    if (e) e.stopPropagation();
     if (userId) {
       navigator.clipboard.writeText(userId);
       setCopiedId(true);
@@ -29,276 +47,313 @@ export function AppShell({ children }) {
   };
 
   const handleLogout = () => {
+    setProfileMenuOpen(false);
     logout();
     navigate('/login');
   };
 
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden selection:bg-slate-800 selection:text-white"
-         style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      
-      {/* Visual Accent: Top-Right Dark Navy Corner Shape */}
-      <div 
-        className="absolute top-0 right-0 w-80 h-32 md:w-96 md:h-40 pointer-events-none z-0 rounded-bl-[80px] transition-all duration-300 opacity-90"
-        style={{ backgroundColor: 'var(--bg-accent-corner)' }}
-      >
-        <div className="absolute top-4 right-6 flex items-center space-x-2 text-xs font-mono text-slate-300/80">
-          <DoodleIcon name="heartbeat" className="w-4 h-4 text-sky-400" />
-          <span>GenHealth AI</span>
-        </div>
-      </div>
+  const userInitial = user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U';
 
-      {/* Main Top Header / Brand Bar */}
-      <header className="relative z-10 border-b transition-colors duration-200"
-              style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'transparent' }}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
-                 style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--text-on-accent)' }}>
-              <DoodleIcon name="logo-pulse" className="w-6 h-6" strokeWidth={1.5} />
+  return (
+    <div
+      className="min-h-screen flex flex-col transition-colors duration-200"
+      style={{ backgroundColor: 'var(--bg-canvas)', color: 'var(--text-primary)' }}
+    >
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          
+          {/* Left: Brand Identity */}
+          <div
+            className="flex items-center space-x-3 cursor-pointer select-none shrink-0 group"
+            onClick={() => navigate('/')}
+          >
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 shadow-xs group-hover:bg-slate-800 transition-colors">
+              <DoodleIcon name="logo-pulse" className="w-5 h-5 text-cyan-400" strokeWidth={1.6} />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-                  GenHealth <span style={{ color: 'var(--text-accent)' }}>AI</span>
+              <div className="flex items-center space-x-1.5 leading-none">
+                <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                  GenHealth
+                </span>
+                <span className="text-base font-bold text-cyan-600 dark:text-cyan-400">
+                  AI
                 </span>
               </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-tight mt-0.5 hidden sm:block">
                 Clinical AI &amp; Diagnostic Intelligence
               </p>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Container: 2-Column Responsive Layout with Primary Nav & Main Content alongside Side Panel */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
-        
-        {/* Left / Center Area: Primary Navigation + Page Content (9 Cols on Desktop) */}
-        <div className="lg:col-span-8 xl:col-span-9 flex flex-col space-y-6">
-          
-          {/* Primary Navigation Bar: Order: Dashboard -> Upload -> Family Tree -> Doctor Portal */}
-          <nav className="p-1 rounded-xl flex flex-wrap items-center gap-1 border shadow-sm transition-all"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+          {/* Center: Primary Navigation Tabs (Desktop & Tablet) */}
+          <nav className="hidden md:flex items-center space-x-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 hover:scale-[1.02] ${
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${
                     isActive
-                      ? 'shadow-sm text-white'
-                      : 'hover:opacity-90'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-xs border border-slate-200/80 dark:border-slate-700'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
                   }`}
-                  style={{
-                    backgroundColor: isActive ? 'var(--brand-nav-active)' : 'transparent',
-                    color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
-                  }}
                 >
-                  <DoodleIcon name={item.icon} className="w-4 h-4" />
+                  <DoodleIcon
+                    name={item.icon}
+                    className={`w-3.5 h-3.5 ${
+                      isActive
+                        ? 'text-cyan-600 dark:text-cyan-400'
+                        : 'text-slate-400'
+                    }`}
+                  />
                   <span>{item.label}</span>
                 </NavLink>
               );
             })}
           </nav>
 
-          {/* Dynamic Page Content */}
-          <main className="flex-1">
-            {children}
-          </main>
-        </div>
-
-        {/* Unified Side Section: Hospital Filter + Profile Controls (3-4 Cols on Desktop) */}
-        <aside className="lg:col-span-4 xl:col-span-3 space-y-6">
-          
-          {/* Combined Side Card: Cohesive grouping of Hospital Filter & Profile */}
-          <div className="p-6 rounded-2xl border shadow-sm space-y-6 transition-all"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+          {/* Right: Hospital Scope + Theme Toggle + User Menu */}
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             
-            {/* Hospital Filter Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5"
-                       style={{ color: 'var(--text-muted)' }}>
-                  <DoodleIcon name="hospital" className="w-3.5 h-3.5" />
-                  <span>Hospital Scope</span>
-                </label>
-                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                      style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)', opacity: 0.85 }}>
-                  Active
-                </span>
-              </div>
+            {/* Hospital Scope Selector */}
+            <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+              <DoodleIcon name="hospital" className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               <select
                 id="hospital-filter-select"
                 value={selectedHospital}
                 onChange={(e) => setSelectedHospital(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm font-medium border transition-colors outline-none focus:ring-2"
-                style={{
-                  backgroundColor: 'var(--bg-input)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
+                className="text-xs font-medium bg-transparent text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-1"
               >
-                <option value="general">General / All Hospitals</option>
-                <option value="city_general">City General Hospital</option>
-                <option value="memorial_clinic">Memorial Diagnostic Center</option>
-                <option value="apex_labs">Apex Clinical Laboratories</option>
+                <option value="general" className="dark:bg-slate-900">All Facilities</option>
+                <option value="city_general" className="dark:bg-slate-900">City General Hospital</option>
+                <option value="memorial_clinic" className="dark:bg-slate-900">Memorial Diagnostic</option>
+                <option value="apex_labs" className="dark:bg-slate-900">Apex Clinical Labs</option>
               </select>
-              <p className="text-[11px] leading-tight" style={{ color: 'var(--text-muted)' }}>
-                Filter reports and analytics across medical facilities.
-              </p>
             </div>
 
-            <div className="border-t" style={{ borderColor: 'var(--border-subtle)' }} />
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              id="theme-toggle-btn"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="w-9 h-9 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            >
+              <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-4 h-4" />
+            </button>
 
-            {/* Profile & User Controls Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  User Profile
-                </span>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                  user?.role === 'doctor'
-                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
-                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                }`}>
-                  {user?.role || 'Patient'}
-                </span>
-              </div>
-
-              {/* User Details */}
-              <div className="p-3.5 rounded-xl border flex items-center space-x-3"
-                   style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-inner"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-                    {user?.full_name || 'Guest User'}
-                  </div>
-                  <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                    {user?.email || 'Not logged in'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Unique User ID Display with Copy */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold flex items-center justify-between"
-                       style={{ color: 'var(--text-muted)' }}>
-                  <span>Unique User ID:</span>
-                  {copiedId && <span className="text-emerald-500 font-normal text-[10px]">Copied!</span>}
-                </label>
-                <div 
-                  onClick={handleCopyId}
-                  title="Click to copy User ID"
-                  className="px-3 py-2 rounded-xl text-xs font-mono border flex items-center justify-between cursor-pointer hover:border-slate-400 transition-all select-all break-all"
-                  style={{
-                    backgroundColor: 'var(--bg-input)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-accent)',
-                  }}
-                >
-                  <span className="truncate">{userId || 'No ID assigned'}</span>
-                  <span className="text-[10px] ml-2 text-slate-400">📋</span>
-                </div>
-              </div>
-
-              {/* Action Controls: Theme Toggle & Logout */}
-              <div className="pt-2 grid grid-cols-2 gap-2">
-                <button
-                  onClick={toggleTheme}
-                  id="theme-toggle-btn"
-                  className="flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all hover:opacity-90"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5" />
-                  <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  id="logout-btn"
-                  className="flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <DoodleIcon name="logout" className="w-3.5 h-3.5" />
-                  <span>Logout</span>
-                </button>
-              </div>
-
+            {/* User Profile Dropdown Menu */}
+            <div className="relative" ref={menuRef}>
               <button
-                onClick={() => setProfileModalOpen(true)}
-                className="w-full py-2 text-center text-xs font-semibold hover:underline"
-                style={{ color: 'var(--text-accent)' }}
+                type="button"
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                className="flex items-center space-x-2 p-1 pl-2 pr-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               >
-                View Full Profile Details
+                <div className="w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300">
+                  {userInitial}
+                </div>
+                <div className="hidden sm:flex flex-col text-left leading-none">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[100px]">
+                    {user?.full_name || 'Guest'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 capitalize">
+                    {user?.role || 'Patient'}
+                  </span>
+                </div>
+                <DoodleIcon name="chevron-down" className="w-3 h-3 text-slate-400" />
               </button>
-            </div>
-          </div>
-        </aside>
-      </div>
 
-      {/* Profile Details Modal */}
-      {profileModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-5 animate-in fade-in"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)', color: 'var(--text-primary)' }}>
-            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }}>
-              <h3 className="text-lg font-bold">User Medical Profile</h3>
-              <button 
-                onClick={() => setProfileModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 text-lg leading-none"
-              >
-                ✕
-              </button>
-            </div>
+              {/* Dropdown Menu Popover */}
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 p-2.5 text-xs animate-in fade-in zoom-in-95 duration-150">
+                  {/* User Profile Header */}
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg space-y-1 mb-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 text-xs truncate">
+                        {user?.full_name || 'User Profile'}
+                      </span>
+                      <Badge status={user?.role === 'doctor' ? 'purple' : 'normal'} size="sm">
+                        {user?.role || 'Patient'}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {user?.email || 'No email registered'}
+                    </p>
+                  </div>
 
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="text-xs uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Full Name:</span>
-                <p className="font-semibold">{user?.full_name || 'N/A'}</p>
-              </div>
-              <div>
-                <span className="text-xs uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Email Address:</span>
-                <p className="font-semibold">{user?.email || 'N/A'}</p>
-              </div>
-              <div>
-                <span className="text-xs uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Role:</span>
-                <p className="font-semibold capitalize">{user?.role || 'Patient'}</p>
-              </div>
-              <div>
-                <span className="text-xs uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Unique User ID:</span>
-                <p className="font-mono text-xs p-2 rounded-lg break-all" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                  {userId || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Member Since:</span>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {user?.created_at ? new Date(user.created_at).toLocaleString() : 'Just now'}
-                </p>
-              </div>
-            </div>
+                  {/* Unique User ID Row */}
+                  <div className="px-1.5 py-1.5 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>Unique User ID</span>
+                      {copiedId && (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                          ✓ Copied
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      onClick={handleCopyId}
+                      title="Click to copy User ID"
+                      className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-700 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:border-cyan-500 transition-colors min-h-[40px]"
+                    >
+                      <span className="truncate">{userId || 'No ID assigned'}</span>
+                      <DoodleIcon name="copy" className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1.5" />
+                    </div>
+                  </div>
 
-            <div className="pt-3 border-t flex justify-end" style={{ borderColor: 'var(--border-subtle)' }}>
-              <button
-                onClick={() => setProfileModalOpen(false)}
-                className="px-5 py-2 rounded-xl text-sm font-semibold text-white shadow-sm"
-                style={{ backgroundColor: 'var(--brand-primary)' }}
-              >
-                Close
-              </button>
+                  {/* Facility Selector for mobile */}
+                  <div className="lg:hidden px-1.5 py-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Hospital Facility
+                    </label>
+                    <select
+                      value={selectedHospital}
+                      onChange={(e) => setSelectedHospital(e.target.value)}
+                      className="w-full h-10 px-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-medium cursor-pointer outline-none"
+                    >
+                      <option value="general" className="dark:bg-slate-900">All Facilities</option>
+                      <option value="city_general" className="dark:bg-slate-900">City General Hospital</option>
+                      <option value="memorial_clinic" className="dark:bg-slate-900">Memorial Diagnostic</option>
+                      <option value="apex_labs" className="dark:bg-slate-900">Apex Clinical Labs</option>
+                    </select>
+                  </div>
+
+                  <div className="border-t border-slate-100 dark:border-slate-800 my-1.5" />
+
+                  {/* Action Links */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      setProfileModalOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium flex items-center space-x-2 transition-colors min-h-[38px]"
+                  >
+                    <DoodleIcon name="user" className="w-3.5 h-3.5 text-slate-400" />
+                    <span>View Medical Profile</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    id="logout-btn"
+                    className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400 font-medium flex items-center space-x-2 transition-colors min-h-[38px]"
+                  >
+                    <DoodleIcon name="logout" className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+
+        {/* Mobile Navigation Sub-bar */}
+        <div className="md:hidden border-t border-slate-200/80 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between gap-1 overflow-x-auto bg-slate-50/90 dark:bg-slate-900/80 backdrop-blur-xs">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors min-h-[36px] ${
+                  isActive
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-700 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <DoodleIcon name={item.icon} className="w-3.5 h-3.5" />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* Main Full-Width Content Canvas */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {children}
+      </main>
+
+      {/* Profile Details Modal */}
+      <Modal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        title="User Medical Profile"
+        subtitle="Account identity and clinical record details"
+        icon={<DoodleIcon name="user" className="w-4 h-4" />}
+        footer={
+          <Button variant="secondary" size="sm" onClick={() => setProfileModalOpen(false)}>
+            Close
+          </Button>
+        }
+      >
+        <div className="space-y-4 text-xs">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+                Full Name
+              </span>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+                {user?.full_name || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+                Role
+              </span>
+              <div className="mt-0.5">
+                <Badge status={user?.role === 'doctor' ? 'purple' : 'normal'}>
+                  {user?.role || 'Patient'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+              Email Address
+            </span>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
+              {user?.email || 'N/A'}
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+                Unique User ID (UUID)
+              </span>
+              {copiedId && (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                  ✓ Copied to clipboard
+                </span>
+              )}
+            </div>
+            <div
+              onClick={handleCopyId}
+              title="Click to copy User ID"
+              className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between cursor-pointer hover:border-cyan-500 transition-colors"
+            >
+              <span className="truncate">{userId || 'N/A'}</span>
+              <DoodleIcon name="copy" className="w-4 h-4 text-slate-400 ml-2 shrink-0" />
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-tight">
+              Share this ID with family members or clinical providers to link records securely.
+            </p>
+          </div>
+
+          <div>
+            <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">
+              Account Created
+            </span>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              {user?.created_at ? new Date(user.created_at).toLocaleString() : 'Active session'}
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

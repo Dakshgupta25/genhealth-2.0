@@ -6,6 +6,7 @@ import DoodleIcon from '../components/common/DoodleIcon';
 import CameraCapture from '../components/upload/CameraCapture';
 import EditableResultTable from '../components/upload/EditableResultTable';
 import UploadHistory from '../components/upload/UploadHistory';
+import { Button, Card } from '../components/ui';
 
 export function UploadPage() {
   const navigate = useNavigate();
@@ -61,11 +62,11 @@ export function UploadPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-200">
       
       {/* Error Notification with Retry & Dismiss */}
       {errorMessage && (
-        <div className="p-4 rounded-2xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+        <div className="p-4 rounded-xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center space-x-2.5">
             <span className="text-base">⚠️</span>
             <div>
@@ -79,32 +80,32 @@ export function UploadPage() {
           </div>
           <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
             {selectedFile && (
-              <button
-                type="button"
+              <Button
+                variant="danger"
+                size="sm"
                 id="retry-upload-btn"
                 onClick={retryUpload}
                 disabled={isProcessing}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 active:scale-95 transition-all flex items-center space-x-1.5 shadow-sm disabled:opacity-50"
+                leftIcon={<DoodleIcon name="sparkles" className="w-3.5 h-3.5" />}
               >
-                <DoodleIcon name="sparkles" className="w-3.5 h-3.5" />
-                <span>Retry</span>
-              </button>
+                Retry
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               id="dismiss-error-btn"
               onClick={() => setErrorMessage('')}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
             >
               Dismiss
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Unsaved draft banner if user is in 'select' view but has reviewed rows */}
       {viewMode === 'select' && extractedRows.length > 0 && (
-        <div className="p-4 rounded-2xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+        <div className="p-4 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center space-x-2.5">
             <span className="text-base">📋</span>
             <span>
@@ -112,116 +113,132 @@ export function UploadPage() {
             </span>
           </div>
           <div className="flex items-center space-x-2 self-end sm:self-center shrink-0">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="sm"
               onClick={() => setViewMode('review')}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 transition-all shadow-sm"
             >
               Resume Review →
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={resetFlow}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
             >
               Discard
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
-      {/* VIEW: Select / Upload Mode */}
+      {/* VIEW 1: Select / Upload Mode */}
       {viewMode === 'select' && (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="space-y-6">
           
           {/* Header Card */}
-          <div className="p-8 rounded-3xl border shadow-sm space-y-3"
-               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                 style={{ backgroundColor: 'var(--brand-primary)' }}>
-              <DoodleIcon name="upload" className="w-4 h-4" />
-            </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                  Ingest Medical Lab Document
-                </h1>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Upload clinical lab reports to run AI extraction, canonical normalization, and abnormality detection.
-                </p>
+          <Card radius="xl">
+            <div className="p-6 sm:p-8 space-y-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700">
+                  <DoodleIcon name="upload" className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                    Ingest Clinical Lab Report
+                  </h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Extract unstructured test results with Gemini Flash, LOINC canonical matching, and biomedical NER
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </Card>
 
-          {/* Tab Selector: File Upload vs Camera vs Manual Entry */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Three Intake Option Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             
             {/* Option 1: File Upload */}
-            <div
+            <Card
+              radius="lg"
+              interactive
               onClick={() => { setUploadTab('file'); fileInputRef.current?.click(); }}
-              className={`p-6 rounded-2xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
-                uploadTab === 'file' ? 'ring-1 ring-indigo-400/40' : ''
+              className={`p-5 sm:p-6 flex flex-col justify-between space-y-4 ${
+                uploadTab === 'file'
+                  ? 'border-cyan-500/50 ring-1 ring-cyan-500/20 bg-slate-50/50 dark:bg-slate-800/40'
+                  : ''
               }`}
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
                   <DoodleIcon name="file" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold">File Upload</h3>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Select PDF or image reports (JPEG, PNG, GIF, WEBP) from your device.
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  File Upload
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Select digital PDF or image reports (JPEG, PNG, GIF, WEBP) from your device storage.
                 </p>
               </div>
-              <span className="text-xs font-bold underline" style={{ color: 'var(--text-accent)' }}>
-                Browse Files →
-              </span>
-            </div>
+              <div>
+                <Button variant="outline" size="sm" className="w-full">
+                  Browse Files →
+                </Button>
+              </div>
+            </Card>
 
             {/* Option 2: Live Camera Capture */}
-            <div
+            <Card
+              radius="lg"
+              interactive
               onClick={() => { setUploadTab('camera'); setViewMode('camera'); }}
-              className={`p-6 rounded-2xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4 ${
-                uploadTab === 'camera' ? 'ring-1 ring-indigo-400/40' : ''
+              className={`p-5 sm:p-6 flex flex-col justify-between space-y-4 ${
+                uploadTab === 'camera'
+                  ? 'border-cyan-500/50 ring-1 ring-cyan-500/20 bg-slate-50/50 dark:bg-slate-800/40'
+                  : ''
               }`}
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
               <div className="space-y-2">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--text-accent)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                   <DoodleIcon name="camera" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold">Live Camera Capture</h3>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Use your phone camera or webcam to scan physical paper test sheets.
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Live Camera Scanner
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Use device webcam or mobile camera to capture physical paper lab printouts directly.
                 </p>
               </div>
-              <span className="text-xs font-bold underline" style={{ color: 'var(--text-accent)' }}>
-                Open Camera →
-              </span>
-            </div>
+              <div>
+                <Button variant="outline" size="sm" className="w-full">
+                  Open Camera →
+                </Button>
+              </div>
+            </Card>
 
             {/* Option 3: Manual Entry */}
-            <div
+            <Card
+              radius="lg"
+              interactive
               onClick={handleManualEntryInit}
-              className="p-6 rounded-3xl border shadow-sm cursor-pointer transition-all hover:scale-[1.01] flex flex-col justify-between space-y-4"
-              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
+              className="p-5 sm:p-6 flex flex-col justify-between space-y-4"
             >
               <div className="space-y-2">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                     style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-                  <DoodleIcon name="pen" className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                  <DoodleIcon name="pen" className="w-4 h-4" />
                 </div>
-                <h3 className="text-base font-bold">Enter Manually</h3>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Type individual test results manually into structured medical fields.
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Enter Manually
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Directly input individual biomarker measurements, values, and bounds into a structured grid.
                 </p>
               </div>
-              <span className="text-xs font-bold underline" style={{ color: 'var(--text-accent)' }}>
-                Start Manual Table →
-              </span>
-            </div>
+              <div>
+                <Button variant="outline" size="sm" className="w-full">
+                  Start Manual Table →
+                </Button>
+              </div>
+            </Card>
           </div>
 
           {/* Hidden File Input */}
@@ -238,26 +255,27 @@ export function UploadPage() {
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onClick={() => fileInputRef.current?.click()}
-            className="p-12 border-2 border-dashed rounded-3xl text-center space-y-4 cursor-pointer hover:border-indigo-400 transition-all"
-            style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-card)' }}
+            className="p-10 sm:p-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center space-y-4 cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-400 bg-white dark:bg-slate-900/60 transition-all shadow-xs"
           >
-            <div className="w-14 h-14 mx-auto rounded-3xl flex items-center justify-center"
-                 style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-              <DoodleIcon name="upload" className="w-7 h-7" />
+            <div className="w-12 h-12 mx-auto rounded-xl flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400">
+              <DoodleIcon name="upload" className="w-6 h-6" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-bold">Drag & drop your lab report here</h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="space-y-1 max-w-sm mx-auto">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                Drag &amp; drop your lab report here
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Supports PDF, JPEG, PNG, WEBP, and GIF formats up to 25MB
               </p>
             </div>
-            <button
+            <Button
+              variant="primary"
+              size="md"
               type="button"
-              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-sm"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
+              leftIcon={<DoodleIcon name="file" className="w-3.5 h-3.5" />}
             >
               Select Document
-            </button>
+            </Button>
           </div>
 
           {/* Upload History with Clickable Measures Table */}
@@ -265,7 +283,7 @@ export function UploadPage() {
         </div>
       )}
 
-      {/* VIEW: Camera Mode */}
+      {/* VIEW 2: Camera Scanner Mode */}
       {viewMode === 'camera' && (
         <CameraCapture
           onCapture={handleCameraCapture}
@@ -273,137 +291,163 @@ export function UploadPage() {
         />
       )}
 
-      {/* VIEW: Processing Pipeline State */}
+      {/* VIEW 3: Multi-Stage Processing Pipeline */}
       {viewMode === 'processing' && (
-        <div className="p-10 rounded-3xl border shadow-xl max-w-xl mx-auto space-y-8 text-center animate-in fade-in duration-300"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          
-          <div className="relative w-20 h-20 mx-auto">
-            <div className="w-20 h-20 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-            <div className="absolute inset-0 flex items-center justify-center text-indigo-600">
-              <DoodleIcon name="heartbeat" className="w-8 h-8" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold">Extracting & Analyzing Lab Report</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Our 3-stage clinical pipeline is processing {selectedFile?.name || 'your document'} in real-time.
-            </p>
-          </div>
-
-          {/* Step Progress Checklist */}
-          <div className="space-y-3 text-left p-6 rounded-2xl border text-xs"
-               style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
+        <Card radius="xl" className="max-w-xl mx-auto shadow-lg">
+          <div className="p-8 sm:p-10 space-y-8 text-center">
             
-            <div className="flex items-center space-x-3">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                processingStage >= 1 ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
-                {processingStage >= 2 ? '✓' : '1'}
-              </span>
-              <span className={processingStage >= 1 ? 'font-bold' : 'text-slate-400'}>
-                Uploading document & verifying format
-              </span>
+            {/* Pulsing Spinner Icon */}
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="w-16 h-16 rounded-full border-3 border-cyan-200 border-t-cyan-600 animate-spin dark:border-cyan-950 dark:border-t-cyan-400" />
+              <div className="absolute inset-0 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                <DoodleIcon name="heartbeat" className="w-6 h-6" />
+              </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                processingStage >= 2 ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
-                {processingStage >= 3 ? '✓' : '2'}
-              </span>
-              <span className={processingStage >= 2 ? 'font-bold' : 'text-slate-400'}>
-                Stage 1: Gemini 2.5 Flash OCR & table extraction
-              </span>
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+                Extracting &amp; Analyzing Lab Report
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Processing <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedFile?.name || 'your document'}</span> through the clinical intelligence pipeline.
+              </p>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                processingStage >= 3 ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
-                {processingStage >= 4 ? '✓' : '3'}
-              </span>
-              <span className={processingStage >= 3 ? 'font-bold' : 'text-slate-400'}>
-                Stage 2a: RapidFuzz canonical normalizer & LOINC mapping
-              </span>
-            </div>
+            {/* Step Progress Multi-Stage Checklist */}
+            <div className="space-y-3 text-left p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs">
+              
+              {/* Step 1 */}
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                    processingStage >= 2
+                      ? 'bg-emerald-600 text-white'
+                      : processingStage >= 1
+                      ? 'bg-cyan-600 text-white animate-pulse'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {processingStage >= 2 ? '✓' : '1'}
+                </span>
+                <span className={processingStage >= 1 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                  Stage 0: Document verification &amp; MIME validation
+                </span>
+              </div>
 
-            <div className="flex items-center space-x-3">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                processingStage >= 4 ? 'bg-emerald-500 text-white' : 'bg-slate-300 text-slate-700'
-              }`}>
-                {processingStage > 4 ? '✓' : '4'}
-              </span>
-              <span className={processingStage >= 4 ? 'font-bold' : 'text-slate-400'}>
-                Stage 2b: Biomedical NER & narrative entity parsing
-              </span>
+              {/* Step 2 */}
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                    processingStage >= 3
+                      ? 'bg-emerald-600 text-white'
+                      : processingStage === 2
+                      ? 'bg-cyan-600 text-white animate-pulse'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {processingStage >= 3 ? '✓' : '2'}
+                </span>
+                <span className={processingStage >= 2 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                  Stage 1: Gemini 2.5 Flash OCR &amp; tabular measure parsing
+                </span>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                    processingStage >= 4
+                      ? 'bg-emerald-600 text-white'
+                      : processingStage === 3
+                      ? 'bg-cyan-600 text-white animate-pulse'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {processingStage >= 4 ? '✓' : '3'}
+                </span>
+                <span className={processingStage >= 3 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                  Stage 2a: RapidFuzz LOINC canonical normalizer
+                </span>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex items-center space-x-3">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                    processingStage > 4
+                      ? 'bg-emerald-600 text-white'
+                      : processingStage >= 4
+                      ? 'bg-cyan-600 text-white animate-pulse'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {processingStage > 4 ? '✓' : '4'}
+                </span>
+                <span className={processingStage >= 4 ? 'font-semibold text-slate-900 dark:text-slate-100' : 'text-slate-400'}>
+                  Stage 2b: Biomedical NER &amp; entity relationship tagging
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* VIEW: Editable Result Review */}
+      {/* VIEW 4: Editable Result Table Review */}
       {viewMode === 'review' && (
-        <div className="space-y-6">
-          <EditableResultTable
-            key={reportId || (uploadTab === 'manual' ? 'manual' : 'review')}
-            initialRows={extractedRows}
-            reportId={reportId}
-            isManual={uploadTab === 'manual'}
-            saving={isSaving}
-            onChange={setExtractedRows}
-            onSave={handleSaveCommit}
-            onCancel={resetFlow}
-          />
-        </div>
+        <EditableResultTable
+          key={reportId || (uploadTab === 'manual' ? 'manual' : 'review')}
+          initialRows={extractedRows}
+          reportId={reportId}
+          isManual={uploadTab === 'manual'}
+          saving={isSaving}
+          onChange={setExtractedRows}
+          onSave={handleSaveCommit}
+          onCancel={resetFlow}
+        />
       )}
 
-      {/* VIEW: Success Confirmation */}
+      {/* VIEW 5: Success Confirmation */}
       {viewMode === 'success' && (
-        <div className="p-10 rounded-3xl border shadow-xl text-center max-w-lg mx-auto space-y-6 animate-in fade-in duration-300"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 shadow-inner">
-            <DoodleIcon name="check" className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Measurements Saved Successfully</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {pipelineSummary?.result_count || extractedRows.length} clinical measures have been indexed into your longitudinal record.
-            </p>
-          </div>
-
-          {reportId && (
-            <div className="p-3 rounded-xl border text-xs font-mono"
-                 style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
-              Report ID: {reportId}
+        <Card radius="xl" className="max-w-lg mx-auto text-center shadow-lg">
+          <div className="p-8 sm:p-10 space-y-6">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 shadow-inner">
+              <DoodleIcon name="check" className="w-7 h-7" />
             </div>
-          )}
 
-          <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => navigate('/')}
-              className="px-6 py-3 rounded-2xl text-xs font-bold text-white shadow-md transition-all active:scale-95"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
-            >
-              Go to Dashboard
-            </button>
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+                Measurements Saved Successfully
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {pipelineSummary?.result_count || extractedRows.length} clinical measures have been verified and indexed into your longitudinal database.
+              </p>
+            </div>
 
-            <button
-              onClick={resetFlow}
-              className="px-6 py-3 rounded-2xl text-xs font-bold border transition-all hover:opacity-80"
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              Upload Another Report
-            </button>
+            {reportId && (
+              <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-300">
+                Report Reference ID: {reportId}
+              </div>
+            )}
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-2.5 justify-center">
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => navigate('/')}
+              >
+                Go to Dashboard
+              </Button>
+
+              <Button
+                variant="outline"
+                size="md"
+                onClick={resetFlow}
+              >
+                Upload Another Report
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

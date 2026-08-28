@@ -1,92 +1,138 @@
 :root {
-  /* Minimal Medical Doodle Design Tokens */
+  /* ==========================================================================
+     GenHealth AI - Clean Medical Precision Design Tokens
+     ========================================================================== */
 
-  /* Light Theme: Soft periwinkle/lavender-blue background with deep navy text */
-  --bg-primary: #EEF2F9;
-  --bg-secondary: #E4EBF5;
-  --bg-card: #FFFFFF;
+  /* Light Theme Canvas & Surfaces */
+  --bg-canvas: #F8FAFC;          /* Canvas: Clean Slate 50 */
+  --bg-primary: #F8FAFC;         /* Legacy alias */
+  --bg-secondary: #F1F5F9;       /* Secondary container: Slate 100 */
+  --bg-subtle: #F1F5F9;
+  --bg-surface: #FFFFFF;         /* Crisp White Card/Panel surface */
+  --bg-card: #FFFFFF;            /* Legacy alias */
   --bg-card-hover: #F8FAFC;
   --bg-input: #FFFFFF;
-  --bg-accent-corner: #0E1626;
+  --bg-accent-corner: transparent; /* Deprecated corner decoration */
 
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
-  --text-accent: #3B5284;
+  /* Typography Colors - WCAG AAA Contrast */
+  --text-primary: #0F172A;       /* Slate 900 */
+  --text-secondary: #475569;     /* Slate 600 */
+  --text-muted: #64748B;         /* Slate 500 */
+  --text-accent: #0891B2;        /* Clinical Teal / Cyan 600 */
   --text-on-accent: #FFFFFF;
+  --text-on-primary: #FFFFFF;
 
-  --border-subtle: #D8E2F0;
-  --border-focus: #3B5284;
-  --border-card: rgba(216, 226, 240, 0.8);
+  /* Borders & Dividers */
+  --border-subtle: #E2E8F0;      /* Slate 200 */
+  --border-card: #E2E8F0;
+  --border-focus: #0891B2;       /* Focus ring brand teal */
 
-  /* Brand colors — light mode */
-  --brand-primary: #1E293B;         /* Primary buttons: deep navy, always legible with white text */
-  --brand-primary-hover: #0F172A;
-  --brand-nav-active: #2D3F60;      /* Nav active pill: rich indigo-navy, white text readable */
-  --brand-accent-indigo: #4F6FAA;   /* Soft lavender-indigo for accent tints */
-  --brand-lavender: #7C8BA6;
+  /* Brand Colors - Light Mode */
+  --brand-primary: #0F172A;         /* Primary Action: Deep Slate Navy */
+  --brand-primary-hover: #1E293B;   /* Slate 800 */
+  --brand-teal: #0891B2;            /* Clinical Teal / Cyan 600 */
+  --brand-teal-hover: #0E7490;      /* Teal 700 */
+  --brand-cyan: #06B6D4;            /* Cyan 500 */
+  --brand-nav-active: #0F172A;      /* Deep navy for active nav pill */
+  --brand-accent-indigo: #0891B2;   /* Clinical teal */
+  --brand-lavender: #64748B;
   --brand-periwinkle: #94A3B8;
-  --brand-soft-blue: #D6E4F0;
-  --brand-pill-bg: #E2E8F0;
+  --brand-soft-blue: #E0F2FE;       /* Sky 100 subtle tint */
+  --brand-pill-bg: #F1F5F9;
 
-  --status-normal: #10B981;
-  --status-normal-bg: #ECFDF5;
-  --status-warning: #F59E0B;
-  --status-warning-bg: #FFFBEB;
-  --status-critical: #EF4444;
-  --status-critical-bg: #FEF2F2;
+  /* Diagnostic Status Colors */
+  --status-normal: #059669;         /* Emerald 600 */
+  --status-normal-bg: #ECFDF5;      /* Emerald 50 */
+  --status-normal-border: #A7F3D0;  /* Emerald 200 */
+  --status-warning: #D97706;        /* Amber 600 */
+  --status-warning-bg: #FFFBEB;     /* Amber 50 */
+  --status-warning-border: #FDE68A; /* Amber 200 */
+  --status-critical: #DC2626;       /* Red 600 */
+  --status-critical-bg: #FEF2F2;    /* Red 50 */
+  --status-critical-border: #FECACA;/* Red 200 */
+  --status-info: #2563EB;           /* Blue 600 */
+  --status-info-bg: #EFF6FF;        /* Blue 50 */
+  --status-info-border: #BFDBFE;    /* Blue 200 */
 
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
+  /* Typography */
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
+  /* Border Radius Scale (Crisp & Structured) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --shadow-hover: 0 10px 25px -3px rgba(15, 23, 42, 0.08);
+  /* Elevation & Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  --shadow-hover: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
 }
 
 [data-theme="dark"], .dark {
-  /* Inverted Palette: Deep Navy background with soft lavender/periwinkle text & cards */
-  --bg-primary: #0B1120;
-  --bg-secondary: #131D31;
-  --bg-card: #182238;
-  --bg-card-hover: #1E2B47;
-  --bg-input: #111A2E;
-  --bg-accent-corner: #1E293B;
+  /* Dark Theme Canvas & Surfaces */
+  --bg-canvas: #0B0F17;          /* Slate-black */
+  --bg-primary: #0B0F17;
+  --bg-secondary: #111827;       /* Gray 900 */
+  --bg-subtle: #1E293B;
+  --bg-surface: #111827;         /* Card surface */
+  --bg-card: #111827;
+  --bg-card-hover: #161F30;
+  --bg-input: #0F172A;
+  --bg-accent-corner: transparent;
 
-  --text-primary: #F1F5F9;
-  --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
-  --text-accent: #93C5FD;
-  --text-on-accent: #FFFFFF;
+  /* Typography Colors - Dark Mode */
+  --text-primary: #F8FAFC;       /* Slate 50 */
+  --text-secondary: #CBD5E1;     /* Slate 300 */
+  --text-muted: #94A3B8;         /* Slate 400 */
+  --text-accent: #22D3EE;        /* Cyan 400 */
+  --text-on-accent: #0F172A;
+  --text-on-primary: #FFFFFF;
 
-  --border-subtle: #24324D;
-  --border-focus: #60A5FA;
-  --border-card: #202D45;
+  /* Borders & Dividers - Dark Mode */
+  --border-subtle: #1E293B;      /* Slate 800 */
+  --border-card: #1E293B;
+  --border-focus: #38BDF8;       /* Sky 400 */
 
-  /* Brand colors — dark mode
-     CRITICAL: --brand-primary must be a DARK fill so white text is legible on top.
-     In dark mode we use a rich indigo-blue (not near-white) for all primary buttons. */
-  --brand-primary: #2D4A7A;         /* Indigo-blue button fill — white text always visible */
-  --brand-primary-hover: #3A5A8F;
-  --brand-nav-active: #2D4A7A;      /* Nav active pill — same indigo, white label readable */
-  --brand-accent-indigo: #4F6FAA;
+  /* Brand Colors - Dark Mode */
+  --brand-primary: #1E293B;         /* Slate 800 */
+  --brand-primary-hover: #334155;   /* Slate 700 */
+  --brand-teal: #06B6D4;            /* Cyan 500 */
+  --brand-teal-hover: #22D3EE;
+  --brand-cyan: #22D3EE;
+  --brand-nav-active: #1E293B;
+  --brand-accent-indigo: #06B6D4;
   --brand-lavender: #94A3B8;
   --brand-periwinkle: #64748B;
-  --brand-soft-blue: rgba(93, 143, 209, 0.15);  /* Subtle tint, not heavy solid fill */
+  --brand-soft-blue: rgba(6, 182, 212, 0.12); /* Subtle cyan tint */
   --brand-pill-bg: #1E293B;
 
-  --status-normal: #34D399;
-  --status-normal-bg: rgba(16, 185, 129, 0.12);
-  --status-warning: #FBBF24;
-  --status-warning-bg: rgba(245, 158, 11, 0.12);
-  --status-critical: #F87171;
-  --status-critical-bg: rgba(239, 68, 68, 0.12);
+  /* Diagnostic Status Colors - Dark Mode */
+  --status-normal: #34D399;         /* Emerald 400 */
+  --status-normal-bg: rgba(16, 185, 129, 0.14);
+  --status-normal-border: rgba(52, 211, 153, 0.3);
+  --status-warning: #FBBF24;        /* Amber 400 */
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
+  --status-warning-border: rgba(251, 191, 36, 0.3);
+  --status-critical: #F87171;       /* Red 400 */
+  --status-critical-bg: rgba(239, 68, 68, 0.14);
+  --status-critical-border: rgba(248, 113, 113, 0.3);
+  --status-info: #60A5FA;           /* Blue 400 */
+  --status-info-bg: rgba(59, 130, 246, 0.14);
+  --status-info-border: rgba(96, 165, 250, 0.3);
 
-  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
-  --shadow-hover: 0 10px 25px -3px rgba(0, 0, 0, 0.5);
+  /* Elevation & Shadows - Dark Mode */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
 }

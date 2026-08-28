@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import DoodleIcon from '../components/common/DoodleIcon';
+import { Button, Card, FormField, Input } from '../components/ui';
 
 export function LoginPage() {
   const [portalMode, setPortalMode] = useState('patient'); // 'patient' | 'doctor'
@@ -34,7 +35,6 @@ export function LoginPage() {
       } else {
         await login(email, password);
       }
-      // Navigate to default landing view: Dashboard
       navigate('/');
     } catch (err) {
       const detail = err.response?.data?.detail;
@@ -49,62 +49,49 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-6 relative overflow-hidden selection:bg-slate-800 selection:text-white"
-         style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      
-      {/* Visual Accent: Top-Right Dark Corner Shape */}
-      <div 
-        className="absolute top-0 right-0 w-80 h-32 md:w-96 md:h-48 pointer-events-none z-0 rounded-bl-[100px] transition-all duration-300 opacity-95"
-        style={{ backgroundColor: 'var(--bg-accent-corner)' }}
-      >
-        <div className="absolute top-6 right-8 flex items-center space-x-2 text-xs font-mono text-slate-300">
-          <DoodleIcon name="heartbeat" className="w-4 h-4 text-sky-400" />
-          <span>GenHealth Portal</span>
-        </div>
-      </div>
-
-      {/* Floating Theme Toggle */}
+    <div
+      className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 relative selection:bg-slate-800 selection:text-white transition-colors duration-200"
+      style={{ backgroundColor: 'var(--bg-canvas)', color: 'var(--text-primary)' }}
+    >
+      {/* Floating Theme Toggle (Top Left/Right) */}
       <button
         onClick={toggleTheme}
-        className="absolute top-6 left-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-full border shadow-sm text-xs font-medium transition-all"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+        id="login-theme-toggle"
+        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
       >
         <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5" />
         <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
       </button>
 
-      {/* Main Login / Portal Card */}
-      <div className="w-full max-w-md relative z-10 space-y-6">
+      {/* Main Authentication Container */}
+      <div className="w-full max-w-md space-y-6 my-auto z-10">
         
-        {/* Header Branding */}
+        {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-xl items-center justify-center shadow-md mb-2"
-               style={{ backgroundColor: 'var(--brand-primary)', color: 'var(--text-on-accent)' }}>
-            <DoodleIcon name="logo-pulse" className="w-7 h-7" strokeWidth={1.5} />
+          <div className="inline-flex w-12 h-12 rounded-xl items-center justify-center bg-slate-900 text-white dark:bg-slate-800 dark:border dark:border-slate-700 shadow-md mb-1">
+            <DoodleIcon name="logo-pulse" className="w-7 h-7 text-cyan-400" strokeWidth={1.6} />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: 'var(--font-heading)' }}>
-            GenHealth <span style={{ color: 'var(--text-accent)' }}>AI</span>
-          </h1>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-            Clinical AI &amp; Health Intelligence Platform
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+              GenHealth <span className="text-cyan-600 dark:text-cyan-400">AI</span>
+            </h1>
+            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-0.5">
+              Clinical AI &amp; Diagnostic Intelligence Platform
+            </p>
+          </div>
         </div>
 
-        {/* Portal Selector: Patient vs Doctor / Hospital Portal */}
-        <div className="p-1 rounded-2xl border flex items-center shadow-sm"
-             style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)' }}>
+        {/* Portal Mode Segmented Control */}
+        <div className="p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center gap-1">
           <button
             type="button"
             onClick={() => { setPortalMode('patient'); setErrorMessage(''); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 min-h-[40px] ${
               portalMode === 'patient'
-                ? 'shadow-sm'
-                : 'opacity-70 hover:opacity-100'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-xs border border-slate-200/80 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
-            style={{
-              backgroundColor: portalMode === 'patient' ? 'var(--bg-card)' : 'transparent',
-              color: portalMode === 'patient' ? 'var(--text-primary)' : 'var(--text-muted)',
-            }}
           >
             <DoodleIcon name="user" className="w-3.5 h-3.5" />
             <span>Patient Portal</span>
@@ -113,38 +100,30 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => { setPortalMode('doctor'); setAuthMode('login'); setErrorMessage(''); }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 ${
+            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 min-h-[40px] ${
               portalMode === 'doctor'
-                ? 'shadow-sm'
-                : 'opacity-70 hover:opacity-100'
+                ? 'bg-slate-900 dark:bg-slate-800 text-white dark:text-cyan-300 shadow-xs border border-slate-800 dark:border-slate-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
-            style={{
-              backgroundColor: portalMode === 'doctor' ? 'var(--brand-primary)' : 'transparent',
-              color: portalMode === 'doctor' ? 'var(--text-on-accent)' : 'var(--text-muted)',
-            }}
           >
             <DoodleIcon name="doctor" className="w-3.5 h-3.5" />
             <span>Doctor / Hospital</span>
           </button>
         </div>
 
-        {/* Form Container */}
-        <div className={`p-8 rounded-3xl border shadow-xl transition-all space-y-6 ${
-          portalMode === 'doctor' ? 'ring-2 ring-indigo-500/30' : ''
-        }`}
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          
+        {/* Authentication Card Form */}
+        <Card radius="xl" className="shadow-lg p-6 sm:p-8 space-y-6">
           {/* Header text based on mode */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-50">
                 {portalMode === 'doctor' 
                   ? 'Clinical Provider Access' 
                   : authMode === 'login' 
                     ? 'Patient Sign In' 
                     : 'Create Patient Account'}
               </h2>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {portalMode === 'doctor'
                   ? 'Access multi-patient lab analytics and clinical trends'
                   : authMode === 'login'
@@ -153,7 +132,7 @@ export function LoginPage() {
               </p>
             </div>
             {portalMode === 'doctor' && (
-              <span className="p-2 rounded-xl text-indigo-500 bg-indigo-50 dark:bg-indigo-950/40">
+              <span className="p-2 rounded-lg text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 dark:text-cyan-400 shrink-0">
                 <DoodleIcon name="stethoscope" className="w-5 h-5" />
               </span>
             )}
@@ -161,128 +140,86 @@ export function LoginPage() {
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3.5 rounded-xl text-xs font-medium border text-red-700 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300">
-              {errorMessage}
+            <div className="p-3.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300 flex items-center space-x-2">
+              <span>⚠️</span>
+              <span>{errorMessage}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
             {portalMode === 'patient' && authMode === 'signup' && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Full Name
-                </label>
-                <input
+              <FormField label="Full Name" required>
+                <Input
                   type="text"
                   required
                   placeholder="e.g. Eleanor Vance"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all focus:ring-2"
-                  style={{
-                    backgroundColor: 'var(--bg-input)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                  }}
                 />
-              </div>
+              </FormField>
             )}
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                Email Address
-              </label>
-              <input
+            <FormField label="Email Address" required>
+              <Input
                 type="email"
                 required
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all focus:ring-2"
-                style={{
-                  backgroundColor: 'var(--bg-input)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
               />
-            </div>
+            </FormField>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                Password
-              </label>
-              <input
+            <FormField label="Password" required>
+              <Input
                 type="password"
                 required
                 minLength={8}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all focus:ring-2"
-                style={{
-                  backgroundColor: 'var(--bg-input)',
-                  borderColor: 'var(--border-subtle)',
-                  color: 'var(--text-primary)',
-                }}
               />
-            </div>
+            </FormField>
 
             {portalMode === 'doctor' && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Hospital / Clinical ID Code (Optional)
-                </label>
-                <input
+              <FormField label="Hospital / Clinical ID Code (Optional)">
+                <Input
                   type="text"
+                  mono
                   placeholder="HOSP-CLINIC-CODE"
                   value={doctorCode}
                   onChange={(e) => setDoctorCode(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm border outline-none transition-all focus:ring-2 font-mono"
-                  style={{
-                    backgroundColor: 'var(--bg-input)',
-                    borderColor: 'var(--border-subtle)',
-                    color: 'var(--text-primary)',
-                  }}
                 />
-              </div>
+              </FormField>
             )}
 
-            <button
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-[0.99] disabled:opacity-50 text-white flex items-center justify-center space-x-2"
-              style={{
-                backgroundColor: 'var(--brand-primary)',
-              }}
+              variant="primary"
+              size="lg"
+              loading={loading}
+              className="w-full mt-2"
+              leftIcon={<DoodleIcon name="check" className="w-4 h-4 text-cyan-400" />}
             >
-              {loading ? (
-                <span>Authenticating...</span>
-              ) : (
-                <>
-                  <span>
-                    {portalMode === 'doctor'
-                      ? 'Access Doctor Portal'
-                      : authMode === 'login'
-                        ? 'Sign In to Dashboard'
-                        : 'Complete Sign Up'}
-                  </span>
-                  <DoodleIcon name="check" className="w-4 h-4" />
-                </>
-              )}
-            </button>
+              {loading
+                ? 'Authenticating...'
+                : portalMode === 'doctor'
+                ? 'Access Doctor Portal'
+                : authMode === 'login'
+                ? 'Sign In to Dashboard'
+                : 'Complete Sign Up'}
+            </Button>
           </form>
 
           {/* Toggle Login vs Signup (For Patient Portal) */}
           {portalMode === 'patient' && (
-            <div className="pt-2 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
               {authMode === 'login' ? (
                 <p>
                   Don't have an account yet?{' '}
                   <button
                     type="button"
                     onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
-                    className="font-bold underline ml-1"
-                    style={{ color: 'var(--text-accent)' }}
+                    className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline ml-1"
                   >
                     Sign Up
                   </button>
@@ -293,8 +230,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
-                    className="font-bold underline ml-1"
-                    style={{ color: 'var(--text-accent)' }}
+                    className="font-bold text-cyan-600 dark:text-cyan-400 hover:underline ml-1"
                   >
                     Sign In
                   </button>
@@ -302,7 +238,7 @@ export function LoginPage() {
               )}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

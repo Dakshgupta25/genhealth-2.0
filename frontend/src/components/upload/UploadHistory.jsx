@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getUserRecentReports, getReportResults, updateReportName } from '../../api/reports';
 import DoodleIcon from '../common/DoodleIcon';
+import { Button, Badge, Card, EmptyState } from '../ui';
 
 /**
  * Helper to format date string to YYYY-MM-DD format (or fallback).
@@ -20,20 +21,20 @@ function formatDate(dateStr) {
 }
 
 /**
- * Returns badge styling for abnormality flags.
+ * Returns status metadata for abnormality flags.
  */
-function getAbnormalityBadge(flag) {
+function getAbnormalityMeta(flag) {
   switch (flag?.toLowerCase()) {
     case 'high':
-      return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 border-red-200 dark:border-red-900';
+      return { status: 'critical', label: 'High' };
     case 'low':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-900';
+      return { status: 'warning', label: 'Low' };
     case 'normal':
-      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900';
+      return { status: 'normal', label: 'Normal' };
     case 'critical':
-      return 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200 dark:border-purple-900 font-black animate-pulse';
+      return { status: 'critical', label: 'Critical' };
     default:
-      return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+      return { status: 'neutral', label: flag || 'Unknown' };
   }
 }
 
@@ -61,7 +62,6 @@ export function UploadHistory({ userId, refreshTrigger }) {
     setError('');
     try {
       const data = await getUserRecentReports(userId);
-      // Strictly filter to ensure only successfully extracted reports appear in history
       const successfulReports = Array.isArray(data)
         ? data.filter((r) => r.status === 'done' && (r.result_count === undefined || r.result_count > 0))
         : [];
@@ -79,18 +79,15 @@ export function UploadHistory({ userId, refreshTrigger }) {
   }, [fetchHistory, refreshTrigger]);
 
   const toggleReportMeasures = async (reportId) => {
-    // If currently editing this report's name, don't collapse/expand
     if (editingReportId === reportId) return;
 
     if (expandedReportId === reportId) {
-      // Collapse
       setExpandedReportId(null);
       return;
     }
 
     setExpandedReportId(reportId);
 
-    // If measures are not already loaded, fetch them
     if (!measuresCache[reportId]) {
       setLoadingMeasures((prev) => ({ ...prev, [reportId]: true }));
       try {
@@ -144,57 +141,52 @@ export function UploadHistory({ userId, refreshTrigger }) {
   };
 
   return (
-    <div className="space-y-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+    <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
       {/* Section Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white"
-               style={{ backgroundColor: 'var(--brand-primary)' }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">
             <DoodleIcon name="history" className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight">Upload History</h2>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              Successfully extracted reports • Click to view measures or edit report names anytime
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-50 tracking-tight">
+              Ingested Lab Report History
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Successfully parsed reports • Click to expand individual biomarker measures
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={fetchHistory}
           disabled={loading}
-          className="px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center space-x-1.5 transition-all hover:bg-slate-500/10 active:scale-95 disabled:opacity-50"
-          style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
-          title="Refresh History"
+          leftIcon={<DoodleIcon name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
         >
-          <DoodleIcon name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+          Refresh
+        </Button>
       </div>
 
       {/* Error state */}
       {error && (
-        <div className="p-3.5 rounded-2xl text-xs text-red-700 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-center justify-between">
+        <div className="p-3.5 rounded-lg text-xs text-red-700 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-center justify-between">
           <span>{error}</span>
-          <button
-            type="button"
-            onClick={fetchHistory}
-            className="underline font-bold text-red-800 dark:text-red-300 ml-2"
-          >
+          <Button variant="ghost" size="sm" onClick={fetchHistory} className="text-red-800 dark:text-red-300">
             Retry
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Rename error notification */}
       {renameError && (
-        <div className="p-3 rounded-xl text-xs text-red-700 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 flex items-center justify-between">
+        <div className="p-3 rounded-lg text-xs text-red-700 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 flex items-center justify-between">
           <span>⚠️ {renameError}</span>
           <button
             type="button"
             onClick={() => setRenameError('')}
-            className="text-xs text-red-700 dark:text-red-300 font-bold ml-2"
+            className="text-xs text-red-700 dark:text-red-300 font-bold ml-2 underline"
           >
             Dismiss
           </button>
@@ -203,25 +195,17 @@ export function UploadHistory({ userId, refreshTrigger }) {
 
       {/* Loading state */}
       {loading && reports.length === 0 ? (
-        <div className="p-8 rounded-2xl border text-center space-y-2"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-          <div className="w-6 h-6 mx-auto rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />
+        <Card radius="lg" className="p-8 text-center space-y-2">
+          <div className="w-6 h-6 mx-auto rounded-full border-2 border-cyan-400 border-t-cyan-600 animate-spin" />
           <p className="text-xs text-slate-400">Loading upload history...</p>
-        </div>
+        </Card>
       ) : error ? null : reports.length === 0 ? (
         /* Empty state */
-        <div className="p-8 rounded-2xl border border-dashed text-center space-y-2"
-             style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-subtle)' }}>
-          <div className="w-10 h-10 mx-auto rounded-2xl flex items-center justify-center text-slate-400 bg-slate-100 dark:bg-slate-800">
-            <DoodleIcon name="file" className="w-5 h-5" />
-          </div>
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-            No successfully extracted lab reports yet.
-          </p>
-          <p className="text-[11px] text-slate-400">
-            Upload your lab report or enter measurements above to see your extracted history here.
-          </p>
-        </div>
+        <EmptyState
+          icon={<DoodleIcon name="file" className="w-5 h-5" />}
+          title="No Extracted Reports Recorded Yet"
+          description="Your verified lab reports and parsed biomarker measures will appear here once ingested."
+        />
       ) : (
         /* Reports History List */
         <div className="space-y-3">
@@ -234,27 +218,25 @@ export function UploadHistory({ userId, refreshTrigger }) {
             const reportName = report.original_filename || 'Lab Report';
 
             return (
-              <div
+              <Card
                 key={report.id}
-                className="rounded-2xl border shadow-sm transition-all overflow-hidden"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  borderColor: isExpanded ? 'var(--brand-primary)' : 'var(--border-card)',
-                }}
+                radius="lg"
+                className={`transition-all overflow-hidden ${
+                  isExpanded ? 'border-cyan-500/50 shadow-xs' : ''
+                }`}
               >
                 {/* Header item: DATE - NAME OF REPORT */}
                 <div
                   onClick={() => toggleReportMeasures(report.id)}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-slate-500/5 transition-colors select-none"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors select-none"
                 >
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                        isExpanded ? 'text-white' : 'text-slate-500 bg-slate-100 dark:bg-slate-800'
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                        isExpanded
+                          ? 'bg-slate-900 text-white dark:bg-slate-800'
+                          : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                       }`}
-                      style={{
-                        backgroundColor: isExpanded ? 'var(--brand-primary)' : undefined,
-                      }}
                     >
                       <DoodleIcon name="file" className="w-4 h-4" />
                     </div>
@@ -266,7 +248,7 @@ export function UploadHistory({ userId, refreshTrigger }) {
                           className="flex flex-wrap items-center gap-2 py-0.5"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <span className="font-mono text-indigo-600 dark:text-indigo-400 shrink-0 text-sm font-bold">
+                          <span className="font-mono text-cyan-600 dark:text-cyan-400 shrink-0 text-xs font-bold">
                             {formattedDate} -
                           </span>
                           <input
@@ -279,37 +261,32 @@ export function UploadHistory({ userId, refreshTrigger }) {
                             }}
                             autoFocus
                             placeholder="Report name..."
-                            className="px-2.5 py-1 text-xs font-bold rounded-xl border focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white dark:bg-slate-900 border-indigo-300 dark:border-indigo-700 min-w-[200px] flex-1 max-w-md shadow-sm"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-md border border-cyan-400 dark:border-cyan-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-w-[180px] flex-1 max-w-sm focus:outline-none"
                           />
                           <div className="flex items-center space-x-1 shrink-0">
-                            <button
-                              type="button"
+                            <Button
+                              variant="teal"
+                              size="sm"
                               onClick={(e) => saveReportName(e, report.id)}
-                              disabled={savingNameId === report.id}
-                              title="Save name"
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all flex items-center space-x-1 shadow-sm disabled:opacity-50"
+                              loading={savingNameId === report.id}
+                              leftIcon={<DoodleIcon name="check" className="w-3 h-3" />}
                             >
-                              <DoodleIcon name="check" className="w-3.5 h-3.5" />
-                              <span>Save</span>
-                            </button>
-                            <button
-                              type="button"
+                              Save
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={cancelEditing}
-                              title="Cancel"
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-600 dark:text-slate-300"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : (
                         /* Standard Display: DATE - NAME OF REPORT with Edit Button */
                         <div className="flex items-center space-x-2 group/title">
-                          <h3
-                            className="text-sm font-bold truncate flex items-center space-x-1.5"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            <span className="font-mono text-indigo-600 dark:text-indigo-400 shrink-0">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate flex items-center space-x-1.5">
+                            <span className="font-mono text-cyan-600 dark:text-cyan-400 shrink-0">
                               {formattedDate}
                             </span>
                             <span className="text-slate-400 shrink-0">-</span>
@@ -319,15 +296,15 @@ export function UploadHistory({ userId, refreshTrigger }) {
                             type="button"
                             onClick={(e) => startEditing(e, report)}
                             title="Edit report name"
-                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 opacity-70 group-hover/title:opacity-100 transition-all shrink-0"
+                            className="p-1 rounded-md text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950/50 opacity-70 group-hover/title:opacity-100 transition-all shrink-0"
                           >
                             <DoodleIcon name="pen" className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       )}
 
-                      <div className="flex items-center space-x-2 mt-0.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Extracted</span>
+                      <div className="flex items-center space-x-2 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
+                        <Badge status="normal" size="sm">✓ Extracted</Badge>
                         <span>•</span>
                         <span>{report.result_count !== undefined ? `${report.result_count} measures` : 'Results recorded'}</span>
                       </div>
@@ -335,14 +312,13 @@ export function UploadHistory({ userId, refreshTrigger }) {
                   </div>
 
                   <div className="flex items-center space-x-2.5 self-end sm:self-center shrink-0">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-slate-100 dark:bg-slate-800/60"
-                          style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                       {isExpanded ? 'Hide Measures' : 'View Measures'}
                     </span>
                     <div className="text-slate-400">
                       <DoodleIcon
                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                        className="w-4 h-4 transition-transform duration-200"
+                        className="w-4 h-4 transition-transform duration-150"
                       />
                     </div>
                   </div>
@@ -350,18 +326,12 @@ export function UploadHistory({ userId, refreshTrigger }) {
 
                 {/* Collapsible Measures Table */}
                 {isExpanded && (
-                  <div
-                    className="border-t p-4 sm:p-6 space-y-4 animate-in fade-in duration-200"
-                    style={{
-                      borderColor: 'var(--border-subtle)',
-                      backgroundColor: 'var(--bg-secondary)',
-                    }}
-                  >
+                  <div className="border-t border-slate-100 dark:border-slate-800 p-4 sm:p-5 space-y-3 bg-slate-50/60 dark:bg-slate-950/40 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <DoodleIcon name="heartbeat" className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                          Extracted Measures & Clinical Lab Results
+                        <DoodleIcon name="heartbeat" className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                          Extracted Measures &amp; Clinical Results
                         </h4>
                       </div>
                       <span className="text-xs font-mono text-slate-400">
@@ -370,85 +340,80 @@ export function UploadHistory({ userId, refreshTrigger }) {
                     </div>
 
                     {isLoadingMeasures ? (
-                      <div className="p-8 text-center space-y-2">
-                        <div className="w-5 h-5 mx-auto rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />
+                      <div className="p-6 text-center space-y-2">
+                        <div className="w-5 h-5 mx-auto rounded-full border-2 border-cyan-400 border-t-transparent animate-spin" />
                         <p className="text-xs text-slate-400">Fetching report measures...</p>
                       </div>
                     ) : measures.length > 0 ? (
-                      <div className="rounded-2xl border shadow-sm overflow-hidden"
-                           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+                      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
-                              <tr className="border-b font-bold tracking-wider uppercase text-[10px]"
-                                  style={{
-                                    backgroundColor: 'var(--bg-secondary)',
-                                    borderColor: 'var(--border-subtle)',
-                                    color: 'var(--text-muted)',
-                                  }}>
-                                <th className="py-3 px-4">Biomarker / Test Name</th>
-                                <th className="py-3 px-4">Canonical Mapping</th>
-                                <th className="py-3 px-4">Observed Value</th>
-                                <th className="py-3 px-4">Reference Range</th>
-                                <th className="py-3 px-4">LOINC Code</th>
-                                <th className="py-3 px-4 text-center">Status</th>
+                              <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                <th className="py-2.5 px-3.5 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)] min-w-[150px]">
+                                  Biomarker / Test Name
+                                </th>
+                                <th className="py-2.5 px-3.5 min-w-[130px]">Canonical Mapping</th>
+                                <th className="py-2.5 px-3.5 min-w-[110px]">Observed Value</th>
+                                <th className="py-2.5 px-3.5 min-w-[120px]">Reference Range</th>
+                                <th className="py-2.5 px-3.5 min-w-[100px]">LOINC Code</th>
+                                <th className="py-2.5 px-3.5 text-center min-w-[90px]">Status</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-                              {measures.map((row, idx) => (
-                                <tr key={row.id || idx} className="hover:bg-slate-500/5 transition-colors">
-                                  <td className="py-3 px-4 font-bold" style={{ color: 'var(--text-primary)' }}>
-                                    <div className="flex flex-col">
-                                      <span>{row.raw_test_name || row.test_name || '—'}</span>
-                                      {row.is_duplicate_same_date && (
-                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
-                                          (Same-date duplicate • Not stored in database records)
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="py-3 px-4 italic text-slate-500 dark:text-slate-400">
-                                    {row.canonical_test_name || 'Standard'}
-                                  </td>
-                                  <td className="py-3 px-4 font-mono font-bold">
-                                    {row.value !== undefined && row.value !== null ? row.value : '—'} {row.unit || ''}
-                                  </td>
-                                  <td className="py-3 px-4 font-mono text-slate-500">
-                                    {row.reference_range || 'N/A'}
-                                  </td>
-                                  <td className="py-3 px-4 font-mono text-[11px] text-slate-400">
-                                    {row.loinc_code || '—'}
-                                  </td>
-                                  <td className="py-3 px-4 text-center">
-                                    <div className="inline-flex flex-col items-center gap-1">
-                                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${getAbnormalityBadge(row.abnormality_flag)}`}>
-                                        {row.abnormality_flag || 'unknown'}
-                                      </span>
-                                      {row.is_duplicate_same_date && (
-                                        <span
-                                          className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900"
-                                          title="Identical measure with same value uploaded on the same date. Shown in report history, omitted from longitudinal database."
-                                        >
-                                          Deduplicated
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                              {measures.map((row, idx) => {
+                                const statusMeta = getAbnormalityMeta(row.abnormality_flag);
+                                return (
+                                  <tr key={row.id || idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td className="py-2.5 px-3.5 font-bold text-slate-900 dark:text-slate-100 text-xs sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
+                                      <div className="flex flex-col">
+                                        <span>{row.raw_test_name || row.test_name || '—'}</span>
+                                        {row.is_duplicate_same_date && (
+                                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                                            (Same-date duplicate • Excluded from trends)
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="py-2.5 px-3.5 italic text-slate-500 dark:text-slate-400">
+                                      {row.canonical_test_name || 'Standard'}
+                                    </td>
+                                    <td className="py-2.5 px-3.5 font-mono font-bold text-slate-900 dark:text-slate-100">
+                                      {row.value !== undefined && row.value !== null ? row.value : '—'} {row.unit || ''}
+                                    </td>
+                                    <td className="py-2.5 px-3.5 font-mono text-slate-600 dark:text-slate-400">
+                                      {row.reference_range || 'N/A'}
+                                    </td>
+                                    <td className="py-2.5 px-3.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                                      {row.loinc_code || '—'}
+                                    </td>
+                                    <td className="py-2.5 px-3.5 text-center">
+                                      <div className="inline-flex flex-col items-center gap-1">
+                                        <Badge status={statusMeta.status} size="sm">
+                                          {statusMeta.label}
+                                        </Badge>
+                                        {row.is_duplicate_same_date && (
+                                          <Badge status="warning" size="sm">
+                                            Deduplicated
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-6 rounded-2xl border border-dashed text-center text-xs text-slate-400"
-                           style={{ borderColor: 'var(--border-subtle)' }}>
+                      <div className="p-6 text-center text-xs text-slate-400">
                         No measurements recorded for this report.
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>

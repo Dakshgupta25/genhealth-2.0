@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import DoodleIcon from '../common/DoodleIcon';
+import { Button, Card, CardHeader, CardTitle, CardContent } from '../ui';
 
 export function CameraCapture({ onCapture, onCancel }) {
   const videoRef = useRef(null);
@@ -77,80 +78,76 @@ export function CameraCapture({ onCapture, onCancel }) {
   };
 
   return (
-    <div className="p-6 rounded-3xl border shadow-xl space-y-4 max-w-2xl mx-auto transition-all"
-         style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <DoodleIcon name="camera" className="w-5 h-5" />
-          <h3 className="text-lg font-bold">Live Document Capture</h3>
+    <Card radius="xl" className="max-w-2xl mx-auto shadow-md">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4">
+        <div className="flex items-center space-x-2.5">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-400">
+            <DoodleIcon name="camera" className="w-4 h-4" />
+          </div>
+          <div>
+            <CardTitle className="text-base">Live Document Capture</CardTitle>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Align physical paper lab sheet inside viewfinder
+            </p>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs font-semibold px-3 py-1.5 rounded-xl border hover:opacity-80 transition-all"
-          style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
-        >
-          Cancel
-        </button>
-      </div>
 
-      {error ? (
-        <div className="p-6 rounded-2xl text-center space-y-3 bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300">
-          <p className="text-sm font-medium">{error}</p>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white"
-            style={{ backgroundColor: 'var(--brand-primary)' }}
-          >
-            Return to File Upload
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center border"
-               style={{ borderColor: 'var(--border-subtle)' }}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            {/* Guide overlay */}
-            <div className="absolute inset-8 border-2 border-dashed border-white/40 rounded-xl pointer-events-none flex items-center justify-center">
-              <span className="text-[11px] font-medium text-white/80 bg-black/40 px-3 py-1 rounded-full backdrop-blur-xs">
-                Align lab report within frame
-              </span>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+      </CardHeader>
+
+      <CardContent className="p-5 sm:p-6 space-y-4">
+        {error ? (
+          <div className="p-6 rounded-xl text-center space-y-3 bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300">
+            <p className="text-sm font-medium">{error}</p>
+            <Button variant="primary" size="sm" onClick={onCancel}>
+              Return to File Upload
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="relative rounded-xl overflow-hidden bg-slate-950 aspect-video flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-inner">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              {/* Guide overlay */}
+              <div className="absolute inset-6 sm:inset-8 border-2 border-dashed border-white/50 rounded-xl pointer-events-none flex items-center justify-center">
+                <span className="text-[11px] font-semibold text-white/90 bg-slate-950/60 px-3.5 py-1 rounded-full backdrop-blur-xs shadow-xs">
+                  Position lab report flat within guide
+                </span>
+              </div>
+            </div>
+
+            <canvas ref={canvasRef} className="hidden" />
+
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={toggleFacingMode}
+                leftIcon={<DoodleIcon name="camera" className="w-4 h-4" />}
+              >
+                Flip Camera
+              </Button>
+
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleCapture}
+                leftIcon={<DoodleIcon name="sparkles" className="w-4 h-4 text-cyan-400" />}
+              >
+                Capture &amp; Extract
+              </Button>
             </div>
           </div>
-
-          <canvas ref={canvasRef} className="hidden" />
-
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              onClick={toggleFacingMode}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold border flex items-center space-x-2 transition-all hover:opacity-80"
-              style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
-            >
-              <DoodleIcon name="camera" className="w-4 h-4" />
-              <span>Flip Camera</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCapture}
-              className="px-6 py-3 rounded-2xl text-sm font-bold text-white shadow-lg flex items-center space-x-2 transition-all active:scale-95"
-              style={{ backgroundColor: 'var(--brand-primary)' }}
-            >
-              <DoodleIcon name="camera" className="w-5 h-5" />
-              <span>Capture & Extract</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

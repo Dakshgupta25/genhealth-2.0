@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DoodleIcon from '../common/DoodleIcon';
+import { Button, Badge, Card, CardTitle, CardDescription } from '../ui';
 
 /**
  * Editable result table for reviewed or manual lab measurements.
@@ -13,7 +14,6 @@ export function EditableResultTable({
   onChange,
   saving = false,
 }) {
-
   const formatInitialRows = (items) => {
     if (items && items.length > 0) {
       return items.map((r, idx) => ({
@@ -79,17 +79,20 @@ export function EditableResultTable({
   const handleDeleteRow = (id) => {
     setRows((prev) => {
       const filtered = prev.filter((r) => r.id !== id);
-      const next = filtered.length === 0 ? [
-        {
-          id: `row-blank-${Date.now()}`,
-          raw_test_name: '',
-          value: '',
-          unit: '',
-          reference_range: '',
-          canonical_test_name: '',
-          abnormality_flag: 'unknown',
-        },
-      ] : filtered;
+      const next =
+        filtered.length === 0
+          ? [
+              {
+                id: `row-blank-${Date.now()}`,
+                raw_test_name: '',
+                value: '',
+                unit: '',
+                reference_range: '',
+                canonical_test_name: '',
+                abnormality_flag: 'unknown',
+              },
+            ]
+          : filtered;
       if (onChange) onChange(next);
       return next;
     });
@@ -97,7 +100,6 @@ export function EditableResultTable({
 
   const handleSave = () => {
     setValidationError('');
-    // Filter out rows where both test name and value are completely blank
     const validRows = rows.filter((r) => r.raw_test_name.trim() || r.value.trim());
 
     if (validRows.length === 0) {
@@ -105,7 +107,6 @@ export function EditableResultTable({
       return;
     }
 
-    // Validate that each filled row has at least a test name and a value
     for (let i = 0; i < validRows.length; i++) {
       if (!validRows[i].raw_test_name.trim()) {
         setValidationError(`Row ${i + 1} is missing a Test Name.`);
@@ -120,215 +121,166 @@ export function EditableResultTable({
     onSave(validRows);
   };
 
-  const getBadgeStyle = (flag) => {
+  const getStatusSelectClass = (flag) => {
     switch (flag?.toLowerCase()) {
       case 'high':
-        return {
-          backgroundColor: 'var(--status-critical-bg)',
-          color: 'var(--status-critical)',
-          label: 'HIGH',
-        };
+      case 'critical':
+        return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900';
       case 'low':
-        return {
-          backgroundColor: 'var(--status-warning-bg)',
-          color: 'var(--status-warning)',
-          label: 'LOW',
-        };
+        return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900';
       case 'normal':
-        return {
-          backgroundColor: 'var(--status-normal-bg)',
-          color: 'var(--status-normal)',
-          label: 'NORMAL',
-        };
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900';
       default:
-        return {
-          backgroundColor: 'var(--bg-secondary)',
-          color: 'var(--text-muted)',
-          label: 'REVIEW',
-        };
+        return 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700';
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-5 animate-in fade-in duration-200">
       
-      {/* Table Header Bar */}
-      <div className="p-6 rounded-3xl border shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider"
-                  style={{ backgroundColor: 'var(--brand-soft-blue)', color: 'var(--brand-primary)' }}>
-              {isManual ? 'Manual Entry Mode' : 'Extracted Measurements Review'}
-            </span>
-            <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-              {rows.length} {rows.length === 1 ? 'measurement' : 'measurements'}
-            </span>
+      {/* Table Header Bar Card */}
+      <Card radius="xl">
+        <div className="p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <Badge status={isManual ? 'teal' : 'info'} size="sm">
+                {isManual ? 'Manual Entry Mode' : 'Extracted Measures Review'}
+              </Badge>
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                {rows.length} {rows.length === 1 ? 'measurement' : 'measurements'}
+              </span>
+            </div>
+            <CardTitle className="text-lg">Review &amp; Edit Clinical Measures</CardTitle>
+            <CardDescription>
+              Verify canonical mappings, numerical values, and reference ranges before committing to your permanent record.
+            </CardDescription>
           </div>
-          <h2 className="text-xl font-bold mt-1">Review & Edit Clinical Measures</h2>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Modify values, adjust reference ranges, delete extraneous lines, or add missing tests before committing.
-          </p>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddRow}
+            id="add-measurement-row-btn"
+            leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5" />}
+          >
+            Add Measurement
+          </Button>
         </div>
+      </Card>
 
-        <button
-          type="button"
-          onClick={handleAddRow}
-          id="add-measurement-row-btn"
-          className="px-4 py-2.5 rounded-xl text-xs font-bold border flex items-center space-x-2 transition-all hover:opacity-90 shadow-sm"
-          style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderColor: 'var(--border-subtle)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <DoodleIcon name="plus" className="w-3.5 h-3.5" />
-          <span>Add Measurement</span>
-        </button>
-      </div>
-
+      {/* Validation Error Banner */}
       {validationError && (
-        <div className="p-4 rounded-2xl text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300">
-          ⚠️ {validationError}
+        <div className="p-3.5 rounded-lg text-xs font-semibold text-red-700 bg-red-50 border border-red-200 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300 flex items-center space-x-2">
+          <span>⚠️</span>
+          <span>{validationError}</span>
         </div>
       )}
 
-      {/* Dynamic Responsive Table */}
-      <div className="rounded-3xl border shadow-sm overflow-hidden"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+      {/* Structured Medical Data Table */}
+      <Card radius="lg" className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b font-bold tracking-wider uppercase text-[11px]"
-                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
-                <th className="py-3.5 px-4 w-12 text-center">#</th>
-                <th className="py-3.5 px-4 min-w-[180px]">Test Name</th>
-                <th className="py-3.5 px-4 min-w-[100px]">Observed Value</th>
-                <th className="py-3.5 px-4 min-w-[90px]">Unit</th>
-                <th className="py-3.5 px-4 min-w-[130px]">Reference Range</th>
-                <th className="py-3.5 px-4 min-w-[150px]">Canonical Mapping</th>
-                <th className="py-3.5 px-4 w-28 text-center">Status Flag</th>
-                <th className="py-3.5 px-4 w-12 text-center">Action</th>
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <th className="py-3 px-3.5 min-w-[170px] sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
+                  Biomarker / Test Name
+                </th>
+                <th className="py-3 px-3.5 min-w-[110px]">Observed Value</th>
+                <th className="py-3 px-3.5 min-w-[90px]">Unit</th>
+                <th className="py-3 px-3.5 min-w-[130px]">Reference Range</th>
+                <th className="py-3 px-3.5 min-w-[160px]">Canonical Mapping</th>
+                <th className="py-3 px-3.5 w-32 text-center">Diagnostic Status</th>
+                <th className="py-3 px-3.5 w-12 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-              {rows.map((row, index) => {
-                const badge = getBadgeStyle(row.abnormality_flag);
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+              {rows.map((row) => {
                 return (
-                  <tr key={row.id} className="hover:bg-slate-500/5 transition-colors">
-                    <td className="py-3 px-4 text-center font-mono text-slate-400">
-                      {index + 1}
-                    </td>
-
-                    {/* Raw Test Name */}
-                    <td className="py-3 px-4">
+                  <tr
+                    key={row.id}
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors h-12"
+                  >
+                    {/* Raw Test Name (Sticky) */}
+                    <td className="py-2 px-3 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-[1px_0_0_0_rgba(0,0,0,0.06)]">
                       <input
                         type="text"
                         placeholder="e.g. Hemoglobin"
                         value={row.raw_test_name}
                         onChange={(e) => handleCellChange(row.id, 'raw_test_name', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border outline-none font-medium focus:ring-1"
-                        style={{
-                          backgroundColor: 'var(--bg-input)',
-                          borderColor: 'var(--border-subtle)',
-                          color: 'var(--text-primary)',
-                        }}
+                        className="w-full h-9 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs font-semibold focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20 outline-none"
                       />
                     </td>
 
-                    {/* Value */}
-                    <td className="py-3 px-4">
+                    {/* Numerical Value */}
+                    <td className="py-2 px-3">
                       <input
                         type="text"
                         placeholder="e.g. 14.2"
                         value={row.value}
                         onChange={(e) => handleCellChange(row.id, 'value', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border outline-none font-semibold focus:ring-1 font-mono"
-                        style={{
-                          backgroundColor: 'var(--bg-input)',
-                          borderColor: 'var(--border-subtle)',
-                          color: 'var(--text-primary)',
-                        }}
+                        className="w-full h-9 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs font-mono font-bold focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20 outline-none"
                       />
                     </td>
 
                     {/* Unit */}
-                    <td className="py-3 px-4">
+                    <td className="py-2 px-3">
                       <input
                         type="text"
                         placeholder="g/dL"
                         value={row.unit}
                         onChange={(e) => handleCellChange(row.id, 'unit', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border outline-none focus:ring-1 font-mono"
-                        style={{
-                          backgroundColor: 'var(--bg-input)',
-                          borderColor: 'var(--border-subtle)',
-                          color: 'var(--text-primary)',
-                        }}
+                        className="w-full h-9 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-mono focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20 outline-none"
                       />
                     </td>
 
                     {/* Reference Range */}
-                    <td className="py-3 px-4">
+                    <td className="py-2 px-3">
                       <input
                         type="text"
                         placeholder="13.0 - 17.0"
                         value={row.reference_range}
                         onChange={(e) => handleCellChange(row.id, 'reference_range', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border outline-none focus:ring-1"
-                        style={{
-                          backgroundColor: 'var(--bg-input)',
-                          borderColor: 'var(--border-subtle)',
-                          color: 'var(--text-primary)',
-                        }}
+                        className="w-full h-9 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs font-mono focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20 outline-none"
                       />
                     </td>
 
                     {/* Canonical Test Name */}
-                    <td className="py-3 px-4">
+                    <td className="py-2 px-3">
                       <input
                         type="text"
-                        placeholder="Auto-resolved canonical"
+                        placeholder="LOINC standard mapping"
                         value={row.canonical_test_name}
                         onChange={(e) => handleCellChange(row.id, 'canonical_test_name', e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg border outline-none text-xs focus:ring-1 italic"
-                        style={{
-                          backgroundColor: 'var(--bg-input)',
-                          borderColor: 'var(--border-subtle)',
-                          color: 'var(--text-accent)',
-                        }}
+                        className="w-full h-9 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-cyan-700 dark:text-cyan-300 text-xs italic focus:border-cyan-600 focus:ring-1 focus:ring-cyan-500/20 outline-none"
                       />
                     </td>
 
-                    {/* Abnormality Flag */}
-                    <td className="py-3 px-4 text-center">
+                    {/* Abnormality Flag Dropdown */}
+                    <td className="py-2 px-3 text-center">
                       <select
                         value={row.abnormality_flag}
                         onChange={(e) => handleCellChange(row.id, 'abnormality_flag', e.target.value)}
-                        className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider outline-none border cursor-pointer"
-                        style={{
-                          backgroundColor: badge.backgroundColor,
-                          color: badge.color,
-                          borderColor: 'transparent',
-                        }}
+                        className={`h-9 px-2 rounded-md text-[11px] font-bold uppercase tracking-wider border cursor-pointer outline-none focus:ring-1 focus:ring-cyan-500/20 ${getStatusSelectClass(row.abnormality_flag)}`}
                       >
-                        <option value="normal">Normal</option>
-                        <option value="high">High</option>
-                        <option value="low">Low</option>
-                        <option value="unknown">Review</option>
+                        <option value="normal" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Normal</option>
+                        <option value="high" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">High</option>
+                        <option value="low" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Low</option>
+                        <option value="critical" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Critical</option>
+                        <option value="unknown" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Review</option>
                       </select>
                     </td>
 
-                    {/* Delete Action */}
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        type="button"
+                    {/* Delete Row Action */}
+                    <td className="py-2 px-3 text-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteRow(row.id)}
                         title="Delete measurement row"
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        className="w-8 h-8 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <DoodleIcon name="trash" className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -336,64 +288,53 @@ export function EditableResultTable({
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      {/* Save Action Banner & Exact Mandatory Reminder Text */}
-      <div className="p-6 rounded-3xl border shadow-md flex flex-col md:flex-row items-center justify-between gap-4"
-           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-        
-        {/* Exact Mandatory Reminder Text */}
-        <div className="flex items-center space-x-3 text-sm">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-amber-600 bg-amber-50 dark:bg-amber-950/50 shrink-0">
-            ⚠️
+      {/* Mandatory Reminder Banner & Commit Actions */}
+      <Card radius="xl" className="p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          
+          {/* Exact Mandatory Reminder Text */}
+          <div className="flex items-center space-x-3 text-xs sm:text-sm">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800 shrink-0">
+              ⚠️
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 dark:text-slate-100">
+                Check the form once before saving it as a medical measure.
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Data will be permanently indexed into your longitudinal health database upon confirmation.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-xs md:text-sm" style={{ color: 'var(--text-primary)' }}>
-              Check the form once before saving it as a medical measure.
-            </p>
-            <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-              Data will be permanently indexed into your longitudinal health database upon confirmation.
-            </p>
-          </div>
-        </div>
 
-        {/* Buttons */}
-        <div className="flex items-center space-x-3 w-full md:w-auto justify-end">
-          {onCancel && (
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={saving}
-              className="px-5 py-3 rounded-2xl text-xs font-bold border transition-all hover:opacity-80 disabled:opacity-50"
-              style={{
-                backgroundColor: 'var(--bg-secondary)',
-                borderColor: 'var(--border-subtle)',
-                color: 'var(--text-secondary)',
-              }}
-            >
-              Cancel
-            </button>
-          )}
-
-          <button
-            type="button"
-            id="commit-save-measurements-btn"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-7 py-3 rounded-2xl text-xs font-bold text-white shadow-lg flex items-center space-x-2 transition-all active:scale-95 disabled:opacity-50"
-            style={{ backgroundColor: 'var(--brand-primary)' }}
-          >
-            {saving ? (
-              <span>Saving Measures...</span>
-            ) : (
-              <>
-                <DoodleIcon name="check" className="w-4 h-4" />
-                <span>Save Medical Measures</span>
-              </>
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2.5 w-full md:w-auto justify-end shrink-0">
+            {onCancel && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={onCancel}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
             )}
-          </button>
+
+            <Button
+              variant="primary"
+              size="md"
+              id="commit-save-measurements-btn"
+              onClick={handleSave}
+              loading={saving}
+              leftIcon={<DoodleIcon name="check" className="w-4 h-4 text-cyan-400" />}
+            >
+              {saving ? 'Saving Measures...' : 'Save Medical Measures'}
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

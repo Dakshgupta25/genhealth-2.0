@@ -1,8 +1,8 @@
 import React from 'react';
 
 /**
- * Minimal Medical Doodle Line-Art Icons.
- * Hand-crafted thin-stroke line art matching the "Minimal Medical Doodle" aesthetic.
+ * GenHealth AI - Medical Icon System
+ * Hand-crafted 24x24 viewBox clinical icons with consistent stroke widths (1.5 - 1.8).
  */
 export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
   switch (name) {
@@ -48,7 +48,7 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
           <path d="M10 9h4" />
           <path d="M12 7v4" />
-          <rect x="9" y="15" width="6" height="6" />
+          <rect x="9" y="15" width="6" height="6" rx="1" />
         </svg>
       );
     case 'tree':
@@ -74,10 +74,10 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
     case 'dashboard':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="9" rx="2" />
-          <rect x="14" y="3" width="7" height="5" rx="2" />
-          <rect x="14" y="12" width="7" height="9" rx="2" />
-          <rect x="3" y="16" width="7" height="5" rx="2" />
+          <rect x="3" y="3" width="7" height="9" rx="1.5" />
+          <rect x="14" y="3" width="7" height="5" rx="1.5" />
+          <rect x="14" y="12" width="7" height="9" rx="1.5" />
+          <rect x="3" y="16" width="7" height="5" rx="1.5" />
         </svg>
       );
     case 'user':
@@ -99,15 +99,15 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
     case 'sun':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="5" />
-          <line x1="12" y1="1" x2="12" y2="3" />
-          <line x1="12" y1="21" x2="12" y2="23" />
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-          <line x1="1" y1="12" x2="3" y2="12" />
-          <line x1="21" y1="12" x2="23" y2="12" />
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          <circle cx="12" cy="12" r="4" />
+          <line x1="12" y1="2" x2="12" y2="4" />
+          <line x1="12" y1="20" x2="12" y2="22" />
+          <line x1="4.93" y1="4.93" x2="6.34" y2="6.34" />
+          <line x1="17.66" y1="17.66" x2="19.07" y2="19.07" />
+          <line x1="2" y1="12" x2="4" y2="12" />
+          <line x1="20" y1="12" x2="22" y2="12" />
+          <line x1="4.93" y1="19.07" x2="6.34" y2="17.66" />
+          <line x1="17.66" y1="6.34" x2="19.07" y2="4.93" />
         </svg>
       );
     case 'moon':
@@ -210,6 +210,12 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       );
+    case 'sparkles':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z" />
+        </svg>
+      );
     case 'eye':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
@@ -217,8 +223,14 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <circle cx="12" cy="12" r="3" />
         </svg>
       );
+    case 'copy':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      );
     case 'logo-pulse':
-      // Primary app logo mark: minimal single-stroke pulse line in a rounded square frame
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
@@ -234,4 +246,5 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
   }
 }
 
+export const MedicalIcon = DoodleIcon;
 export default DoodleIcon;

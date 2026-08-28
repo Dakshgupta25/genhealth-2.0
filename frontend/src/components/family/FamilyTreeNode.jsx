@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DoodleIcon from '../common/DoodleIcon';
+import { Badge, Card, Button } from '../ui';
 
 export function FamilyTreeNode({
   member,
@@ -8,7 +9,8 @@ export function FamilyTreeNode({
 }) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopyId = () => {
+  const handleCopyId = (e) => {
+    if (e) e.stopPropagation();
     const id = isSelf ? member.id : member.relative_id;
     if (id) {
       navigator.clipboard.writeText(id);
@@ -17,108 +19,109 @@ export function FamilyTreeNode({
     }
   };
 
-  const getRelationshipColor = (relType) => {
+  const getRelationshipBadgeMeta = (relType) => {
     switch (relType?.toLowerCase()) {
       case 'father':
       case 'mother':
       case 'parent':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200';
+        return { status: 'teal', label: relType.toUpperCase() };
       case 'spouse':
       case 'wife':
       case 'husband':
-        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border-rose-200';
+        return { status: 'purple', label: relType.toUpperCase() };
       case 'brother':
       case 'sister':
       case 'sibling':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200';
+        return { status: 'info', label: relType.toUpperCase() };
       case 'son':
       case 'daughter':
       case 'child':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200';
+        return { status: 'normal', label: relType.toUpperCase() };
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-200';
+        return { status: 'neutral', label: relType ? relType.toUpperCase() : 'RELATIVE' };
     }
   };
 
   const userId = isSelf ? member.id : member.relative_id;
   const fullName = isSelf ? (member.full_name || 'You') : member.full_name;
-  const relLabel = isSelf ? 'Primary User' : (member.relationship_type || 'Relative');
+  const badgeMeta = isSelf
+    ? { status: 'teal', label: 'PRIMARY USER' }
+    : getRelationshipBadgeMeta(member.relationship_type);
 
   return (
-    <div
-      className={`p-5 rounded-3xl border shadow-md relative transition-all duration-200 hover:shadow-lg w-full max-w-[260px] mx-auto text-left space-y-3 ${
-        isSelf ? 'ring-2 ring-indigo-500/40 shadow-indigo-500/10' : ''
+    <Card
+      radius="lg"
+      className={`w-full max-w-[270px] text-left transition-all duration-150 ${
+        isSelf
+          ? 'border-cyan-500/60 ring-1 ring-cyan-500/20 bg-slate-50/60 dark:bg-slate-800/40 shadow-xs'
+          : 'hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
       }`}
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        borderColor: 'var(--border-card)',
-      }}
     >
-      {/* Node Header: Avatar & Badge */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner"
-            style={{
-              backgroundColor: isSelf ? 'var(--brand-primary)' : 'var(--brand-soft-blue)',
-              color: isSelf ? 'var(--text-on-accent)' : 'var(--brand-primary)',
-            }}
-          >
-            {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
-          </div>
-          <div className="min-w-0">
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
-                isSelf ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200' : getRelationshipColor(member.relationship_type)
+      <div className="p-4 sm:p-4.5 space-y-3.5">
+        
+        {/* Node Top Row: Avatar Initials + Relationship Badge + Unlink Action */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div
+              className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                isSelf
+                  ? 'bg-slate-900 text-white dark:bg-slate-800 dark:text-cyan-400 shadow-xs'
+                  : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300'
               }`}
             >
-              {relLabel}
+              {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div className="min-w-0">
+              <Badge status={badgeMeta.status} size="sm">
+                {badgeMeta.label}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Unlink Action Button */}
+          {!isSelf && onUnlink && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onUnlink(member.relationship_id, member.full_name)}
+              title="Unlink from family tree"
+              className="w-7 h-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 shrink-0"
+            >
+              <DoodleIcon name="trash" className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
+
+        {/* User Identity Details */}
+        <div className="space-y-0.5">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={fullName}>
+            {fullName}
+          </h4>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate" title={member.email}>
+            {member.email || 'No email registered'}
+          </p>
+        </div>
+
+        {/* User ID Snippet with 1-Click Copy Pattern */}
+        <div className="pt-0.5">
+          <div
+            onClick={handleCopyId}
+            title="Click to copy User ID"
+            className="p-2 rounded-lg text-[10px] font-mono border border-slate-200 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-400 transition-colors select-all"
+          >
+            <span className="truncate">{userId ? `ID: ${userId.substring(0, 13)}...` : 'ID N/A'}</span>
+            <span className="text-[10px] ml-1 font-sans text-slate-400 shrink-0 flex items-center">
+              {copied ? (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Copied</span>
+              ) : (
+                <DoodleIcon name="copy" className="w-3 h-3 text-slate-400 ml-1" />
+              )}
             </span>
           </div>
         </div>
 
-        {/* Unlink Action */}
-        {!isSelf && onUnlink && (
-          <button
-            type="button"
-            onClick={() => onUnlink(member.relationship_id, member.full_name)}
-            title="Unlink from family tree"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-          >
-            <DoodleIcon name="trash" className="w-3.5 h-3.5" />
-          </button>
-        )}
       </div>
-
-      {/* User Information */}
-      <div className="space-y-0.5">
-        <h4 className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
-          {fullName}
-        </h4>
-        <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
-          {member.email || 'No email registered'}
-        </p>
-      </div>
-
-      {/* User ID Snippet with Copy */}
-      <div className="pt-1">
-        <div
-          onClick={handleCopyId}
-          title="Click to copy User ID"
-          className="p-2 rounded-xl text-[10px] font-mono border flex items-center justify-between cursor-pointer hover:border-slate-400 transition-all select-all break-all"
-          style={{
-            backgroundColor: 'var(--bg-secondary)',
-            borderColor: 'var(--border-subtle)',
-            color: 'var(--text-accent)',
-          }}
-        >
-          <span className="truncate">{userId ? `ID: ${userId.substring(0, 13)}...` : 'ID N/A'}</span>
-          <span className="text-[10px] ml-1 font-sans text-slate-400 shrink-0">
-            {copied ? '✓ Copied' : '📋'}
-          </span>
-        </div>
-      </div>
-    </div>
+    </Card>
   );
 }
 

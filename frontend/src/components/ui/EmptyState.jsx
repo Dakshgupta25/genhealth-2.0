@@ -1,35 +1,35 @@
 import React from 'react';
 
 /**
- * GenHealth AI - EmptyState Primitive
- * Standardized empty data visualization with icon, title, description, and action button
+ * GenHealth AI - Clinical EmptyState Primitive
+ * Restrained empty state on clean white canvas with clear primary action.
  */
 export function EmptyState({
   icon = null,
   title = 'No records found',
   description = 'There is currently no data available for this section.',
   action = null,
-  isDashed = true,
+  isDashed = false,
   className = '',
 }) {
   return (
     <div
-      className={`p-8 sm:p-10 rounded-xl text-center flex flex-col items-center justify-center space-y-3 bg-white dark:bg-[#141C19] ${
+      className={`p-8 sm:p-10 rounded-[12px] text-center flex flex-col items-center justify-center space-y-3 bg-white dark:bg-[#1E1E1E] ${
         isDashed
-          ? 'border border-dashed border-[#D0D9D0] dark:border-[#2A3B34]'
-          : 'border border-[#D0D9D0] dark:border-[#2A3B34] shadow-xs'
+          ? 'border border-dashed border-[#D8D5D1] dark:border-[#404040]'
+          : 'border border-[#E7E5E2] dark:border-[#303030] shadow-xs'
       } ${className}`}
     >
       {icon && (
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#E3EFE9] dark:bg-[#1A332B] text-[#0D5446] dark:text-[#3BB298] mb-1">
+        <div className="w-10 h-10 rounded-[8px] flex items-center justify-center bg-[#F5F5F3] dark:bg-[#252525] text-[#171717] dark:text-[#F0F0F0] mb-0.5">
           {icon}
         </div>
       )}
       <div className="space-y-1 max-w-sm">
-        <h4 className="text-sm font-bold text-[#11231E] dark:text-[#ECF2EE]">
+        <h4 className="text-sm font-semibold text-[#171717] dark:text-[#F0F0F0]">
           {title}
         </h4>
-        <p className="text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed">
+        <p className="text-xs text-[#666666] dark:text-[#A0A0A0] leading-relaxed">
           {description}
         </p>
       </div>

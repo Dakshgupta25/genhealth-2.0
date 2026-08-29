@@ -1,9 +1,8 @@
 import React from 'react';
 
 /**
- * GenHealth AI - Badge Primitive
- * Statuses: normal (clinical evergreen/sage), warning (amber), critical (crimson), info (navy blue), neutral (warm stone), purple (doctor)
- * Sizes: sm, md
+ * GenHealth AI - Clinical Badge Primitive
+ * Restrained status badges with high contrast & soft tint.
  */
 export function Badge({
   children,
@@ -13,35 +12,47 @@ export function Badge({
   className = '',
 }) {
   const sizeStyles = {
-    sm: 'text-[10px] px-1.5 py-0.5 rounded gap-1',
-    md: 'text-[11px] px-2 py-0.5 rounded-md gap-1.5 font-semibold',
+    sm: 'text-[10px] px-1.5 py-0.5 rounded-[4px] gap-1',
+    md: 'text-[11px] px-2 py-0.5 rounded-[6px] gap-1.5 font-medium',
   };
 
   const statusStyles = {
     normal:
-      'bg-[#E3EFE9] text-[#0D5446] border border-[#C6DFD2] dark:bg-[rgba(74,222,128,0.12)] dark:text-[#4ADE80] dark:border-[rgba(74,222,128,0.28)]',
+      'bg-[#EAF6F0] text-[#247A59] border border-[#B8E4D1] dark:bg-[#13241B] dark:text-[#48BB78] dark:border-[#1E3D2C]',
     warning:
-      'bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] dark:bg-[rgba(251,191,36,0.12)] dark:text-[#FBBF24] dark:border-[rgba(251,191,36,0.28)]',
+      'bg-[#FFF5DD] text-[#9A6500] border border-[#FCE1A3] dark:bg-[#2B2412] dark:text-[#ECC94B] dark:border-[#4D3F1B]',
     critical:
-      'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] dark:bg-[rgba(248,113,113,0.12)] dark:text-[#F87171] dark:border-[rgba(248,113,113,0.28)]',
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
+    high:
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
+    low:
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
     info:
-      'bg-[#EFF6FF] text-[#1E40AF] border border-[#DBEAFE] dark:bg-[rgba(96,165,250,0.12)] dark:text-[#60A5FA] dark:border-[rgba(96,165,250,0.28)]',
+      'bg-[#EBF4FF] text-[#2B6CB0] border border-[#C3DAFE] dark:bg-[#142230] dark:text-[#63B3ED] dark:border-[#233A52]',
     neutral:
-      'bg-[#EDF1ED] text-[#334740] border border-[#D6DDD6] dark:bg-[#1A2421] dark:text-[#B2C2B8] dark:border-[#23312B]',
+      'bg-[#F4F4F2] text-[#5F6368] border border-[#E3E3DF] dark:bg-[#1A1A1A] dark:text-[#A0A0A0] dark:border-[#303030]',
     purple:
-      'bg-[#F3E8FF] text-[#6B21A8] border border-[#E9D5FF] dark:bg-[rgba(168,85,247,0.12)] dark:text-[#C084FC] dark:border-[rgba(168,85,247,0.28)]',
+      'bg-[#F4F4F2] text-[#5F6368] border border-[#E3E3DF] dark:bg-[#1A1A1A] dark:text-[#A0A0A0] dark:border-[#303030]',
+    brand:
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
+    juniper:
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
     teal:
-      'bg-[#E3EFE9] text-[#0D5446] border border-[#C6DFD2] dark:bg-[rgba(59,178,152,0.14)] dark:text-[#3BB298] dark:border-[rgba(59,178,152,0.3)]',
+      'bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#522226]',
   };
 
   const dotColors = {
-    normal: 'bg-[#0D5446] dark:bg-[#4ADE80]',
-    warning: 'bg-[#D97706] dark:bg-[#FBBF24]',
-    critical: 'bg-[#DC2626] dark:bg-[#F87171]',
-    info: 'bg-[#2563EB] dark:bg-[#60A5FA]',
-    neutral: 'bg-[#586D66] dark:bg-[#7C9184]',
-    purple: 'bg-[#9333EA] dark:bg-[#C084FC]',
-    teal: 'bg-[#1D7A68] dark:bg-[#3BB298]',
+    normal: 'bg-[#247A59] dark:bg-[#48BB78]',
+    warning: 'bg-[#9A6500] dark:bg-[#ECC94B]',
+    critical: 'bg-[#B4232F] dark:bg-[#E04855]',
+    high: 'bg-[#B4232F] dark:bg-[#E04855]',
+    low: 'bg-[#B4232F] dark:bg-[#E04855]',
+    info: 'bg-[#2B6CB0] dark:bg-[#63B3ED]',
+    neutral: 'bg-[#858585] dark:bg-[#707070]',
+    purple: 'bg-[#858585] dark:bg-[#707070]',
+    brand: 'bg-[#B4232F] dark:bg-[#E04855]',
+    juniper: 'bg-[#B4232F] dark:bg-[#E04855]',
+    teal: 'bg-[#B4232F] dark:bg-[#E04855]',
   };
 
   return (

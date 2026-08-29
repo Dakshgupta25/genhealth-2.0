@@ -1,82 +1,61 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
 
+/* Tailwind CSS v4 class-based and data-attribute dark mode selector */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
 @layer base {
   * {
     box-sizing: border-box;
   }
   
-  body {
-    background-color: var(--bg-primary);
+  html, body {
+    background-color: var(--bg-canvas);
     color: var(--text-primary);
     font-family: var(--font-body);
     min-height: 100vh;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Headings with clear contrast and red highlights */
+  h1 {
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+
+  h2 {
+    color: var(--text-h2);
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
-    font-weight: 700;
+    font-weight: 650;
+  }
+
+  h3 {
+    color: var(--text-h3);
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+
+  h4, h5, h6 {
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+    font-weight: 600;
   }
 }
 
 @layer utilities {
-  /* Issue #3: Subtle cursor micro-interactions on all interactive elements.
-     Kept intentionally lightweight — scale-up only, no custom cursor, no glow flash. */
   button, [role="button"] {
-    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-  }
-  button:hover:not(:disabled), [role="button"]:hover {
-    transform: scale(1.02);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
   }
   button:active:not(:disabled), [role="button"]:active {
-    transform: scale(0.98);
-  }
-
-  /* Nav links & card-like clickable elements get the same gentle lift */
-  a {
-    transition: opacity 0.15s ease, transform 0.15s ease;
-  }
-  a:hover {
-    transform: translateY(-1px);
-  }
-  a:active {
-    transform: translateY(0px);
-  }
-
-  /* Clickable cards */
-  .card-interactive {
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-  }
-  .card-interactive:hover {
-    transform: translateY(-2px) scale(1.005);
-    box-shadow: var(--shadow-hover);
-  }
-
-  /* Issue #4: Secondary badges & tags — toned down, softer fill.
-     All inline status/category badges should recede visually. */
-  .badge-subtle {
-    background-color: var(--brand-soft-blue);
-    color: var(--text-accent);
-    font-size: 0.625rem;       /* 10px */
-    font-weight: 600;
-    padding: 0.125rem 0.5rem;  /* 2px 8px */
-    border-radius: 4px;        /* Less pill-shaped */
-    letter-spacing: 0.04em;
-    opacity: 0.9;
-  }
-
-  /* "In Development" / "Doctor Mode" / category badges — use this class */
-  .badge-status {
-    background-color: var(--brand-soft-blue);
-    color: var(--text-accent);
-    font-size: 0.625rem;
-    font-weight: 600;
-    padding: 0.15rem 0.6rem;
-    border-radius: 6px;       /* Slightly rounded rectangle, not full pill */
-    opacity: 0.85;
+    transform: scale(0.99);
   }
 }

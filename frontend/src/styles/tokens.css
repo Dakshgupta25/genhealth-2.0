@@ -1,142 +1,183 @@
 :root {
   /* ==========================================================================
-     GenHealth AI - Clinical Evergreen Design Tokens (Light Theme)
+     GenHealth AI - Light Mode Clinical Intelligence Design Tokens
+     Foundation: Off-white canvas, crisp white surfaces, charcoal typography,
+     dark charcoal header anchor, and restrained clinical red accents.
      ========================================================================== */
 
-  /* Light Theme Canvas & Surfaces (Warm Clinical Neutrals) */
-  --bg-canvas: #F5F7F5;          /* Warm stone-tinted clinical canvas */
-  --bg-primary: #F5F7F5;         /* Legacy alias */
-  --bg-secondary: #EDF1ED;       /* Muted secondary container (table headers, filters) */
-  --bg-subtle: #EDF1ED;
-  --bg-surface: #FFFFFF;         /* Crisp White Card/Panel surface */
-  --bg-card: #FFFFFF;            /* Legacy alias */
-  --bg-card-hover: #F8FAF8;
+  /* Base Canvas & Surfaces */
+  --bg-canvas: #F7F7F5;          /* Warm off-white page background */
+  --bg-primary: #F7F7F5;         /* Compatibility alias */
+  --bg-surface: #FFFFFF;         /* Primary white surface (Cards, Panels) */
+  --bg-secondary: #FCFCFB;       /* Secondary subtle panel */
+  --bg-subtle: #F4F4F2;          /* Recessed surface / table headers */
+  --bg-surface-raised: #FFFFFF;  /* Raised cards */
+  --bg-surface-inset: #F7F7F5;   /* Inset wells */
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAFAF9;
   --bg-input: #FFFFFF;
-  --bg-accent-corner: transparent;
+  --bg-header: #141414;          /* Dark charcoal header anchor */
 
-  /* Typography Colors - WCAG AAA & AA Contrast */
-  --text-primary: #11231E;       /* Deep evergreen charcoal — 15.4:1 contrast on white */
-  --text-secondary: #334740;     /* Muted clinical forest — 8.2:1 contrast on white */
-  --text-muted: #586D66;         /* Subtle metadata — 4.8:1 contrast on white (WCAG AA) */
-  --text-accent: #0D5446;        /* Deep Evergreen accent */
+  /* Typography Colors */
+  --text-primary: #171717;       /* H1 & high-contrast dark charcoal */
+  --text-h2: #202020;            /* H2 */
+  --text-h3: #242424;            /* H3 / card titles */
+  --text-secondary: #5F6368;     /* Body & supporting labels */
+  --text-muted: #858585;         /* Metadata & timestamps */
+  --text-accent: #B4232F;        /* Clinical red eyebrow / accent */
+  --text-header: #F0F0F0;        /* Header brand text */
+  --text-header-muted: #9E9E9E;  /* Header nav links inactive */
   --text-on-accent: #FFFFFF;
   --text-on-primary: #FFFFFF;
 
   /* Borders & Dividers */
-  --border-subtle: #D6DDD6;      /* Neutral clinical border */
-  --border-card: #D0D9D0;        /* Card elevation border */
-  --border-focus: #1D7A68;       /* Focus ring brand evergreen */
+  --border-subtle: #E8E7E4;      /* Subtle internal row dividers */
+  --border-default: #E3E3DF;     /* Normal card & table borders */
+  --border-card: #E3E3DF;
+  --border-strong: #D4D2CE;      /* Strong / input borders */
+  --border-focus: #B4232F;       /* Focus ring brand red */
+  --border-red: #D98A91;         /* Flagged / alert border */
 
-  /* Brand Colors - Light Mode */
-  --brand-primary: #0D5446;         /* Clinical Deep Evergreen */
-  --brand-primary-hover: #0A4337;   /* Deepened pine */
-  --brand-teal: #1D7A68;            /* Medium Forest Teal */
-  --brand-teal-hover: #166052;
-  --brand-cyan: #227D6B;
-  --brand-nav-active: #0D5446;
-  --brand-accent-indigo: #1D7A68;
-  --brand-lavender: #586D66;
-  --brand-periwinkle: #8BA196;
-  --brand-soft-blue: #E3EFE9;       /* Soft clinical sage tint */
-  --brand-pill-bg: #EDF1ED;
+  /* Brand / Clinical Red Accent */
+  --brand-primary: #B4232F;
+  --brand-hover: #961D28;
+  --brand-secondary: #D64550;
+  --brand-soft: #FCEBED;
+  --brand-border: #D98A91;
 
-  /* Diagnostic Status Colors - Light Mode */
-  --status-normal: #0D5446;         /* Clinical Deep Green */
-  --status-normal-bg: #E3EFE9;      /* Sage tint */
-  --status-normal-border: #C6DFD2;
-  --status-warning: #92400E;        /* Clinical Amber */
-  --status-warning-bg: #FEF3C7;
-  --status-warning-border: #FDE68A;
-  --status-critical: #991B1B;       /* Clinical Crimson */
-  --status-critical-bg: #FEE2E2;
-  --status-critical-border: #FECACA;
-  --status-info: #1E40AF;           /* Clinical Blue */
-  --status-info-bg: #EFF6FF;
-  --status-info-border: #DBEAFE;
+  /* Compatibility Brand Aliases */
+  --primary-default: #B4232F;
+  --primary-hover: #961D28;
+  --primary-subtle: #FCEBED;
+  --primary-text: #B4232F;
+  --primary-on: #FFFFFF;
+  --brand-teal: #B4232F;
+  --brand-teal-hover: #961D28;
+  --brand-cyan: #B4232F;
+  --brand-nav-active: #FCEBED;
+  --brand-accent-indigo: #B4232F;
+  --brand-lavender: #858585;
+  --brand-periwinkle: #D4D2CE;
+  --brand-soft-blue: #FCEBED;
+  --brand-pill-bg: #F4F4F2;
 
-  /* Typography */
-  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* Diagnostic Status Colors */
+  --status-normal: #247A59;
+  --status-normal-bg: #EAF6F0;
+  --status-normal-border: #B8E4D1;
+  --status-warning: #9A6500;
+  --status-warning-bg: #FFF5DD;
+  --status-warning-border: #FCE1A3;
+  --status-critical: #B4232F;
+  --status-critical-bg: #FCEBED;
+  --status-critical-border: #E8B4B9;
+  --status-info: #2B6CB0;
+  --status-info-bg: #EBF4FF;
+  --status-info-border: #C3DAFE;
+
+  /* Typography Fonts */
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Border Radius Scale (Crisp & Structured) */
+  /* Border Radius Scale */
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-xl: 14px;
   --radius-full: 9999px;
 
-  /* Elevation & Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(17, 35, 30, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(17, 35, 30, 0.06), 0 1px 2px -1px rgba(17, 35, 30, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(17, 35, 30, 0.06), 0 2px 4px -2px rgba(17, 35, 30, 0.04);
-  --shadow-card: 0 1px 3px 0 rgba(17, 35, 30, 0.05), 0 1px 2px -1px rgba(17, 35, 30, 0.03);
-  --shadow-hover: 0 4px 12px -2px rgba(17, 35, 30, 0.08);
-  --shadow-modal: 0 20px 25px -5px rgba(17, 35, 30, 0.1), 0 8px 10px -6px rgba(17, 35, 30, 0.04);
+  /* Shadows - Crisp, Minimal */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 14px -2px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.12);
+  --shadow-focus-ring: 0 0 0 3px rgba(180, 35, 47, 0.15);
 }
 
 [data-theme="dark"], .dark {
   /* ==========================================================================
-     GenHealth AI - Clinical Evergreen Design Tokens (Dark Theme)
+     GenHealth AI - Dark Mode Design Tokens
+     Obsidian Charcoal Surfaces & Precision Red Accents
      ========================================================================== */
 
-  /* Dark Theme Canvas & Surfaces (Deep Spruce & Charcoal) */
-  --bg-canvas: #0E1412;          /* Deep evergreen-black canvas */
-  --bg-primary: #0E1412;
-  --bg-secondary: #1A2421;       /* Deep spruce container */
-  --bg-subtle: #1A2421;
-  --bg-surface: #141C19;         /* Elevated deep spruce card surface */
-  --bg-card: #141C19;
-  --bg-card-hover: #192420;
-  --bg-input: #0F1714;
-  --bg-accent-corner: transparent;
+  --bg-canvas: #121212;
+  --bg-primary: #121212;
+  --bg-surface: #1E1E1E;
+  --bg-secondary: #222222;
+  --bg-subtle: #181818;
+  --bg-surface-raised: #242424;
+  --bg-surface-inset: #161616;
+  --bg-card: #1E1E1E;
+  --bg-card-hover: #262626;
+  --bg-input: #181818;
+  --bg-header: #121212;
 
-  /* Typography Colors - Dark Mode (WCAG AAA Contrast) */
-  --text-primary: #ECF2EE;       /* Luminous white — 14.2:1 contrast */
-  --text-secondary: #B2C2B8;     /* Soft sage — 7.6:1 contrast */
-  --text-muted: #7C9184;         /* Muted spruce metadata — 4.6:1 contrast */
-  --text-accent: #3BB298;        /* Luminous jade accent */
+  /* Typography Colors - Dark Mode */
+  --text-primary: #F0F0F0;
+  --text-h2: #ECECEC;
+  --text-h3: #E4E4E4;
+  --text-secondary: #A0A0A0;
+  --text-muted: #707070;
+  --text-accent: #E04855;
+  --text-header: #F0F0F0;
+  --text-header-muted: #A0A0A0;
   --text-on-accent: #FFFFFF;
   --text-on-primary: #FFFFFF;
 
   /* Borders & Dividers - Dark Mode */
-  --border-subtle: #23312B;      /* Dark spruce border */
-  --border-card: #2A3B34;        /* Elevated card border */
-  --border-focus: #3BB298;       /* Jade focus ring */
+  --border-subtle: #262626;
+  --border-default: #303030;
+  --border-card: #303030;
+  --border-strong: #404040;
+  --border-focus: #E04855;
+  --border-red: #522226;
 
-  /* Brand Colors - Dark Mode */
-  --brand-primary: #227D6B;         /* Luminous Clinical Evergreen */
-  --brand-primary-hover: #2A947F;   /* Hover jade */
-  --brand-teal: #3BB298;            /* Luminous jade */
-  --brand-teal-hover: #4FCAB0;
-  --brand-cyan: #3BB298;
-  --brand-nav-active: #1A2421;
-  --brand-accent-indigo: #3BB298;
-  --brand-lavender: #7C9184;
-  --brand-periwinkle: #B2C2B8;
-  --brand-soft-blue: #1A332B;       /* Dark spruce tint */
-  --brand-pill-bg: #1A2421;
+  /* Brand / Primary Colors - Dark Mode */
+  --brand-primary: #B4232F;
+  --brand-hover: #D64550;
+  --brand-secondary: #D64550;
+  --brand-soft: #2D1416;
+  --brand-border: #522226;
+
+  --primary-default: #B4232F;
+  --primary-hover: #D64550;
+  --primary-subtle: #2D1416;
+  --primary-text: #E04855;
+  --primary-on: #FFFFFF;
+  --brand-teal: #E04855;
+  --brand-teal-hover: #D64550;
+  --brand-cyan: #E04855;
+  --brand-nav-active: #2D1416;
+  --brand-accent-indigo: #E04855;
+  --brand-lavender: #707070;
+  --brand-periwinkle: #404040;
+  --brand-soft-blue: #2D1416;
+  --brand-pill-bg: #222222;
 
   /* Diagnostic Status Colors - Dark Mode */
-  --status-normal: #4ADE80;         /* Emerald 400 */
-  --status-normal-bg: rgba(74, 222, 128, 0.12);
-  --status-normal-border: rgba(74, 222, 128, 0.28);
-  --status-warning: #FBBF24;        /* Amber 400 */
-  --status-warning-bg: rgba(251, 191, 36, 0.12);
-  --status-warning-border: rgba(251, 191, 36, 0.28);
-  --status-critical: #F87171;       /* Red 400 */
-  --status-critical-bg: rgba(248, 113, 113, 0.12);
-  --status-critical-border: rgba(248, 113, 113, 0.28);
-  --status-info: #60A5FA;           /* Blue 400 */
-  --status-info-bg: rgba(96, 165, 250, 0.12);
-  --status-info-border: rgba(96, 165, 250, 0.28);
+  --status-normal: #48BB78;
+  --status-normal-bg: #13241B;
+  --status-normal-border: #1E3D2C;
+  --status-warning: #ECC94B;
+  --status-warning-bg: #2B2412;
+  --status-warning-border: #4D3F1B;
+  --status-critical: #E04855;
+  --status-critical-bg: #2D1416;
+  --status-critical-border: #522226;
+  --status-info: #63B3ED;
+  --status-info-bg: #142230;
+  --status-info-border: #233A52;
 
   /* Elevation & Shadows - Dark Mode */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.45);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.55);
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.45), 0 1px 2px -1px rgba(0, 0, 0, 0.35);
-  --shadow-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.75);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.7);
+  --shadow-modal: 0 12px 40px rgba(0, 0, 0, 0.85);
+  --shadow-focus-ring: 0 0 0 3px rgba(224, 72, 85, 0.25);
 }

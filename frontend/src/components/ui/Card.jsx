@@ -1,29 +1,30 @@
 import React from 'react';
 
 /**
- * GenHealth AI - Card Primitive Collection
- * Standardized 12px/16px radius, 1px border, subtle elevation, warm clinical surface
+ * GenHealth AI - Clinical Card Primitives
+ * Crisp white surfaces, thin red/neutral borders, and dark typography
  */
 export function Card({
   children,
-  radius = 'lg', // 'md' (8px), 'lg' (12px), 'xl' (16px)
+  radius = 'lg', // 'sm' (6px), 'md' (8px), 'lg' (12px), 'xl' (14px)
   interactive = false,
   className = '',
   ...props
 }) {
   const radiusStyles = {
-    md: 'rounded-lg',
-    lg: 'rounded-xl',
-    xl: 'rounded-2xl',
+    sm: 'rounded-[6px]',
+    md: 'rounded-[8px]',
+    lg: 'rounded-[12px]',
+    xl: 'rounded-[14px]',
   };
 
   const interactiveStyles = interactive
-    ? 'hover:border-[#B2C2B8] dark:hover:border-[#3BB298]/40 hover:shadow-xs transition-all duration-150 cursor-pointer'
+    ? 'hover:border-[#B4232F] hover:shadow-sm transition-all duration-150 cursor-pointer'
     : '';
 
   return (
     <div
-      className={`bg-white dark:bg-[#141C19] border border-[#D0D9D0] dark:border-[#2A3B34] shadow-xs ${
+      className={`bg-white dark:bg-[#1E1E1E] text-[#171717] dark:text-[#F0F0F0] border border-[#D98A91]/80 dark:border-[#422225] shadow-xs ${
         radiusStyles[radius] || radiusStyles.lg
       } ${interactiveStyles} ${className}`}
       {...props}
@@ -33,10 +34,15 @@ export function Card({
   );
 }
 
-export function CardHeader({ children, className = '', ...props }) {
+export function CardHeader({ children, density = 'spacious', className = '', ...props }) {
+  const paddingStyles =
+    density === 'compact'
+      ? 'p-4 pb-3'
+      : 'p-5 sm:p-6 pb-3 sm:pb-4';
+
   return (
     <div
-      className={`p-5 sm:p-6 pb-3 sm:pb-4 flex flex-col space-y-1.5 ${className}`}
+      className={`${paddingStyles} flex flex-col space-y-1 ${className}`}
       {...props}
     >
       {children}
@@ -44,10 +50,15 @@ export function CardHeader({ children, className = '', ...props }) {
   );
 }
 
-export function CardTitle({ children, className = '', ...props }) {
+export function CardTitle({ children, density = 'spacious', className = '', ...props }) {
+  const sizeStyles =
+    density === 'compact'
+      ? 'text-sm sm:text-base font-semibold'
+      : 'text-base sm:text-lg font-semibold';
+
   return (
     <h3
-      className={`text-base sm:text-lg font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE] ${className}`}
+      className={`${sizeStyles} tracking-tight text-[#171717] dark:text-[#F0F0F0] ${className}`}
       {...props}
     >
       {children}
@@ -58,7 +69,7 @@ export function CardTitle({ children, className = '', ...props }) {
 export function CardDescription({ children, className = '', ...props }) {
   return (
     <p
-      className={`text-xs text-[#586D66] dark:text-[#7C9184] leading-relaxed ${className}`}
+      className={`text-xs text-[#5F6368] dark:text-[#A0A0A0] leading-relaxed ${className}`}
       {...props}
     >
       {children}
@@ -66,18 +77,28 @@ export function CardDescription({ children, className = '', ...props }) {
   );
 }
 
-export function CardContent({ children, className = '', ...props }) {
+export function CardContent({ children, density = 'spacious', className = '', ...props }) {
+  const paddingStyles =
+    density === 'compact'
+      ? 'p-4 pt-0'
+      : 'p-5 sm:p-6 pt-0';
+
   return (
-    <div className={`p-5 sm:p-6 pt-0 ${className}`} {...props}>
+    <div className={`${paddingStyles} ${className}`} {...props}>
       {children}
     </div>
   );
 }
 
-export function CardFooter({ children, className = '', ...props }) {
+export function CardFooter({ children, density = 'spacious', className = '', ...props }) {
+  const paddingStyles =
+    density === 'compact'
+      ? 'p-4 pt-3'
+      : 'p-5 sm:p-6 pt-4';
+
   return (
     <div
-      className={`p-5 sm:p-6 pt-0 border-t border-[#EDF1ED] dark:border-[#1A2421] flex items-center justify-between gap-3 ${className}`}
+      className={`${paddingStyles} border-t border-[#E3E3DF] dark:border-[#303030] flex items-center justify-between gap-3 ${className}`}
       {...props}
     >
       {children}

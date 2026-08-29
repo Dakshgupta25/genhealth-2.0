@@ -84,4 +84,12 @@ export async function updateReportName(reportId, originalFilename) {
   return response.data;
 }
 
-
+/**
+ * Permanently delete a lab report and all associated extracted measurements.
+ * @param {string} reportId UUID
+ * @returns {Promise<{ message: string, report_id: string }>}
+ */
+export async function deleteReport(reportId) {
+  const response = await apiClient.delete(`/api/v1/reports/${reportId}`);
+  return response.data;
+}

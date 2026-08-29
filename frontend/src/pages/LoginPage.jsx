@@ -50,7 +50,7 @@ export function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 relative selection:bg-[#0D5446] selection:text-white transition-colors duration-200"
+      className="min-h-screen flex flex-col justify-center items-center p-4 sm:p-6 relative transition-colors duration-200"
       style={{ backgroundColor: 'var(--bg-canvas)', color: 'var(--text-primary)' }}
     >
       {/* Floating Theme Toggle */}
@@ -58,9 +58,9 @@ export function LoginPage() {
         onClick={toggleTheme}
         id="login-theme-toggle"
         title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-[#D0D9D0] dark:border-[#2A3B34] bg-white/90 dark:bg-[#141C19]/90 shadow-xs text-xs font-semibold text-[#11231E] dark:text-[#ECF2EE] hover:bg-[#EDF1ED] dark:hover:bg-[#1A2421] transition-colors"
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-[6px] border border-[#E3E3DF] dark:border-[#303030] bg-white/95 dark:bg-[#1E1E1E]/95 shadow-xs text-xs font-semibold text-[#171717] dark:text-[#F0F0F0] hover:bg-[#F4F4F2] dark:hover:bg-[#252525] transition-colors cursor-pointer"
       >
-        <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5" />
+        <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5 text-[#5F6368] dark:text-[#A0A0A0]" />
         <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
       </button>
 
@@ -69,28 +69,28 @@ export function LoginPage() {
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-xl items-center justify-center bg-[#0D5446] text-white dark:bg-[#1A2421] dark:border dark:border-[#2A3B34] shadow-md mb-1">
-            <DoodleIcon name="logo-pulse" className="w-7 h-7 text-emerald-300 dark:text-[#3BB298]" strokeWidth={1.6} />
+          <div className="inline-flex w-10 h-10 rounded-[8px] items-center justify-center bg-[#141414] text-white shadow-xs mb-1">
+            <DoodleIcon name="logo-pulse" className="w-5 h-5 text-white" strokeWidth={1.8} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE]">
-              GenHealth <span className="text-[#0D5446] dark:text-[#3BB298]">AI</span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#171717] dark:text-[#F0F0F0]">
+              GenHealth <span className="text-[#B4232F] dark:text-[#E04855]">AI</span>
             </h1>
-            <p className="text-xs sm:text-sm font-medium text-[#586D66] dark:text-[#7C9184] mt-0.5">
-              Clinical AI &amp; Diagnostic Intelligence Platform
+            <p className="text-xs sm:text-sm font-medium text-[#5F6368] dark:text-[#A0A0A0] mt-0.5">
+              Clinical Intelligence &amp; Diagnostic Platform
             </p>
           </div>
         </div>
 
         {/* Portal Mode Segmented Control */}
-        <div className="p-1 rounded-xl bg-[#EDF1ED] dark:bg-[#1A2421] border border-[#D6DDD6] dark:border-[#2A3B34] flex items-center gap-1">
+        <div className="p-1 rounded-[8px] bg-[#F4F4F2] dark:bg-[#202020] border border-[#E3E3DF] dark:border-[#303030] flex items-center gap-1">
           <button
             type="button"
             onClick={() => { setPortalMode('patient'); setErrorMessage(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 min-h-[40px] ${
+            className={`flex-1 py-2 rounded-[6px] text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               portalMode === 'patient'
-                ? 'bg-white dark:bg-[#141C19] text-[#11231E] dark:text-[#ECF2EE] shadow-xs border border-[#D0D9D0] dark:border-[#2A3B34]'
-                : 'text-[#586D66] dark:text-[#7C9184] hover:text-[#11231E] dark:hover:text-[#ECF2EE]'
+                ? 'bg-white dark:bg-[#1E1E1E] text-[#171717] dark:text-[#F0F0F0] shadow-xs border border-[#E3E3DF] dark:border-[#303030]'
+                : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717]'
             }`}
           >
             <DoodleIcon name="user" className="w-3.5 h-3.5" />
@@ -100,10 +100,10 @@ export function LoginPage() {
           <button
             type="button"
             onClick={() => { setPortalMode('doctor'); setAuthMode('login'); setErrorMessage(''); }}
-            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 min-h-[40px] ${
+            className={`flex-1 py-2 rounded-[6px] text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               portalMode === 'doctor'
-                ? 'bg-[#0D5446] dark:bg-[#227D6B] text-white shadow-xs border border-[#0D5446] dark:border-[#2A947F]'
-                : 'text-[#586D66] dark:text-[#7C9184] hover:text-[#11231E] dark:hover:text-[#ECF2EE]'
+                ? 'bg-[#B4232F] text-white shadow-xs'
+                : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717]'
             }`}
           >
             <DoodleIcon name="doctor" className="w-3.5 h-3.5" />
@@ -112,18 +112,18 @@ export function LoginPage() {
         </div>
 
         {/* Authentication Card Form */}
-        <Card radius="xl" className="shadow-lg p-6 sm:p-8 space-y-6">
+        <Card radius="lg" className="p-6 sm:p-8 space-y-6 bg-white border border-[#E3E3DF] dark:border-[#303030]">
           {/* Header text based on mode */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-[#11231E] dark:text-[#ECF2EE]">
+              <h2 className="text-lg font-bold text-[#171717] dark:text-[#F0F0F0]">
                 {portalMode === 'doctor' 
                   ? 'Clinical Provider Access' 
                   : authMode === 'login' 
                     ? 'Patient Sign In' 
                     : 'Create Patient Account'}
               </h2>
-              <p className="text-xs text-[#586D66] dark:text-[#7C9184] mt-0.5">
+              <p className="text-xs text-[#5F6368] dark:text-[#A0A0A0] mt-0.5">
                 {portalMode === 'doctor'
                   ? 'Access multi-patient lab analytics and clinical trends'
                   : authMode === 'login'
@@ -131,16 +131,11 @@ export function LoginPage() {
                     : 'Get your unique medical User ID today'}
               </p>
             </div>
-            {portalMode === 'doctor' && (
-              <span className="p-2 rounded-lg text-[#0D5446] bg-[#E3EFE9] dark:bg-[#1A332B] dark:text-[#3BB298] shrink-0">
-                <DoodleIcon name="stethoscope" className="w-5 h-5" />
-              </span>
-            )}
           </div>
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3.5 rounded-lg text-xs font-semibold text-[#991B1B] bg-[#FEE2E2] border border-[#FECACA] dark:bg-[#2B1212] dark:border-[#4C1D1D] dark:text-[#F87171] flex items-center space-x-2">
+            <div className="p-3.5 rounded-[6px] text-xs font-semibold text-[#B4232F] bg-[#FCEBED] border border-[#E8B4B9] dark:bg-[#2D1416] dark:border-[#522226] dark:text-[#E04855] flex items-center space-x-2">
               <span>⚠️</span>
               <span>{errorMessage}</span>
             </div>
@@ -198,7 +193,7 @@ export function LoginPage() {
               size="lg"
               loading={loading}
               className="w-full mt-2"
-              leftIcon={<DoodleIcon name="check" className="w-4 h-4 text-emerald-300 dark:text-[#3BB298]" />}
+              leftIcon={<DoodleIcon name="check" className="w-4 h-4 text-white" />}
             >
               {loading
                 ? 'Authenticating...'
@@ -212,14 +207,14 @@ export function LoginPage() {
 
           {/* Toggle Login vs Signup (For Patient Portal) */}
           {portalMode === 'patient' && (
-            <div className="pt-2 text-center text-xs text-[#586D66] dark:text-[#7C9184] border-t border-[#EDF1ED] dark:border-[#1A2421]">
+            <div className="pt-2 text-center text-xs text-[#5F6368] dark:text-[#A0A0A0] border-t border-[#E3E3DF] dark:border-[#303030]">
               {authMode === 'login' ? (
                 <p>
                   Don't have an account yet?{' '}
                   <button
                     type="button"
                     onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
-                    className="font-bold text-[#0D5446] dark:text-[#3BB298] hover:underline ml-1"
+                    className="font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline ml-1 cursor-pointer"
                   >
                     Sign Up
                   </button>
@@ -230,7 +225,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
-                    className="font-bold text-[#0D5446] dark:text-[#3BB298] hover:underline ml-1"
+                    className="font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline ml-1 cursor-pointer"
                   >
                     Sign In
                   </button>

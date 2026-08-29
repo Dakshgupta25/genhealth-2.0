@@ -108,3 +108,47 @@ def test_update_report_results(client, db_session):
     chol = next(r for r in updated_items if "Cholesterol" in r["raw_test_name"])
     assert chol["abnormality_flag"] == "high"
     assert chol["canonical_test_name"] == "Total Cholesterol"
+
+
+def test_delete_report_and_extracted_measurements(client, db_session):
+    # 1. Create a user
+    user = User(
+        email="patient.delete@test.com",
+        password_hash="fakehash",
+        full_name="Delete Test Patient",
+        role="patient",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+
+    # 2. Create manual report with measurements
+    payload = {
+        "user_id": str(user.id),
+        "original_filename": "Report To Delete.pdf",
+        "results": [
+            {
+                "raw_test_name": "Hemoglobin",
+                "value": "13.8",
+                "unit": "g/dL",
+                "reference_range": "13.0-17.0",
+            },
+        ],
+    }
+    create_res = client.post("/api/v1/reports/manual", json=payload)
+    assert create_res.status_code == 201
+    report_id = create_res.json()["report_id"]
+
+    # 3. Confirm measurements exist
+    res_before = client.get(f"/api/v1/reports/{report_id}/results")
+    assert res_before.status_code == 200
+    assert len(res_before.json()) == 1
+
+    # 4. Delete the report
+    del_res = client.delete(f"/api/v1/reports/{report_id}")
+    assert del_res.status_code == 200
+    assert "permanently deleted" in del_res.json()["message"]
+
+    # 5. Verify report and measurements are gone
+    res_after = client.get(f"/api/v1/reports/{report_id}/results")
+    assert res_after.status_code == 404

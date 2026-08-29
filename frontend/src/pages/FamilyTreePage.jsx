@@ -38,7 +38,7 @@ export function FamilyTreePage() {
   const handleLinkSubmit = async (e) => {
     e.preventDefault();
     if (!targetUserId.trim()) {
-      setModalError('Please enter the target relative’s User ID (UUID).');
+      setModalError('Please enter the relative’s User ID (UUID).');
       return;
     }
 
@@ -63,7 +63,7 @@ export function FamilyTreePage() {
   };
 
   const handleUnlink = async (relationshipId, relativeName) => {
-    if (!window.confirm(`Are you sure you want to unlink ${relativeName || 'this relative'} from your family tree?`)) {
+    if (!window.confirm(`Are you sure you want to unlink ${relativeName || 'this relative'} from your family pedigree?`)) {
       return;
     }
 
@@ -105,38 +105,34 @@ export function FamilyTreePage() {
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
       
-      {/* 1. Header Card */}
-      <Card radius="xl">
-        <div className="p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-[#0D5446] text-white dark:bg-[#1A2421] dark:border dark:border-[#2A3B34] shadow-xs">
-              <DoodleIcon name="tree" className="w-4 h-4 text-emerald-300 dark:text-[#3BB298]" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#11231E] dark:text-[#ECF2EE]">
-                Family Health Tree
-              </h1>
-              <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
-                Top-to-bottom visual genealogical hierarchy connecting relatives via unique User IDs
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => { setLinkModalOpen(true); setModalError(''); }}
-            id="open-link-family-modal-btn"
-            leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5 text-emerald-300 dark:text-[#3BB298]" />}
-          >
-            Link Family Member
-          </Button>
+      {/* 1. Header Section with Red Titles */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E3E3DF] dark:border-[#303030]">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold tracking-widest text-[#B4232F] dark:text-[#E04855] uppercase">
+            Genealogical Intelligence
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#B4232F] dark:text-[#E04855]">
+            Family Health Pedigree
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5F6368] dark:text-[#A0A0A0]">
+            Understand hereditary health patterns and risk predispositions across generations.
+          </p>
         </div>
-      </Card>
+
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => { setLinkModalOpen(true); setModalError(''); }}
+          id="open-link-family-modal-btn"
+          leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5 text-white" />}
+        >
+          + Link Family Member
+        </Button>
+      </div>
 
       {/* Success Notification Banner */}
       {successMessage && (
-        <div className="p-3.5 rounded-xl text-xs font-semibold bg-[#E3EFE9] text-[#0D5446] border border-[#C6DFD2] dark:bg-[#1A332B] dark:text-[#4ADE80] dark:border-[#1B4332] flex items-center justify-between shadow-xs">
+        <div className="p-3.5 rounded-[8px] text-xs font-semibold bg-[#EAF6F0] text-[#247A59] border border-[#B8E4D1] dark:bg-[#13241B] dark:text-[#48BB78] dark:border-[#1E3D2C] flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-2">
             <span>✓</span>
             <span>{successMessage}</span>
@@ -144,7 +140,7 @@ export function FamilyTreePage() {
           <button
             type="button"
             onClick={() => setSuccessMessage('')}
-            className="text-[#0D5446] dark:text-[#4ADE80] font-bold underline ml-2"
+            className="text-[#247A59] dark:text-[#48BB78] font-bold underline ml-2 cursor-pointer"
           >
             Dismiss
           </button>
@@ -153,41 +149,41 @@ export function FamilyTreePage() {
 
       {/* 2. THREE-TIER VISUAL GENEALOGY HIERARCHY */}
       {loading ? (
-        <Card radius="lg" className="p-12 text-center space-y-3">
-          <div className="w-6 h-6 mx-auto rounded-full border-2 border-[#1D7A68] border-t-[#0D5446] animate-spin" />
-          <p className="text-xs text-[#586D66] dark:text-[#7C9184]">Loading genealogical network...</p>
+        <Card radius="lg" className="p-12 text-center space-y-3 bg-white dark:bg-[#1E1E1E] border border-[#D98A91]/80 dark:border-[#303030]">
+          <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#B4232F] border-t-transparent animate-spin" />
+          <p className="text-xs text-[#858585]">Loading pedigree records...</p>
         </Card>
       ) : relatives.length === 0 ? (
         <EmptyState
           icon={<DoodleIcon name="tree" className="w-5 h-5" />}
-          title="No Family Members Linked Yet"
-          description="Build your genealogical health network to unlock multi-generational hereditary risk intelligence."
+          title="No family members linked yet"
+          description="Add a relative to start building your health pedigree and map multi-generational risk patterns."
           action={
             <Button
               variant="primary"
               size="sm"
               onClick={() => { setLinkModalOpen(true); setModalError(''); }}
-              leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5" />}
+              leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5 text-white" />}
             >
-              Link First Relative
+              + Add First Relative
             </Button>
           }
         />
       ) : (
-        <div className="space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto">
           
           {/* TIER 1: Parents & Ascendants */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B4232F] dark:text-[#E04855]">
                 Tier 1 • Parents &amp; Ascendants
               </span>
-              <span className="text-xs text-[#8BA196] dark:text-[#7C9184]">
+              <span className="text-xs text-[#858585]">
                 ({parentRelatives.length})
               </span>
             </div>
 
-            <div className="p-5 sm:p-6 rounded-2xl border border-[#D0D9D0] dark:border-[#2A3B34] bg-[#F5F7F5]/50 dark:bg-[#141C19]/40 min-h-[110px] flex items-center justify-center">
+            <div className="p-5 rounded-[12px] border border-[#D98A91]/80 dark:border-[#422225] bg-white dark:bg-[#1E1E1E] min-h-[100px] flex items-center justify-center shadow-xs">
               {parentRelatives.length > 0 ? (
                 <div className="flex flex-wrap items-center justify-center gap-4 w-full">
                   {parentRelatives.map((rel) => (
@@ -199,19 +195,17 @@ export function FamilyTreePage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-xs text-[#586D66] dark:text-[#7C9184] space-y-1">
-                  <p className="font-semibold">No Parents Linked</p>
+                <div className="text-center text-xs text-[#858585] space-y-1">
+                  <p className="font-semibold text-[#171717] dark:text-[#F0F0F0]">No Parents Linked</p>
                   <p className="text-[11px]">
-                    Link mother or father accounts to cross-examine hereditary traits.
+                    Link mother or father accounts to analyze hereditary predispositions.
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => { setRelationshipType('father'); setLinkModalOpen(true); }}
-                    className="text-xs font-bold text-[#0D5446] dark:text-[#3BB298] hover:underline pt-1"
+                    className="text-xs font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline pt-1 cursor-pointer"
                   >
                     + Link Parent
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -219,24 +213,24 @@ export function FamilyTreePage() {
 
           {/* Genealogical Connector Line (Tier 1 -> Tier 2) */}
           <div className="flex justify-center">
-            <div className="w-0.5 h-6 bg-[#D0D9D0] dark:bg-[#2A3B34]" />
+            <div className="w-px h-6 bg-[#BDBDB8] dark:border-[#404040]" />
           </div>
 
           {/* TIER 2: Self, Spouse & Siblings (Center Focus) */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#0D5446] dark:text-[#3BB298]">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#B4232F] dark:text-[#E04855]">
                 Tier 2 • Self, Spouse &amp; Siblings
               </span>
-              <span className="text-xs text-[#8BA196] dark:text-[#7C9184]">
+              <span className="text-xs text-[#858585]">
                 ({1 + peerRelatives.length})
               </span>
             </div>
 
-            <div className="p-5 sm:p-6 rounded-2xl border border-[#0D5446]/40 dark:border-[#3BB298]/30 bg-white dark:bg-[#141C19] shadow-xs">
+            <div className="p-5 rounded-[12px] border border-[#B4232F] bg-white dark:bg-[#1E1E1E] shadow-xs">
               <div className="flex flex-wrap items-center justify-center gap-4">
                 
-                {/* 1. Primary User Self Node */}
+                {/* Primary User Self Node */}
                 <FamilyTreeNode
                   member={{
                     id: userId,
@@ -247,7 +241,7 @@ export function FamilyTreePage() {
                   isSelf={true}
                 />
 
-                {/* 2. Peer Generation Nodes (Spouse / Siblings) */}
+                {/* Peer Generation Nodes (Spouse / Siblings) */}
                 {peerRelatives.map((rel) => (
                   <FamilyTreeNode
                     key={rel.relationship_id}
@@ -261,21 +255,21 @@ export function FamilyTreePage() {
 
           {/* Genealogical Connector Line (Tier 2 -> Tier 3) */}
           <div className="flex justify-center">
-            <div className="w-0.5 h-6 bg-[#D0D9D0] dark:bg-[#2A3B34]" />
+            <div className="w-px h-6 bg-[#BDBDB8] dark:border-[#404040]" />
           </div>
 
           {/* TIER 3: Children & Descendants */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B4232F] dark:text-[#E04855]">
                 Tier 3 • Children &amp; Descendants
               </span>
-              <span className="text-xs text-[#8BA196] dark:text-[#7C9184]">
+              <span className="text-xs text-[#858585]">
                 ({childRelatives.length})
               </span>
             </div>
 
-            <div className="p-5 sm:p-6 rounded-2xl border border-[#D0D9D0] dark:border-[#2A3B34] bg-[#F5F7F5]/50 dark:bg-[#141C19]/40 min-h-[110px] flex items-center justify-center">
+            <div className="p-5 rounded-[12px] border border-[#D98A91]/80 dark:border-[#422225] bg-white dark:bg-[#1E1E1E] min-h-[100px] flex items-center justify-center shadow-xs">
               {childRelatives.length > 0 ? (
                 <div className="flex flex-wrap items-center justify-center gap-4 w-full">
                   {childRelatives.map((rel) => (
@@ -287,19 +281,17 @@ export function FamilyTreePage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-xs text-[#586D66] dark:text-[#7C9184] space-y-1">
-                  <p className="font-semibold">No Children Linked</p>
+                <div className="text-center text-xs text-[#858585] space-y-1">
+                  <p className="font-semibold text-[#171717] dark:text-[#F0F0F0]">No Children Linked</p>
                   <p className="text-[11px]">
                     Link children accounts to track downward health trajectories.
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => { setRelationshipType('child'); setLinkModalOpen(true); }}
-                    className="text-xs font-bold text-[#0D5446] dark:text-[#3BB298] hover:underline pt-1"
+                    className="text-xs font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline pt-1 cursor-pointer"
                   >
                     + Link Child
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
@@ -309,12 +301,12 @@ export function FamilyTreePage() {
           {otherRelatives.length > 0 && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#586D66] dark:text-[#7C9184]">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#B4232F] dark:text-[#E04855]">
                   Extended Family &amp; Kinship
                 </span>
-                <span className="text-xs text-[#8BA196]">({otherRelatives.length})</span>
+                <span className="text-xs text-[#858585]">({otherRelatives.length})</span>
               </div>
-              <div className="p-5 sm:p-6 rounded-2xl border border-[#D0D9D0] dark:border-[#2A3B34] bg-[#F5F7F5]/50 dark:bg-[#141C19]/40">
+              <div className="p-5 rounded-[12px] border border-[#D98A91]/80 dark:border-[#303030] bg-white dark:bg-[#1E1E1E]">
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   {otherRelatives.map((rel) => (
                     <FamilyTreeNode
@@ -337,11 +329,11 @@ export function FamilyTreePage() {
         onClose={() => setLinkModalOpen(false)}
         title="Link Family Member"
         subtitle="Connect a relative's health profile via their unique User ID (UUID)"
-        icon={<DoodleIcon name="tree" className="w-4 h-4" />}
+        icon={<DoodleIcon name="tree" className="w-4 h-4 text-[#B4232F] dark:text-[#E04855]" />}
         footer={
           <>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => setLinkModalOpen(false)}
               disabled={submitting}
@@ -354,7 +346,7 @@ export function FamilyTreePage() {
               onClick={handleLinkSubmit}
               loading={submitting}
               id="submit-link-relative-btn"
-              leftIcon={<DoodleIcon name="check" className="w-3.5 h-3.5 text-emerald-300 dark:text-[#3BB298]" />}
+              leftIcon={<DoodleIcon name="check" className="w-3.5 h-3.5 text-white" />}
             >
               Confirm &amp; Link Relative
             </Button>
@@ -363,7 +355,7 @@ export function FamilyTreePage() {
       >
         <form onSubmit={handleLinkSubmit} className="space-y-4">
           {modalError && (
-            <div className="p-3.5 rounded-lg text-xs font-medium bg-[#FEE2E2] border border-[#FECACA] text-[#991B1B] dark:bg-[#2B1212] dark:border-[#4C1D1D] dark:text-[#F87171] flex items-center space-x-2">
+            <div className="p-3 rounded-[6px] text-xs font-medium bg-[#FCEBED] border border-[#E8B4B9] text-[#B4232F] dark:bg-[#2D1416] dark:border-[#522226] dark:text-[#E04855] flex items-center space-x-2">
               <span>⚠️</span>
               <span>{modalError}</span>
             </div>
@@ -372,7 +364,7 @@ export function FamilyTreePage() {
           <FormField
             label="Relative's User ID (UUID)"
             required
-            helperText="Ask your relative to copy their User ID from their profile or family tree page."
+            helperText="Ask your relative to copy their unique User ID from their profile menu."
           >
             <Input
               type="text"

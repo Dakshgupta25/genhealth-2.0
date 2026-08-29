@@ -1,10 +1,10 @@
 import React from 'react';
 
 /**
- * GenHealth AI - Medical Icon System
- * Hand-crafted 24x24 viewBox clinical icons with consistent stroke widths (1.5 - 1.8).
+ * GenHealth AI - Clinical Iconography System
+ * Clean, restrained 24x24 viewBox medical & UI icons with consistent stroke width.
  */
-export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
+export function DoodleIcon({ name, className = "w-4 h-4", strokeWidth = 1.6 }) {
   switch (name) {
     case 'heartbeat':
       return (
@@ -74,10 +74,10 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
     case 'dashboard':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="9" rx="1.5" />
-          <rect x="14" y="3" width="7" height="5" rx="1.5" />
-          <rect x="14" y="12" width="7" height="9" rx="1.5" />
-          <rect x="3" y="16" width="7" height="5" rx="1.5" />
+          <rect x="3" y="3" width="7" height="9" rx="1" />
+          <rect x="14" y="3" width="7" height="5" rx="1" />
+          <rect x="14" y="12" width="7" height="9" rx="1" />
+          <rect x="3" y="16" width="7" height="5" rx="1" />
         </svg>
       );
     case 'user':
@@ -144,7 +144,6 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <polyline points="14 2 14 8 20 8" />
           <line x1="16" y1="13" x2="8" y2="13" />
           <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
         </svg>
       );
     case 'pen':
@@ -230,11 +229,18 @@ export function DoodleIcon({ name, className = "w-5 h-5", strokeWidth = 1.8 }) {
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
         </svg>
       );
+    case 'chart-line':
+      return (
+        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 3v18h18" />
+          <path d="m19 9-5 5-4-4-3 3" />
+        </svg>
+      );
     case 'logo-pulse':
       return (
         <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M4 12h3.5l2-5 3 9 2.5-6 1.5 3H20" />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M7 12h2.5l1.5-4 2 8 2-5 1.5 2.5 1.5-1.5" />
         </svg>
       );
     default:

@@ -10,9 +10,9 @@ export function TrendChart({
 }) {
   if (loading) {
     return (
-      <Card radius="lg" className="p-8 flex flex-col items-center justify-center space-y-3 min-h-[260px] text-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#1D7A68] border-t-[#0D5446] animate-spin" />
-        <p className="text-xs text-[#586D66] dark:text-[#7C9184] font-medium">
+      <Card radius="lg" className="p-8 flex flex-col items-center justify-center space-y-3 min-h-[240px] text-center bg-white border border-[#E3E3DF] dark:border-[#303030]">
+        <div className="w-6 h-6 rounded-full border-2 border-[#B4232F] border-t-transparent animate-spin" />
+        <p className="text-xs text-[#858585] font-medium">
           Loading longitudinal biomarker trajectory...
         </p>
       </Card>
@@ -24,7 +24,7 @@ export function TrendChart({
       <EmptyState
         icon={<DoodleIcon name="heartbeat" className="w-5 h-5" />}
         title={`No Historical Records for ${title || 'Selected Test'}`}
-        description="Upload clinical lab reports containing this biomarker to automatically plot longitudinal trend curves."
+        description="Ingest clinical lab reports containing this biomarker to plot longitudinal trend curves."
       />
     );
   }
@@ -46,10 +46,10 @@ export function TrendChart({
   const yRange = yMax - yMin || 1;
 
   // SVG Chart dimensions
-  const width = 580;
-  const height = 210;
-  const padX = 52;
-  const padY = 32;
+  const width = 560;
+  const height = 190;
+  const padX = 48;
+  const padY = 28;
   const graphWidth = width - padX * 2;
   const graphHeight = height - padY * 2;
 
@@ -75,59 +75,55 @@ export function TrendChart({
     switch (flag?.toLowerCase()) {
       case 'high':
       case 'critical':
-        return '#EF4444';
+        return '#B4232F';
       case 'low':
-        return '#F59E0B';
+        return '#9A6500';
       case 'normal':
-        return '#10B981';
+        return '#247A59';
       default:
-        return '#0D5446';
+        return '#171717';
     }
   };
 
   const latestPoint = sorted[sorted.length - 1];
 
   return (
-    <Card radius="lg" className="overflow-hidden shadow-sm">
-      <CardHeader className="border-b border-[#EDF1ED] dark:border-[#1A2421] pb-3">
+    <Card radius="lg" className="overflow-hidden bg-white border border-[#E3E3DF] dark:border-[#303030]">
+      <CardHeader density="compact" className="border-b border-[#E3E3DF] dark:border-[#303030] pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="flex items-center space-x-2">
-              <CardTitle className="text-base">{title}</CardTitle>
+              <CardTitle density="compact">{title}</CardTitle>
               {unit && (
-                <span className="text-xs px-2 py-0.5 rounded-md font-mono font-semibold bg-[#EDF1ED] text-[#0D5446] dark:bg-[#1A2421] dark:text-[#3BB298]">
+                <span className="text-xs px-2 py-0.5 rounded-[4px] font-mono font-semibold bg-[#F4F4F2] text-[#171717] dark:bg-[#252525] dark:text-[#F0F0F0]">
                   {unit}
                 </span>
               )}
             </div>
             <CardDescription className="text-xs">
-              Longitudinal trend across <span className="font-semibold text-[#11231E] dark:text-[#ECF2EE]">{sorted.length}</span> recorded lab measures
+              Longitudinal trajectory across <span className="font-semibold text-[#171717] dark:text-[#F0F0F0]">{sorted.length}</span> recorded measures
             </CardDescription>
           </div>
 
           <div className="flex items-center space-x-3 text-[11px] font-medium self-start sm:self-center">
             <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-              <span className="text-[#586D66] dark:text-[#7C9184]">Normal</span>
+              <span className="w-2 h-2 rounded-full bg-[#247A59]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Normal</span>
             </span>
             <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-              <span className="text-[#586D66] dark:text-[#7C9184]">High</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-              <span className="text-[#586D66] dark:text-[#7C9184]">Low</span>
+              <span className="w-2 h-2 rounded-full bg-[#B4232F]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Abnormal</span>
             </span>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="p-4 sm:p-5">
+      <CardContent density="compact" className="p-4 sm:p-5">
         {/* SVG Trend Chart Canvas */}
         <div className="w-full overflow-x-auto">
           <svg
             viewBox={`0 0 ${width} ${height}`}
-            className="w-full h-auto min-w-[480px]"
+            className="w-full h-auto min-w-[440px]"
           >
             {/* Horizontal Reference Grid Lines */}
             <line
@@ -136,7 +132,7 @@ export function TrendChart({
               x2={width - padX}
               y2={padY}
               stroke="currentColor"
-              className="text-[#D0D9D0] dark:text-[#2A3B34]"
+              className="text-[#E3E3DF] dark:text-[#303030]"
               strokeDasharray="4 4"
             />
             <line
@@ -145,7 +141,7 @@ export function TrendChart({
               x2={width - padX}
               y2={height / 2}
               stroke="currentColor"
-              className="text-[#D0D9D0] dark:text-[#2A3B34]"
+              className="text-[#E3E3DF] dark:text-[#303030]"
               strokeDasharray="4 4"
             />
             <line
@@ -154,27 +150,28 @@ export function TrendChart({
               x2={width - padX}
               y2={height - padY}
               stroke="currentColor"
-              className="text-[#D0D9D0] dark:text-[#2A3B34]"
+              className="text-[#E3E3DF] dark:text-[#303030]"
             />
 
             {/* Y Axis Labels */}
-            <text x={padX - 8} y={padY + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
+            <text x={padX - 8} y={padY + 4} textAnchor="end" className="text-[10px] fill-[#858585] font-mono">
               {yMax}
             </text>
-            <text x={padX - 8} y={height / 2 + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
+            <text x={padX - 8} y={height / 2 + 4} textAnchor="end" className="text-[10px] fill-[#858585] font-mono">
               {Math.round((yMax + yMin) / 2)}
             </text>
-            <text x={padX - 8} y={height - padY + 4} textAnchor="end" className="text-[10px] fill-[#7C9184] font-mono">
+            <text x={padX - 8} y={height - padY + 4} textAnchor="end" className="text-[10px] fill-[#858585] font-mono">
               {yMin}
             </text>
 
-            {/* Clinical Trend Line Path (Clinical Evergreen) */}
+            {/* Clinical Trend Line Path (Brand Red) */}
             {points.length > 1 && (
               <path
                 d={pathD}
                 fill="none"
-                stroke="#1D7A68"
-                strokeWidth="2.5"
+                stroke="#B4232F"
+                className="dark:stroke-[#E04855]"
+                strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -186,25 +183,25 @@ export function TrendChart({
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r="5.5"
+                  r="5"
                   fill={getPointColor(p.abnormality_flag)}
                   stroke="#FFFFFF"
                   strokeWidth="2"
-                  className="transition-transform hover:scale-125 cursor-pointer"
+                  className="transition-transform hover:scale-125 cursor-pointer dark:stroke-[#1E1E1E]"
                 />
                 <text
                   x={p.x}
-                  y={p.y - 9}
+                  y={p.y - 8}
                   textAnchor="middle"
-                  className="text-[10px] font-bold font-mono fill-[#11231E] dark:fill-[#ECF2EE]"
+                  className="text-[10px] font-bold font-mono fill-[#171717] dark:fill-[#F0F0F0]"
                 >
                   {p.value}
                 </text>
                 <text
                   x={p.x}
-                  y={height - padY + 16}
+                  y={height - padY + 15}
                   textAnchor="middle"
-                  className="text-[9px] fill-[#7C9184] font-mono"
+                  className="text-[9px] fill-[#858585] font-mono"
                 >
                   {new Date(p.report_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </text>
@@ -215,11 +212,11 @@ export function TrendChart({
 
         {/* Latest Value Footnote */}
         {latestPoint && (
-          <div className="mt-2 pt-2 border-t border-[#EDF1ED] dark:border-[#1A2421] flex items-center justify-between text-xs">
-            <span className="text-[#586D66] dark:text-[#7C9184]">
-              Latest reading: <strong className="font-mono text-[#11231E] dark:text-[#ECF2EE]">{latestPoint.value} {unit}</strong> on {new Date(latestPoint.report_date).toLocaleDateString()}
+          <div className="mt-2 pt-2 border-t border-[#E3E3DF] dark:border-[#303030] flex items-center justify-between text-xs">
+            <span className="text-[#5F6368] dark:text-[#A0A0A0]">
+              Latest reading: <strong className="font-mono text-[#171717] dark:text-[#F0F0F0]">{latestPoint.value} {unit}</strong> on {new Date(latestPoint.report_date).toLocaleDateString()}
             </span>
-            <Badge status={latestPoint.abnormality_flag === 'normal' ? 'normal' : latestPoint.abnormality_flag === 'low' ? 'warning' : 'critical'} size="sm">
+            <Badge status={latestPoint.abnormality_flag === 'normal' ? 'normal' : 'critical'} size="sm" dot>
               {latestPoint.abnormality_flag || 'Status'}
             </Badge>
           </div>

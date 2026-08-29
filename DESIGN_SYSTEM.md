@@ -1,116 +1,108 @@
-# GenHealth AI — Design System Documentation
-**Style Direction:** Clean Medical Precision / Modern Clinical Minimal (Clinical Evergreen Palette)  
+# GenHealth AI — Modern Nordic Ergonomic Design System
+**Style Direction:** Modern Nordic Ergonomic (Maritime Slate & Juniper Palette)  
 **Product:** GenHealth AI — Clinical AI & Health Intelligence Platform  
-**Target Users:** Patients, Doctors, Clinical Providers & Hospitals  
-**Core Aesthetic:** Trustworthy, calm, medically credible, uncluttered, technologically advanced.
+**Audiences:** Patients (Stress-reducing, calming health records) & Physicians (High-throughput diagnostic lookup)  
+**Core Aesthetic:** Dignified, calm, human-scale clinical clarity, tonal surfaces, and zero decorative noise.
 
 ---
 
-## 1. Design Principles
+## 1. Design Philosophy
 
-1. **Signal-to-Noise Priority:** Clinical data is life-critical. Minimize decorative noise (no arbitrary corner blobs, excessive glassmorphism, or cartoonish illustrations).
-2. **Disciplined Geometry:** Precise, modern radii (8px–16px) instead of bloated pill shapes and inflated 28px corners.
-3. **High-Legibility Medical Contrast:** Deep evergreen charcoal (`#11231E`) on warm stone white surfaces (Light: 15.4:1 contrast ratio) and luminous white (`#ECF2EE`) on deep spruce surfaces (Dark: 14.2:1 contrast ratio) meeting WCAG AAA standard.
-4. **Purpose-Driven Status Encoding:** Color is used exclusively for actionable clinical flags (Deep Green/Sage for Normal, Amber for Low/Warning, Crimson for High/Critical, Blue for Informational).
-5. **Tabular Precision:** JetBrains Mono font for biomarker readings, reference intervals, LOINC codes, and UUID anchors.
+1. **Human-Scale Reassurance for Patients:** Lab results (especially abnormal ones) carry emotional cognitive weight. The patient experience prioritizes unhurried typography, natural mineral tones, and clear summaries.
+2. **High-Throughput Diagnostic Density for Doctors:** The Doctor Portal provides a dense, information-forward working mode with compact table rows, instant pathology filters, and multi-biomarker longitudinal curves without breaking the visual language.
+3. **Deep Desaturated Juniper Anchor:** Anchored by `#1E4D45` (light) / `#336E63` (dark)—authoritative, grounded, and clinical without being synthetic, cold, or minty.
+4. **Tonal Surfaces Over Muddy Shadows:** Uses subtle substrate shifts (warm maritime mist `#F4F6F5` to crisp card surface `#FFFFFF`) and 1px hairline borders (`#CBD6D2` / `#2F433E`) rather than heavy blurred drop shadows.
+5. **High-Margin WCAG AAA/AA Contrast:** All text tokens strictly exceed contrast floors (Normal body > 7.5:1 AAA, Muted metadata > 5.7:1 AA safety margin).
 
 ---
 
-## 2. Color System
+## 2. Color System & Contrast Ratios
 
-### Light Mode (`:root`)
+### Light Mode (`:root` / `[data-theme="light"]`)
 
-| Role | Token | Hex / Value | Semantic Purpose / Contrast Ratio |
+| Role | Token | Hex Value | Contrast vs Surface / Semantic Purpose |
 | :--- | :--- | :--- | :--- |
-| **Canvas Background** | `--bg-canvas` / `--bg-primary` | `#F5F7F5` (Warm Neutral) | High-comfort neutral page background |
-| **Secondary Surface** | `--bg-secondary` / `--bg-subtle` | `#EDF1ED` (Muted Sage) | Inset panels, table headers, filter bars |
-| **Surface / Card** | `--bg-surface` / `--bg-card` | `#FFFFFF` (Pure White) | Card surfaces, modal sheets, tables |
-| **Hover Surface** | `--bg-card-hover` | `#F8FAF8` | Interactive card hover state |
-| **Input Background** | `--bg-input` | `#FFFFFF` | Form inputs, search fields |
-| **Text Primary** | `--text-primary` | `#11231E` (Evergreen Charcoal) | High-contrast headings and body text (**15.4:1, WCAG AAA**) |
-| **Text Secondary** | `--text-secondary` | `#334740` (Forest Muted) | Metadata, descriptions, subtitle copy (**8.2:1, WCAG AAA**) |
-| **Text Muted** | `--text-muted` | `#586D66` (Sage Muted) | Table headers, timestamps, subtle labels (**4.8:1, WCAG AA**) |
-| **Brand Primary Action** | `--brand-primary` | `#0D5446` (Deep Evergreen) | High-authority primary button fill (**8.6:1 contrast**) |
-| **Brand Primary Hover** | `--brand-primary-hover` | `#0A4337` (Deep Pine) | Active and hover button state |
-| **Brand Accent** | `--brand-teal` / `--text-accent` | `#1D7A68` (Forest Teal) | Clinical active links, brand highlights |
-| **Subtle Tint Accent** | `--brand-soft-blue` | `#E3EFE9` (Clinical Sage) | Badge backgrounds, accent highlight chips |
-| **Subtle Border** | `--border-subtle` / `--border-card` | `#D6DDD6` / `#D0D9D0` | 1px clean container and cell dividers |
-| **Focus Ring** | `--border-focus` | `#1D7A68` | Accessible focus outline |
+| **Canvas Background** | `--bg-canvas` | `#F4F6F5` | Warm maritime mist canvas |
+| **Surface / Card** | `--bg-surface` | `#FFFFFF` | Crisp White card surface |
+| **Raised Container** | `--bg-surface-raised` | `#EBF0EE` | Table headers, secondary toolbars |
+| **Inset Input Well** | `--bg-surface-inset` | `#E2E9E6` | Input fields, code wells |
+| **Text Primary** | `--text-primary` | `#13221F` | Deep charcoal juniper (**15.8:1, WCAG AAA**) |
+| **Text Secondary** | `--text-secondary` | `#3D524E` | Muted clinical slate (**7.9:1, WCAG AAA**) |
+| **Text Muted** | `--text-muted` | `#4E6863` | Timestamps, units, metadata (**5.88:1, Safe AA**) |
+| **Primary Action** | `--primary-default` | `#1E4D45` | Deep Nordic Juniper button fill (**9.2:1 contrast**) |
+| **Primary Hover** | `--primary-hover` | `#163E37` | Hover deep pine state |
+| **Subtle Tint Accent** | `--primary-subtle` | `#E5EFEA` | Selected tab/filter pill fill |
+| **Subtle Border** | `--border-subtle` | `#E0E7E4` | Internal card and table dividers |
+| **Default Border** | `--border-default` | `#CBD6D2` | Standard card and form borders |
 
 ### Dark Mode (`[data-theme="dark"]`, `.dark`)
 
-| Role | Token | Hex / Value | Semantic Purpose / Contrast Ratio |
+| Role | Token | Hex Value | Contrast vs Surface / Semantic Purpose |
 | :--- | :--- | :--- | :--- |
-| **Canvas Background** | `--bg-canvas` / `--bg-primary` | `#0E1412` (Deep Spruce Black) | Eye-strain reducing deep background |
-| **Secondary Surface** | `--bg-secondary` / `--bg-subtle` | `#1A2421` (Deep Spruce) | Inset panels, table headers |
-| **Surface / Card** | `--bg-surface` / `--bg-card` | `#141C19` (Elevated Spruce) | Card surfaces, modal sheets |
-| **Hover Surface** | `--bg-card-hover` | `#192420` | Interactive card hover state |
-| **Input Background** | `--bg-input` | `#0F1714` (Deep Charcoal) | Form inputs |
-| **Text Primary** | `--text-primary` | `#ECF2EE` (Luminous White) | High-contrast readable text (**14.2:1, WCAG AAA**) |
-| **Text Secondary** | `--text-secondary` | `#B2C2B8` (Soft Sage) | Subtitles, labels (**7.6:1, WCAG AAA**) |
-| **Text Muted** | `--text-muted` | `#7C9184` (Spruce Muted) | Table headers, timestamps (**4.6:1, WCAG AA**) |
-| **Brand Primary Action** | `--brand-primary` | `#227D6B` (Luminous Evergreen) | Dark mode button fill |
-| **Brand Primary Hover** | `--brand-primary-hover` | `#2A947F` (Hover Jade) | Hover state for dark mode buttons |
-| **Brand Accent** | `--brand-teal` / `--text-accent` | `#3BB298` (Luminous Jade) | Luminous clinical accent and indicators |
-| **Subtle Tint Accent** | `--brand-soft-blue` | `#1A332B` (Dark Spruce Tint) | Subtle badge fill |
-| **Subtle Border** | `--border-subtle` / `--border-card` | `#23312B` / `#2A3B34` | 1px dark spruce border dividers |
-
-### Clinical Status Diagnostic Colors
-
-| Diagnostic Flag | Foreground (Text) | Background (Light) | Background (Dark) |
-| :--- | :--- | :--- | :--- |
-| **Normal / Optimal** | `#0D5446` (Light) / `#4ADE80` (Dark) | `#E3EFE9` (Sage 50) | `rgba(74, 222, 128, 0.12)` |
-| **Warning / Low / Review** | `#92400E` (Light) / `#FBBF24` (Dark) | `#FEF3C7` (Amber 50) | `rgba(251, 191, 36, 0.12)` |
-| **Critical / High** | `#991B1B` (Light) / `#F87171` (Dark) | `#FEE2E2` (Red 50) | `rgba(248, 113, 113, 0.12)` |
-| **Clinical Note / Info** | `#1E40AF` (Light) / `#60A5FA` (Dark) | `#EFF6FF` (Blue 50) | `rgba(96, 165, 250, 0.12)` |
+| **Canvas Background** | `--bg-canvas` | `#0E1413` | Deep obsidian maritime charcoal canvas |
+| **Surface / Card** | `--bg-surface` | `#151E1C` | Elevated Nordic charcoal surface |
+| **Raised Container** | `--bg-surface-raised` | `#1C2725` | Table headers, secondary toolbars |
+| **Inset Input Well** | `--bg-surface-inset` | `#23322E` | Input fields, code wells |
+| **Text Primary** | `--text-primary` | `#EFF5F3` | Luminous soft white (**15.2:1, WCAG AAA**) |
+| **Text Secondary** | `--text-secondary` | `#A0B6B0` | Soft sage slate (**8.1:1, WCAG AAA**) |
+| **Text Muted** | `--text-muted` | `#7E9993` | Timestamps, units, metadata (**5.70:1, Safe AA**) |
+| **Primary Action** | `--primary-default` | `#336E63` | Calibrated Luminous Juniper (**5.7:1 contrast**) |
+| **Primary Hover** | `--primary-hover` | `#3F8477` | Hover luminous state |
+| **Subtle Tint Accent** | `--primary-subtle` | `#1A2C28` | Selected tab/filter pill fill |
+| **Subtle Border** | `--border-subtle` | `#22312E` | Internal card and table dividers |
+| **Default Border** | `--border-default` | `#2F433E` | Standard card and form borders |
 
 ---
 
-## 3. Typography Scale
+## 3. Grounded Mineral Status System
+
+| Diagnostic Status | Light Mode (Text / Bg / Border) | Dark Mode (Text / Bg / Border) | Usage |
+| :--- | :--- | :--- | :--- |
+| **Normal / Optimal** | `#18573D` / `#F0F8F4` / `#C8E6D6` (7.4:1 AAA) | `#57BA8E` / `#11251B` / `#224D37` (7.2:1 AAA) | In-range biomarkers, completed extractions |
+| **Warning / Low / Review** | `#8F5708` / `#FEF7EB` / `#F6DCB1` (5.9:1 AA) | `#E6A84F` / `#2B1F0E` / `#573E1B` (7.7:1 AAA) | Borderline measurements, unreviewed items |
+| **Critical / High** | `#942728` / `#FDF0F0` / `#F6C4C5` (7.9:1 AAA) | `#E57373` / `#2D1616` / `#5B292A` (5.4:1 AA) | Out-of-range clinical flags, delete actions |
+| **Clinical Info / Note** | `#1E4E6B` / `#F0F6FA` / `#C3DCEB` (7.5:1 AAA) | `#5FA9D6` / `#13232E` / `#25455B` (7.2:1 AAA) | AI extraction notes, category labels |
+
+---
+
+## 4. Typography Scale
 
 * **Headings & Body:** `'Plus Jakarta Sans', system-ui, -apple-system, sans-serif`
-* **Tabular & Numerals:** `'JetBrains Mono', ui-monospace, monospace`
+* **Tabular Numbers & Units:** `'JetBrains Mono', ui-monospace, monospace`
 
-| Level | Size | Weight | Line Height | Tracking | Usage |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Page Title** | 28px (`text-2xl` / `text-3xl`) | 700 (Bold) | 1.2 | `-0.02em` | Main page hero titles |
-| **Card / Section Header** | 18px (`text-lg`) | 600 (Semibold) | 1.3 | `-0.01em` | Panel titles, modal headers |
-| **Subsection Header** | 15px (`text-base`) | 600 (Semibold) | 1.4 | `0` | Form section titles |
-| **Body (Default)** | 14px (`text-sm`) | 400 (Regular) | 1.5 | `0` | Standard descriptions, paragraphs |
-| **Caption / Metadata** | 12px (`text-xs`) | 500 (Medium) | 1.4 | `0` | Subtitles, footnotes, button labels |
-| **Micro / Status Tag** | 11px (`text-[11px]`) | 600 (Semibold) | 1.3 | `0.02em` | Badges, status chips, table headers |
-| **Tabular Numbers** | 12px–14px | 500 / 600 (Mono) | 1.0 | `0` | Biomarker values, dates, UUIDs |
-
----
-
-## 4. Spacing Scale
-
-* **4px Base Rhythm:**
-  * `space-1` (4px): Micro-gaps between icons and text
-  * `space-2` (8px): Button internal icon gaps, tight list spacing
-  * `space-3` (12px): Form input padding, small card internal spacing
-  * `space-4` (16px): Card internal padding, grid gutters
-  * `space-6` (24px): Section separation, hero container padding
-  * `space-8` (32px): Major page module gap
+| Token | Size | Weight | Line Height | Application |
+| :--- | :--- | :--- | :--- | :--- |
+| `--text-2xs` | 11px | 600 | 1.3 | Micro-badges, table headers |
+| `--text-xs` | 12px | 400 / 500 | 1.4 | Timestamps, form helper text |
+| `--text-sm` | 14px | 400 / 500 | 1.45 | Form labels, table cells |
+| `--text-base` | 15px | 400 / 500 | 1.5 | Default body copy, descriptions |
+| `--text-lg` | 18px | 600 / 700 | 1.4 | Card titles, section headers |
+| `--text-xl` | 22px | 700 | 1.35 | Major module titles |
+| `--text-2xl` | 28px | 700 | 1.25 | Main page hero titles |
 
 ---
 
-## 5. Border Radius System
+## 5. Geometry, Radius & Density Modes
 
-* **`--radius-xs` (4px):** Code snippets, micro-tags, tooltips.
-* **`--radius-sm` (6px):** Table row status chips, inline badges.
-* **`--radius-md` (8px):** Form inputs, standard buttons, dropdown menus.
-* **`--radius-lg` (12px):** Metric preview boxes, list containers, sub-panels.
-* **`--radius-xl` (16px):** Main cards, upload drop zones, modal dialogs.
-* **`--radius-full` (9999px):** Status dots, avatar circles.
+* **Corner Radii:**
+  * `--radius-xs` (4px): Micro tags, indicator dots
+  * `--radius-sm` (6px): Segment controls, table inputs
+  * `--radius-md` (9px): Standard action buttons, form inputs
+  * `--radius-lg` (14px): Standard cards, panels, modals
+  * `--radius-xl` (18px): Hero containers, upload dropzone
+  * `--radius-full` (9999px): Status pills, avatar circles
+
+* **Density Calibration:**
+  * **Patient Mode (`density="spacious"`):** Generous 20px–24px padding, 44px table rows, conversational helper labels.
+  * **Doctor Mode (`density="compact"`):** Compact 14px padding, 32px table rows, high-throughput search and filtering.
 
 ---
 
-## 6. Global Reusable UI Primitives (`src/components/ui/`)
+## 6. Shared UI Primitives (`src/components/ui/`)
 
-1. `<Button variant="primary | secondary | outline | ghost | danger | teal" size="sm | md | lg" />`
-2. `<Badge status="normal | warning | critical | info | neutral | purple | teal" size="sm | md" dot={boolean} />`
-3. `<Card radius="md | lg | xl" interactive={boolean}> <CardHeader> <CardTitle> <CardDescription> <CardContent> <CardFooter> </Card>`
-4. `<FormField label="..." required error="..." helperText="..."> <Input /> | <Select /> </FormField>`
+1. `<Button variant="primary | secondary | outline | ghost | danger | dangerSubtle" size="sm | md | lg" />`
+2. `<Badge status="normal | warning | critical | info | neutral | purple | juniper" size="sm | md" dot={boolean} />`
+3. `<Card radius="sm | md | lg | xl" interactive={boolean}> <CardHeader density="..."> <CardTitle> <CardDescription> <CardContent> <CardFooter> </Card>`
+4. `<FormField label="..." required error="..." helperText="..."> <Input density="..." /> | <Select density="..." /> </FormField>`
 5. `<Modal isOpen={boolean} onClose={fn} title="..." subtitle="..." icon={...} footer={...}>`
 6. `<EmptyState icon={...} title="..." description="..." action={<Button />} />`

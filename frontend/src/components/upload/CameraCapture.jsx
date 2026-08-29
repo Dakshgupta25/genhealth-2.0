@@ -78,15 +78,15 @@ export function CameraCapture({ onCapture, onCancel }) {
   };
 
   return (
-    <Card radius="xl" className="max-w-2xl mx-auto shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between border-b border-[#EDF1ED] dark:border-[#1A2421] pb-4">
+    <Card radius="lg" className="max-w-2xl mx-auto bg-white border border-[#E3E3DF] dark:border-[#303030]">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-[#E3E3DF] dark:border-[#303030] pb-4">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[#E3EFE9] text-[#0D5446] dark:bg-[#1A332B] dark:text-[#3BB298]">
+          <div className="w-8 h-8 rounded-[6px] flex items-center justify-center bg-[#F4F4F2] text-[#171717] dark:bg-[#252525] dark:text-[#F0F0F0]">
             <DoodleIcon name="camera" className="w-4 h-4" />
           </div>
           <div>
-            <CardTitle className="text-base">Live Document Capture</CardTitle>
-            <p className="text-xs text-[#586D66] dark:text-[#7C9184]">
+            <CardTitle className="text-base">Document Camera Scanner</CardTitle>
+            <p className="text-xs text-[#5F6368] dark:text-[#A0A0A0]">
               Align physical paper lab sheet inside viewfinder
             </p>
           </div>
@@ -99,7 +99,7 @@ export function CameraCapture({ onCapture, onCancel }) {
 
       <CardContent className="p-5 sm:p-6 space-y-4">
         {error ? (
-          <div className="p-6 rounded-xl text-center space-y-3 bg-[#FEE2E2] border border-[#FECACA] text-[#991B1B] dark:bg-[#2B1212] dark:border-[#4C1D1D] dark:text-[#F87171]">
+          <div className="p-6 rounded-[8px] text-center space-y-3 bg-[#FCEBED] border border-[#E8B4B9] text-[#B4232F] dark:bg-[#2D1416] dark:border-[#522226] dark:text-[#E04855]">
             <p className="text-sm font-medium">{error}</p>
             <Button variant="primary" size="sm" onClick={onCancel}>
               Return to File Upload
@@ -107,7 +107,7 @@ export function CameraCapture({ onCapture, onCancel }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="relative rounded-xl overflow-hidden bg-[#0E1412] aspect-video flex items-center justify-center border border-[#D0D9D0] dark:border-[#2A3B34] shadow-inner">
+            <div className="relative rounded-[8px] overflow-hidden bg-[#141414] aspect-video flex items-center justify-center border border-[#E3E3DF] dark:border-[#303030]">
               <video
                 ref={videoRef}
                 autoPlay
@@ -116,8 +116,8 @@ export function CameraCapture({ onCapture, onCancel }) {
                 className="w-full h-full object-cover"
               />
               {/* Guide overlay */}
-              <div className="absolute inset-6 sm:inset-8 border-2 border-dashed border-white/50 rounded-xl pointer-events-none flex items-center justify-center">
-                <span className="text-[11px] font-semibold text-white/90 bg-[#0E1412]/70 px-3.5 py-1 rounded-full backdrop-blur-xs shadow-xs">
+              <div className="absolute inset-6 sm:inset-8 border border-dashed border-white/60 rounded-[8px] pointer-events-none flex items-center justify-center">
+                <span className="text-[11px] font-semibold text-white/90 bg-[#141414]/80 px-3 py-1 rounded-[4px] backdrop-blur-xs">
                   Position lab report flat within guide
                 </span>
               </div>
@@ -127,10 +127,10 @@ export function CameraCapture({ onCapture, onCancel }) {
 
             <div className="flex items-center justify-between pt-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="md"
                 onClick={toggleFacingMode}
-                leftIcon={<DoodleIcon name="camera" className="w-4 h-4" />}
+                leftIcon={<DoodleIcon name="camera" className="w-4 h-4 text-[#5F6368]" />}
               >
                 Flip Camera
               </Button>
@@ -139,7 +139,7 @@ export function CameraCapture({ onCapture, onCancel }) {
                 variant="primary"
                 size="md"
                 onClick={handleCapture}
-                leftIcon={<DoodleIcon name="sparkles" className="w-4 h-4 text-emerald-300 dark:text-[#3BB298]" />}
+                leftIcon={<DoodleIcon name="sparkles" className="w-4 h-4 text-white" />}
               >
                 Capture &amp; Extract
               </Button>

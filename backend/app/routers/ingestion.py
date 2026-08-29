@@ -531,4 +531,29 @@ def update_report_name(
     )
 
 
+@router.delete(
+    "/{report_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete a report and all its extracted measurements",
+)
+def delete_report(
+    report_id: uuid.UUID = FPath(...),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Permanently deletes a report and all associated extracted measurements from the database.
+    """
+    report_stmt = select(Report).where(Report.id == report_id)
+    report = db.execute(report_stmt).scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found.")
 
+    # Delete all associated extracted measurements explicitly and the report
+    db.execute(delete(ReportResult).where(ReportResult.report_id == report_id))
+    db.delete(report)
+    db.commit()
+
+    return {
+        "message": "Report and all extracted measurements permanently deleted successfully.",
+        "report_id": str(report_id),
+    }

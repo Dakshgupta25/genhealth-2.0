@@ -64,137 +64,131 @@ export function FamilyTreeNode({
   const ringMeta = getRingStyles(healthStatus);
 
   return (
-    <Card
-      radius="lg"
-      onClick={() => onNodeClick && onNodeClick(member)}
-      className={`group relative w-full max-w-[240px] text-center transition-all duration-200 cursor-pointer bg-white dark:bg-[#151E1C] border hover:shadow-md ${
-        isSelf
-          ? 'border-[#1E4D45] dark:border-[#336E63] shadow-xs'
-          : 'border-[#CBD6D2] dark:border-[#2F433E] hover:border-[#1E4D45] dark:hover:border-[#336E63]'
-      }`}
+    <div
+      data-node-id={userId}
+      data-node-role={member.relationship_type || (isSelf ? 'self' : 'relative')}
+      className="relative z-10"
     >
-      <div className="p-4 flex flex-col items-center space-y-3">
-        
-        {/* Node Top Row: Placeholder / Self Badge & Unlink Action */}
-        <div className="w-full flex items-center justify-between gap-1 text-[10px]">
-          <div>
-            {isSelf ? (
-              <Badge status="juniper" size="sm">
-                PRIMARY ACCOUNT
-              </Badge>
-            ) : isPlaceholder ? (
-              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-[4px] font-semibold bg-[#EBF0EE] text-[#3D524E] border border-[#CBD6D2] dark:bg-[#1C2725] dark:text-[#A0B6B0] dark:border-[#2F433E]">
-                <span>⚙️</span>
-                <span>Managed Profile</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-[4px] font-semibold bg-[#F0F6FA] text-[#1E4E6B] border border-[#C3DCEB] dark:bg-[#13232E] dark:text-[#5FA9D6] dark:border-[#25455B]">
-                <span>✓</span>
-                <span>Claimed Account</span>
+      <Card
+        radius="lg"
+        onClick={() => onNodeClick && onNodeClick(member)}
+        className={`group relative w-[155px] text-center transition-all duration-200 cursor-pointer bg-white dark:bg-[#151E1C] border hover:shadow-md ${
+          isSelf
+            ? 'border-[#1E4D45] dark:border-[#57BA8E] shadow-xs'
+            : 'border-[#CBD6D2] dark:border-[#2F433E] hover:border-[#1E4D45] dark:hover:border-[#57BA8E]'
+        }`}
+      >
+        <div className="p-3 flex flex-col items-center space-y-2">
+          
+          {/* Node Top Row: Status / Placeholder Badge & Unlink Action */}
+          <div className="w-full flex items-center justify-between gap-1 text-[9px]">
+            <div>
+              {isSelf ? (
+                <span className="px-1.5 py-0.5 rounded-[4px] font-bold bg-[#1E4D45] text-white dark:bg-[#336E63] text-[9px]">
+                  YOU
+                </span>
+              ) : isPlaceholder ? (
+                <span className="px-1 py-0.5 rounded-[4px] font-semibold bg-[#EBF0EE] text-[#3D524E] border border-[#CBD6D2] dark:bg-[#1C2725] dark:text-[#A0B6B0] dark:border-[#2F433E]">
+                  Managed
+                </span>
+              ) : (
+                <span className="px-1 py-0.5 rounded-[4px] font-semibold bg-[#F0F6FA] text-[#1E4E6B] border border-[#C3DCEB] dark:bg-[#13232E] dark:text-[#5FA9D6] dark:border-[#25455B]">
+                  Claimed
+                </span>
+              )}
+            </div>
+
+            {!isSelf && onUnlink && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUnlink(member.relationship_id, member.full_name);
+                }}
+                title="Unlink relative"
+                className="w-4 h-4 inline-flex items-center justify-center rounded-[3px] text-[#7E9993] hover:text-[#942728] hover:bg-[#FDF0F0] dark:hover:bg-[#2D1616] transition-colors cursor-pointer"
+              >
+                <DoodleIcon name="trash" className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* Compact Circular Avatar with Health Status Ring */}
+          <div className="relative inline-block mt-0.5">
+            <div
+              className={`w-11 h-11 rounded-full p-[2px] transition-transform duration-200 group-hover:scale-105 ${ringMeta.ring}`}
+              title={`Health Status: ${ringMeta.statusLabel}`}
+            >
+              {member.avatar_url ? (
+                <img
+                  src={member.avatar_url}
+                  alt={fullName}
+                  className="w-full h-full rounded-full object-cover bg-[#EBF0EE] dark:bg-[#1C2725]"
+                />
+              ) : (
+                <div
+                  className={`w-full h-full rounded-full flex items-center justify-center font-bold text-xs select-none ${
+                    isSelf
+                      ? 'bg-[#1E4D45] text-white dark:bg-[#336E63]'
+                      : isPlaceholder
+                      ? 'bg-[#EBF0EE] text-[#13221F] dark:bg-[#1C2725] dark:text-[#EFF5F3]'
+                      : 'bg-[#F0F6FA] text-[#1E4E6B] dark:bg-[#13232E] dark:text-[#5FA9D6]'
+                  }`}
+                >
+                  {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
+            </div>
+
+            {/* Health Status Mini Pip Indicator */}
+            <span
+              className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#151E1C] ${ringMeta.dot}`}
+              title={ringMeta.statusLabel}
+            />
+
+            {/* Edit / Upload Cue Indicator */}
+            {canEdit && (
+              <span
+                className="absolute top-0 right-0 w-3 h-3 rounded-full bg-[#1E4D45] text-white text-[8px] flex items-center justify-center border border-white dark:border-[#151E1C] shadow-xs"
+                title="Editable & Ingestable"
+              >
+                ✎
               </span>
             )}
           </div>
 
-          {!isSelf && onUnlink && (
+          {/* Member Name & Relation Code Badge */}
+          <div className="space-y-1 w-full">
+            <div className="flex items-center justify-center space-x-1">
+              <span className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3] truncate max-w-[100px]" title={fullName}>
+                {fullName}
+              </span>
+              <span className="font-mono text-[9px] font-bold px-1 py-0.2 rounded-[3px] bg-[#F4F6F5] text-[#1E4D45] border border-[#CBD6D2] dark:bg-[#1C2725] dark:text-[#57BA8E] dark:border-[#2F433E]">
+                {badgeCode}
+              </span>
+            </div>
+
+            <p className="text-[10px] capitalize text-[#4E6863] dark:text-[#7E9993] truncate">
+              {isSelf ? 'Patient Context' : (member.relationship_type || 'Relative')}
+            </p>
+          </div>
+
+          {/* 1-Click Copy ID Row */}
+          <div className="w-full pt-1 border-t border-[#E0E7E4] dark:border-[#22312E]">
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onUnlink(member.relationship_id, member.full_name);
-              }}
-              title="Unlink from pedigree"
-              className="w-5 h-5 inline-flex items-center justify-center rounded-[4px] text-[#7E9993] hover:text-[#942728] hover:bg-[#FDF0F0] dark:hover:bg-[#2D1616] transition-colors cursor-pointer"
+              onClick={handleCopyId}
+              title="Click to copy User ID"
+              className="w-full flex items-center justify-center space-x-1 py-0.5 text-[9px] font-mono text-[#7E9993] hover:text-[#1E4D45] dark:hover:text-[#57BA8E] transition-colors cursor-pointer"
             >
-              <DoodleIcon name="trash" className="w-3.5 h-3.5" />
+              <span>{copied ? '✓ Copied' : userId ? `${userId.substring(0, 6)}...` : 'ID'}</span>
+              <DoodleIcon name="copy" className="w-2.5 h-2.5 opacity-60" />
             </button>
-          )}
-        </div>
-
-        {/* Circular Avatar with Calibrated Health Status Ring */}
-        <div className="relative inline-block mt-1">
-          <div
-            className={`w-16 h-16 rounded-full p-[2px] transition-transform duration-200 group-hover:scale-105 ${ringMeta.ring}`}
-            title={`Health Status: ${ringMeta.statusLabel}`}
-          >
-            {member.avatar_url ? (
-              <img
-                src={member.avatar_url}
-                alt={fullName}
-                className="w-full h-full rounded-full object-cover bg-[#EBF0EE] dark:bg-[#1C2725]"
-              />
-            ) : (
-              <div
-                className={`w-full h-full rounded-full flex items-center justify-center font-bold text-base select-none ${
-                  isSelf
-                    ? 'bg-[#1E4D45] text-white dark:bg-[#336E63]'
-                    : isPlaceholder
-                    ? 'bg-[#EBF0EE] text-[#13221F] dark:bg-[#1C2725] dark:text-[#EFF5F3]'
-                    : 'bg-[#F0F6FA] text-[#1E4E6B] dark:bg-[#13232E] dark:text-[#5FA9D6]'
-                }`}
-              >
-                {fullName ? fullName.charAt(0).toUpperCase() : 'U'}
-              </div>
-            )}
           </div>
 
-          {/* Health Status Mini Pip Indicator */}
-          <div
-            className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-2 border-white dark:border-[#151E1C] ${ringMeta.dot}`}
-            title={`Status: ${ringMeta.statusLabel}`}
-          />
-
-          {/* Edit icon overlay badge for editable profiles */}
-          {canEdit && (
-            <div
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] text-[#1E4D45] dark:text-[#57BA8E] flex items-center justify-center shadow-xs text-[10px]"
-              title="Click to edit profile & avatar"
-            >
-              ✎
-            </div>
-          )}
         </div>
-
-        {/* Identity & Relation Code Badge */}
-        <div className="space-y-1.5 w-full">
-          <div className="flex items-center justify-center space-x-1.5">
-            <h4
-              className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3] truncate max-w-[150px]"
-              title={fullName}
-            >
-              {fullName}
-            </h4>
-          </div>
-
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            <Badge status="neutral" size="sm">
-              {badgeCode}
-            </Badge>
-            <span className="text-[11px] text-[#4E6863] dark:text-[#7E9993] capitalize">
-              {member.relationship_type || (isSelf ? 'Primary' : 'Relative')}
-            </span>
-          </div>
-        </div>
-
-        {/* 1-Click Copy User ID snippet */}
-        <div className="w-full pt-1">
-          <div
-            onClick={handleCopyId}
-            title="Click to copy User ID"
-            className="p-1 px-2 rounded-[6px] text-[10px] font-mono border border-[#E0E7E4] dark:border-[#22312E] bg-[#F4F6F5] dark:bg-[#0E1413] text-[#4E6863] dark:text-[#7E9993] flex items-center justify-between cursor-pointer hover:border-[#1E4D45] dark:hover:border-[#336E63] transition-colors"
-          >
-            <span className="truncate">{userId ? `ID: ${userId.substring(0, 8)}...` : 'ID N/A'}</span>
-            <span className="text-[10px] ml-1 font-sans shrink-0 flex items-center">
-              {copied ? (
-                <span className="text-[#18573D] dark:text-[#57BA8E] font-semibold">✓</span>
-              ) : (
-                <DoodleIcon name="copy" className="w-3 h-3 text-[#7E9993]" />
-              )}
-            </span>
-          </div>
-        </div>
-
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
 

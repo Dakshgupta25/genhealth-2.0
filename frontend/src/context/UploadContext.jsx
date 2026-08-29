@@ -5,7 +5,10 @@ import { ingestReportFile, getReportResults, updateReportResults, createManualRe
 const UploadContext = createContext(null);
 
 export function UploadProvider({ children }) {
-  const { userId } = useAuth();
+  const { userId, user } = useAuth();
+
+  // Target relative profile context (null = uploading for logged in user)
+  const [targetProfile, setTargetProfile] = useState(null);
 
   // View modes: 'select' | 'camera' | 'processing' | 'review' | 'success'
   const [viewMode, setViewMode] = useState('select');
@@ -22,9 +25,11 @@ export function UploadProvider({ children }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [processingStage, setProcessingStage] = useState(0);
 
-  const processFileUpload = async (file) => {
-    if (!userId) {
-      setErrorMessage('User session not found. Please log in again.');
+  const processFileUpload = async (file, overrideTargetUserId) => {
+    const effectiveUserId = overrideTargetUserId || targetProfile?.id || userId;
+
+    if (!effectiveUserId) {
+      setErrorMessage('User session or target profile not found. Please log in again.');
       return;
     }
 
@@ -46,8 +51,8 @@ export function UploadProvider({ children }) {
     const stageTimer3 = setTimeout(() => setProcessingStage(4), 6500);
 
     try {
-      // Send multipart upload to the real backend ingestion pipeline
-      const summary = await ingestReportFile(fileToProcess, userId);
+      // Send multipart upload to the real backend ingestion pipeline with effective target user_id
+      const summary = await ingestReportFile(fileToProcess, effectiveUserId);
       
       if (summary.status === 'failed' || summary.error) {
         throw new Error(summary.error || 'Pipeline extraction failed.');
@@ -106,6 +111,7 @@ export function UploadProvider({ children }) {
   };
 
   const handleSaveCommit = async (reviewedRows) => {
+    const effectiveUserId = targetProfile?.id || userId;
     setIsSaving(true);
     setErrorMessage('');
 
@@ -113,7 +119,7 @@ export function UploadProvider({ children }) {
       if (uploadTab === 'manual') {
         // Create new manual report record
         const response = await createManualReport({
-          user_id: userId,
+          user_id: effectiveUserId,
           original_filename: `Manual Entry - ${new Date().toLocaleDateString()}`,
           results: reviewedRows,
         });
@@ -126,6 +132,7 @@ export function UploadProvider({ children }) {
       setExtractedRows(reviewedRows);
       setViewMode('success');
     } catch (err) {
+      console.error('Failed to save medical measures:', err);
       const detail = err.response?.data?.detail;
       setErrorMessage(
         typeof detail === 'string'
@@ -151,6 +158,8 @@ export function UploadProvider({ children }) {
   return (
     <UploadContext.Provider
       value={{
+        targetProfile,
+        setTargetProfile,
         viewMode,
         setViewMode,
         uploadTab,
@@ -182,7 +191,7 @@ export function UploadProvider({ children }) {
 export function useUpload() {
   const context = useContext(UploadContext);
   if (!context) {
-    throw new Error('useUpload must be used within an UploadProvider');
+    throw new Error('useUpload must be used within an AuthProvider and UploadProvider');
   }
   return context;
 }

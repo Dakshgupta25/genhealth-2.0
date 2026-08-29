@@ -400,3 +400,185 @@ def test_cannot_edit_independent_linked_relative(client, db_session):
     daughter_in_db = db_session.get(User, daughter.id)
     assert daughter_in_db.full_name == "Independent Daughter"
 
+
+def test_graph_propagation_full_siblings(client, db_session):
+    user_a = User(email="child_a@test.com", password_hash="fake", full_name="Child A", gender="female")
+    father = User(email="father_p@test.com", password_hash="fake", full_name="Father P", gender="male")
+    mother = User(email="mother_p@test.com", password_hash="fake", full_name="Mother P", gender="female")
+    db_session.add_all([user_a, father, mother])
+    db_session.commit()
+
+    # Link parents to user_a
+    client.post("/api/v1/family/link", json={"user_id": str(user_a.id), "relative_user_id": str(father.id), "relationship_type": "father"})
+    client.post("/api/v1/family/link", json={"user_id": str(user_a.id), "relative_user_id": str(mother.id), "relationship_type": "mother"})
+
+    # User A creates a full-brother placeholder
+    res = client.post("/api/v1/family/placeholder", json={
+        "manager_user_id": str(user_a.id),
+        "full_name": "Full Brother Ben",
+        "relationship_type": "brother",
+        "gender": "male",
+        "is_half_sibling": False,
+    })
+    assert res.status_code == 201
+    brother_id = res.json()["relative_id"]
+
+    # Verify: Father automatically has Brother Ben linked as Son
+    father_relatives = client.get(f"/api/v1/family/{father.id}").json()
+    ben_from_dad = next((r for r in father_relatives if r["relative_id"] == brother_id), None)
+    assert ben_from_dad is not None
+    assert ben_from_dad["relationship_type"] == "son"
+    assert ben_from_dad["tier"] == "children"
+
+    # Verify: Mother automatically has Brother Ben linked as Son
+    mother_relatives = client.get(f"/api/v1/family/{mother.id}").json()
+    ben_from_mom = next((r for r in mother_relatives if r["relative_id"] == brother_id), None)
+    assert ben_from_mom is not None
+    assert ben_from_mom["relationship_type"] == "son"
+
+
+def test_graph_propagation_half_sibling(client, db_session):
+    user_a = User(email="child_h@test.com", password_hash="fake", full_name="Child H", gender="male")
+    father = User(email="father_h@test.com", password_hash="fake", full_name="Father H", gender="male")
+    mother = User(email="mother_h@test.com", password_hash="fake", full_name="Mother H", gender="female")
+    db_session.add_all([user_a, father, mother])
+    db_session.commit()
+
+    # Link parents to user_a
+    client.post("/api/v1/family/link", json={"user_id": str(user_a.id), "relative_user_id": str(father.id), "relationship_type": "father"})
+    client.post("/api/v1/family/link", json={"user_id": str(user_a.id), "relative_user_id": str(mother.id), "relationship_type": "mother"})
+
+    # User A creates a Maternal Half-Sister (shares only Mother)
+    res = client.post("/api/v1/family/placeholder", json={
+        "manager_user_id": str(user_a.id),
+        "full_name": "Half Sister Chloe",
+        "relationship_type": "sister",
+        "gender": "female",
+        "is_half_sibling": True,
+        "shared_parent_id": str(mother.id),
+    })
+    assert res.status_code == 201
+    sister_id = res.json()["relative_id"]
+
+    # Verify: Mother has Chloe linked as Daughter
+    mother_relatives = client.get(f"/api/v1/family/{mother.id}").json()
+    chloe_from_mom = next((r for r in mother_relatives if r["relative_id"] == sister_id), None)
+    assert chloe_from_mom is not None
+    assert chloe_from_mom["relationship_type"] == "daughter"
+
+    # Verify: Father DOES NOT have Chloe linked (isolated half-sibling)
+    father_relatives = client.get(f"/api/v1/family/{father.id}").json()
+    chloe_from_dad = next((r for r in father_relatives if r["relative_id"] == sister_id), None)
+    assert chloe_from_dad is None
+
+
+def test_graph_propagation_lateral_uncle(client, db_session):
+    child = User(email="child_u@test.com", password_hash="fake", full_name="Child Neo", gender="male")
+    father = User(email="father_u@test.com", password_hash="fake", full_name="Father Morpheus", gender="male")
+    uncle = User(email="uncle_u@test.com", password_hash="fake", full_name="Uncle Cypher", gender="male")
+    db_session.add_all([child, father, uncle])
+    db_session.commit()
+
+    # Link Father to Child
+    client.post("/api/v1/family/link", json={"user_id": str(child.id), "relative_user_id": str(father.id), "relationship_type": "father"})
+
+    # Father links Uncle Cypher as Brother -> Should propagate to Child Neo as Uncle
+    client.post("/api/v1/family/link", json={"user_id": str(father.id), "relative_user_id": str(uncle.id), "relationship_type": "brother"})
+
+    # Verify Child Neo sees Cypher as Uncle
+    child_tree = client.get(f"/api/v1/family/{child.id}/tree").json()
+    uncle_node = next((m for m in child_tree["extended"] if m["relative_id"] == str(uncle.id)), None)
+    assert uncle_node is not None
+    assert uncle_node["relationship_type"] == "uncle"
+    assert uncle_node["badge_code"] == "UNC"
+
+    # Verify Uncle Cypher sees Child Neo as Nephew
+    cypher_relatives = client.get(f"/api/v1/family/{uncle.id}").json()
+    neo_node = next((m for m in cypher_relatives if m["relative_id"] == str(child.id)), None)
+    assert neo_node is not None
+    assert neo_node["relationship_type"] == "nephew"
+    assert neo_node["badge_code"] == "NEPH"
+
+
+def test_suggested_coparent_spouse_confirmation(client, db_session):
+    child = User(email="child_sp@test.com", password_hash="fake", full_name="Child Sp", gender="male")
+    father = User(email="dad_sp@test.com", password_hash="fake", full_name="Dad Sp", gender="male")
+    mother = User(email="mom_sp@test.com", password_hash="fake", full_name="Mom Sp", gender="female")
+    db_session.add_all([child, father, mother])
+    db_session.commit()
+
+    # Link parents to child
+    client.post("/api/v1/family/link", json={"user_id": str(child.id), "relative_user_id": str(father.id), "relationship_type": "father"})
+    client.post("/api/v1/family/link", json={"user_id": str(child.id), "relative_user_id": str(mother.id), "relationship_type": "mother"})
+
+    # Query tree -> should contain suggested spouse link between Dad and Mom
+    tree_res = client.get(f"/api/v1/family/{child.id}/tree")
+    assert tree_res.status_code == 200
+    suggestions = tree_res.json()["suggested_links"]
+    assert len(suggestions) == 1
+    assert suggestions[0]["suggested_relationship"] == "spouse"
+    assert "both linked as your parents" in suggestions[0]["reason"]
+
+    # Confirm the suggestion
+    confirm_res = client.post("/api/v1/family/confirm-spouse", json={
+        "user1_id": str(father.id),
+        "user2_id": str(mother.id),
+        "confirm": True,
+    })
+    assert confirm_res.status_code == 200
+    assert confirm_res.json()["status"] == "confirmed"
+
+    # Verify Dad and Mom are now linked as spouses
+    dad_relatives = client.get(f"/api/v1/family/{father.id}").json()
+    mom_from_dad = next((r for r in dad_relatives if r["relative_id"] == str(mother.id)), None)
+    assert mom_from_dad is not None
+    assert mom_from_dad["relationship_type"] == "wife"
+    assert mom_from_dad["tier"] == "peers"
+
+
+def test_mother_adds_mother_propagates_to_grandchild_as_grandmother(client, db_session):
+    # 1. Create Child (user_a), Mother (mother_m), and Grandmother (grandma_g)
+    user_a = User(email="child_gm@test.com", password_hash="fake", full_name="User A", gender="male")
+    mother_m = User(email="mother_gm@test.com", password_hash="fake", full_name="Mother M", gender="female")
+    grandma_g = User(email="grandma_gm@test.com", password_hash="fake", full_name="Grandmother G", gender="female")
+    db_session.add_all([user_a, mother_m, grandma_g])
+    db_session.commit()
+
+    # 2. User A links Mother M as "mother"
+    link_mother_res = client.post("/api/v1/family/link", json={
+        "user_id": str(user_a.id),
+        "relative_user_id": str(mother_m.id),
+        "relationship_type": "mother",
+    })
+    assert link_mother_res.status_code == 201
+
+    # 3. In Mother M's account, Mother M adds grandma_g as "mother"
+    link_gm_res = client.post("/api/v1/family/link", json={
+        "user_id": str(mother_m.id),
+        "relative_user_id": str(grandma_g.id),
+        "relationship_type": "mother",
+    })
+    assert link_gm_res.status_code == 201
+
+    # 4. Verify User A automatically sees grandma_g in User A's tree under Tier 1 (Grandparents) as Grandmother!
+    child_tree_res = client.get(f"/api/v1/family/{user_a.id}/tree")
+    assert child_tree_res.status_code == 200
+    child_tree = child_tree_res.json()
+
+    assert len(child_tree["grandparents"]) == 1
+    gm_node = child_tree["grandparents"][0]
+    assert gm_node["relative_id"] == str(grandma_g.id)
+    assert gm_node["full_name"] == "Grandmother G"
+    assert gm_node["relationship_type"] == "grandmother"
+    assert gm_node["tier"] == "grandparents"
+    assert gm_node["badge_code"] == "GM"
+
+    # 5. Verify grandma_g sees User A as Grandson
+    gm_relatives = client.get(f"/api/v1/family/{grandma_g.id}").json()
+    grandson_node = next((r for r in gm_relatives if r["relative_id"] == str(user_a.id)), None)
+    assert grandson_node is not None
+    assert grandson_node["relationship_type"] == "grandson"
+    assert grandson_node["tier"] == "children"
+
+
+

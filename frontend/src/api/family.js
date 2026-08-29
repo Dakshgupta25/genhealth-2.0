@@ -70,3 +70,20 @@ export async function updateSharingConsent(relationshipId, payload) {
 export async function unlinkFamilyMember(relationshipId) {
   await apiClient.delete(`/api/v1/family/${relationshipId}`);
 }
+
+/**
+ * Confirm or dismiss a suggested spouse link between co-parents.
+ * @param {string} user1Id UUID
+ * @param {string} user2Id UUID
+ * @param {boolean} confirm
+ * @returns {Promise<{ status: string, message: string }>}
+ */
+export async function confirmSpouseLink(user1Id, user2Id, confirm) {
+  const response = await apiClient.post('/api/v1/family/confirm-spouse', {
+    user1_id: user1Id,
+    user2_id: user2Id,
+    confirm,
+  });
+  return response.data;
+}
+

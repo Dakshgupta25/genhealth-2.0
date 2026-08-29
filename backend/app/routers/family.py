@@ -69,6 +69,23 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
             return "grandmother"
         return "grandparent"
 
+    elif r in ("uncle", "aunt"):
+        if gender == "male":
+            return "nephew"
+        elif gender == "female":
+            return "niece"
+        return "nephew_niece"
+
+    elif r in ("nephew", "niece", "nephew_niece"):
+        if gender == "male":
+            return "uncle"
+        elif gender == "female":
+            return "aunt"
+        return "uncle_aunt"
+
+    elif r == "cousin":
+        return "cousin"
+
     return "relative"
 
 
@@ -79,7 +96,7 @@ def get_generational_tier(rel_type: str) -> str:
     - parents
     - peers (self, spouse, siblings)
     - children (descendants)
-    - extended
+    - extended (uncles, aunts, cousins)
     """
     r = (rel_type or "").strip().lower()
     if r in ("grandfather", "grandmother", "grandparent"):
@@ -90,11 +107,13 @@ def get_generational_tier(rel_type: str) -> str:
         return "peers"
     if r in ("son", "daughter", "child", "grandson", "granddaughter", "grandchild"):
         return "children"
+    if r in ("uncle", "aunt", "nephew", "niece", "nephew_niece", "cousin", "relative"):
+        return "extended"
     return "extended"
 
 
 def get_relation_badge_code(rel_type: str) -> str:
-    """Returns a short 1-3 letter badge code for visual UI rendering."""
+    """Returns a short 1-4 letter badge code for visual UI rendering."""
     r = (rel_type or "").strip().lower()
     mapping = {
         "self": "SELF",
@@ -116,6 +135,11 @@ def get_relation_badge_code(rel_type: str) -> str:
         "grandson": "GS",
         "granddaughter": "GD",
         "grandchild": "GC",
+        "uncle": "UNC",
+        "aunt": "AUNT",
+        "nephew": "NEPH",
+        "niece": "NIECE",
+        "cousin": "COUS",
     }
     return mapping.get(r, "REL")
 
@@ -211,6 +235,8 @@ class FamilyLinkRequest(BaseModel):
     relative_user_id: uuid.UUID
     relationship_type: str
     share_clinical_data: bool = True
+    is_half_sibling: bool = False
+    shared_parent_id: Optional[uuid.UUID] = None
 
 
 class PlaceholderCreateRequest(BaseModel):
@@ -220,6 +246,8 @@ class PlaceholderCreateRequest(BaseModel):
     gender: Optional[str] = "unspecified"
     date_of_birth: Optional[str] = None
     avatar_url: Optional[str] = None
+    is_half_sibling: bool = False
+    shared_parent_id: Optional[uuid.UUID] = None
 
 
 class MemberUpdateRequest(BaseModel):
@@ -233,6 +261,21 @@ class MemberUpdateRequest(BaseModel):
 class ConsentUpdateRequest(BaseModel):
     user_id: uuid.UUID
     share_clinical_data: bool
+
+
+class ConfirmSpouseRequest(BaseModel):
+    user1_id: uuid.UUID
+    user2_id: uuid.UUID
+    confirm: bool
+
+
+class SuggestedLinkResponse(BaseModel):
+    user1_id: uuid.UUID
+    user1_name: str
+    user2_id: uuid.UUID
+    user2_name: str
+    suggested_relationship: str
+    reason: str
 
 
 class HealthStatusInfo(BaseModel):
@@ -274,6 +317,222 @@ class FamilyTreeHierarchyResponse(BaseModel):
     children: List[FamilyMemberResponse]
     extended: List[FamilyMemberResponse]
     all_members: List[FamilyMemberResponse]
+    suggested_links: List[SuggestedLinkResponse] = []
+
+
+# ---------------------------------------------------------------------------
+# Graph Propagation Engine
+# ---------------------------------------------------------------------------
+
+def create_bidirectional_link(
+    user1_id: uuid.UUID,
+    user2_id: uuid.UUID,
+    rel_type_forward: str,
+    db: Session,
+    share_clinical_data: bool = True,
+) -> Optional[FamilyRelationship]:
+    if user1_id == user2_id:
+        return None
+
+    # Check if forward link already exists (explicit precedence)
+    existing = db.execute(
+        select(FamilyRelationship).where(
+            FamilyRelationship.user_id == user1_id,
+            FamilyRelationship.relative_user_id == user2_id,
+        )
+    ).scalar_one_or_none()
+    if existing:
+        return existing
+
+    user1 = db.get(User, user1_id)
+    user2 = db.get(User, user2_id)
+    if not user1 or not user2:
+        return None
+
+    link_group_id = uuid.uuid4()
+    rel_type_reciprocal = get_reciprocal_relationship(rel_type_forward, user1.gender)
+
+    forward_rel = FamilyRelationship(
+        user_id=user1_id,
+        relative_user_id=user2_id,
+        relationship_type=rel_type_forward.strip().lower(),
+        link_group_id=link_group_id,
+        share_clinical_data=share_clinical_data,
+    )
+    db.add(forward_rel)
+
+    # Reciprocal check
+    recip = db.execute(
+        select(FamilyRelationship).where(
+            FamilyRelationship.user_id == user2_id,
+            FamilyRelationship.relative_user_id == user1_id,
+        )
+    ).scalar_one_or_none()
+    if not recip:
+        reciprocal_rel = FamilyRelationship(
+            user_id=user2_id,
+            relative_user_id=user1_id,
+            relationship_type=rel_type_reciprocal.strip().lower(),
+            link_group_id=link_group_id,
+            share_clinical_data=share_clinical_data,
+        )
+        db.add(reciprocal_rel)
+
+    return forward_rel
+
+
+def propagate_relationship_graph(
+    primary_user_id: uuid.UUID,
+    newly_linked_user_id: uuid.UUID,
+    rel_type: str,
+    db: Session,
+    is_half_sibling: bool = False,
+    shared_parent_id: Optional[uuid.UUID] = None,
+    share_clinical_data: bool = True,
+) -> None:
+    """
+    Performs transitive graph propagation for direct-line and lateral relationships.
+    - Full-siblings propagate to both parents and other full-siblings.
+    - Half-siblings only propagate to the single designated shared parent.
+    - Uncles/Aunts (Parent's Sibling) propagate to/from Nephew/Niece (Self) without generating parent/spouse edges.
+    - Parents propagate to their other children (Self's siblings) and to Grandparents.
+    """
+    r = (rel_type or "").strip().lower()
+    primary_user = db.get(User, primary_user_id)
+    new_user = db.get(User, newly_linked_user_id)
+    if not primary_user or not new_user:
+        return
+
+    # Fetch existing relatives of primary_user
+    existing_rels = db.execute(
+        select(FamilyRelationship).where(FamilyRelationship.user_id == primary_user_id)
+    ).scalars().all()
+
+    # 1. NEW NODE IS A SIBLING (Brother, Sister, Sibling)
+    if r in ("brother", "sister", "sibling"):
+        # Find parents of primary_user -> link them to this sibling
+        parents = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("father", "mother", "parent", "dad", "mom")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for p in parents:
+            if is_half_sibling:
+                if shared_parent_id and p.relative_user_id == shared_parent_id:
+                    child_role = "son" if new_user.gender == "male" else "daughter" if new_user.gender == "female" else "child"
+                    create_bidirectional_link(p.relative_user_id, newly_linked_user_id, child_role, db, share_clinical_data)
+            else:
+                child_role = "son" if new_user.gender == "male" else "daughter" if new_user.gender == "female" else "child"
+                create_bidirectional_link(p.relative_user_id, newly_linked_user_id, child_role, db, share_clinical_data)
+
+        # Propagate to other siblings of primary_user (if full sibling)
+        if not is_half_sibling:
+            other_siblings = [
+                rel for rel in existing_rels
+                if rel.relationship_type in ("brother", "sister", "sibling")
+                and rel.relative_user_id != newly_linked_user_id
+            ]
+            for s in other_siblings:
+                sib_role = "brother" if new_user.gender == "male" else "sister" if new_user.gender == "female" else "sibling"
+                create_bidirectional_link(s.relative_user_id, newly_linked_user_id, sib_role, db, share_clinical_data)
+
+        # Lateral: If primary_user has children, those children see new_user as uncle/aunt
+        children = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("son", "daughter", "child")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for c in children:
+            uncle_role = "uncle" if new_user.gender == "male" else "aunt" if new_user.gender == "female" else "uncle"
+            create_bidirectional_link(c.relative_user_id, newly_linked_user_id, uncle_role, db, share_clinical_data)
+
+    # 2. NEW NODE IS A PARENT (Father, Mother, Parent)
+    elif r in ("father", "mother", "parent", "dad", "mom"):
+        # A. Propagate this parent to all siblings of primary_user
+        siblings = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("brother", "sister", "sibling")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for s in siblings:
+            parent_role = "father" if new_user.gender == "male" else "mother" if new_user.gender == "female" else "parent"
+            create_bidirectional_link(s.relative_user_id, newly_linked_user_id, parent_role, db, share_clinical_data)
+
+        # B. Check if primary_user has children -> they see new_user as Grandparent! (Mother's mother = Child's grandmother)
+        children = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("son", "daughter", "child")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for c in children:
+            gp_role = "grandfather" if new_user.gender == "male" else "grandmother" if new_user.gender == "female" else "grandparent"
+            create_bidirectional_link(c.relative_user_id, newly_linked_user_id, gp_role, db, share_clinical_data)
+
+        # C. Check if the new parent already has parents linked (primary_user's grandparents)
+        new_parent_parents = db.execute(
+            select(FamilyRelationship).where(
+                FamilyRelationship.user_id == newly_linked_user_id,
+                FamilyRelationship.relationship_type.in_(["father", "mother", "parent", "dad", "mom"]),
+            )
+        ).scalars().all()
+        for gp in new_parent_parents:
+            gp_user = db.get(User, gp.relative_user_id)
+            gp_role = "grandfather" if (gp_user and gp_user.gender == "male") else "grandmother" if (gp_user and gp_user.gender == "female") else "grandparent"
+            create_bidirectional_link(primary_user_id, gp.relative_user_id, gp_role, db, share_clinical_data)
+            # Also propagate grandparent down to primary_user's siblings
+            for s in siblings:
+                create_bidirectional_link(s.relative_user_id, gp.relative_user_id, gp_role, db, share_clinical_data)
+
+    # 3. NEW NODE IS LATERAL: UNCLE / AUNT
+    elif r in ("uncle", "aunt"):
+        parents = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("father", "mother", "parent", "dad", "mom")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for p in parents:
+            if shared_parent_id:
+                if p.relative_user_id == shared_parent_id:
+                    sib_role = "brother" if new_user.gender == "male" else "sister" if new_user.gender == "female" else "sibling"
+                    create_bidirectional_link(p.relative_user_id, newly_linked_user_id, sib_role, db, share_clinical_data)
+            else:
+                sib_role = "brother" if new_user.gender == "male" else "sister" if new_user.gender == "female" else "sibling"
+                create_bidirectional_link(p.relative_user_id, newly_linked_user_id, sib_role, db, share_clinical_data)
+                break
+
+    # 4. NEW NODE IS A CHILD (Son, Daughter, Child)
+    elif r in ("son", "daughter", "child"):
+        # A. Primary user's parents become grandparents to new child
+        parents = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("father", "mother", "parent", "dad", "mom")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for p in parents:
+            child_role = "grandson" if new_user.gender == "male" else "granddaughter" if new_user.gender == "female" else "grandchild"
+            create_bidirectional_link(p.relative_user_id, newly_linked_user_id, child_role, db, share_clinical_data)
+
+        # B. Primary user's other children become siblings to new child
+        other_children = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("son", "daughter", "child")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for oc in other_children:
+            sib_role = "brother" if new_user.gender == "male" else "sister" if new_user.gender == "female" else "sibling"
+            create_bidirectional_link(oc.relative_user_id, newly_linked_user_id, sib_role, db, share_clinical_data)
+
+    # 5. NEW NODE IS A GRANDPARENT (Grandfather, Grandmother, Grandparent)
+    elif r in ("grandfather", "grandmother", "grandparent"):
+        # If primary user has siblings, they also get this grandparent
+        siblings = [
+            rel for rel in existing_rels
+            if rel.relationship_type in ("brother", "sister", "sibling")
+            and rel.relative_user_id != newly_linked_user_id
+        ]
+        for s in siblings:
+            gp_role = "grandfather" if new_user.gender == "male" else "grandmother" if new_user.gender == "female" else "grandparent"
+            create_bidirectional_link(s.relative_user_id, newly_linked_user_id, gp_role, db, share_clinical_data)
 
 
 # ---------------------------------------------------------------------------
@@ -370,6 +629,34 @@ def get_family_tree(
     children = [m for m in all_members if m.tier == "children"]
     extended = [m for m in all_members if m.tier == "extended"]
 
+    # 3. Detect suggested links (e.g. Co-parents who are not yet spouses)
+    suggested_links: List[SuggestedLinkResponse] = []
+    parents_nodes = [m for m in all_members if m.relationship_type in ("father", "mother", "parent", "dad", "mom")]
+    if len(parents_nodes) >= 2:
+        for i in range(len(parents_nodes)):
+            for j in range(i + 1, len(parents_nodes)):
+                p1 = parents_nodes[i]
+                p2 = parents_nodes[j]
+                # Check if p1 and p2 are already linked as spouses
+                spouse_link = db.execute(
+                    select(FamilyRelationship).where(
+                        FamilyRelationship.user_id == p1.relative_id,
+                        FamilyRelationship.relative_user_id == p2.relative_id,
+                        FamilyRelationship.relationship_type.in_(["spouse", "husband", "wife", "partner"]),
+                    )
+                ).scalar_one_or_none()
+                if not spouse_link:
+                    suggested_links.append(
+                        SuggestedLinkResponse(
+                            user1_id=p1.relative_id,
+                            user1_name=p1.full_name,
+                            user2_id=p2.relative_id,
+                            user2_name=p2.full_name,
+                            suggested_relationship="spouse",
+                            reason=f"{p1.full_name} and {p2.full_name} are both linked as your parents.",
+                        )
+                    )
+
     return FamilyTreeHierarchyResponse(
         self_node=self_node,
         grandparents=grandparents,
@@ -378,6 +665,7 @@ def get_family_tree(
         children=children,
         extended=extended,
         all_members=all_members,
+        suggested_links=suggested_links,
     )
 
 
@@ -385,7 +673,7 @@ def get_family_tree(
     "/link",
     response_model=FamilyMemberResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Link an existing user with automatic bidirectional reciprocal creation",
+    summary="Link an existing user with automatic bidirectional reciprocal creation and graph propagation",
 )
 def link_family_member(
     payload: FamilyLinkRequest,
@@ -448,6 +736,17 @@ def link_family_member(
         )
         db.add(reciprocal_rel)
 
+    # 3. Transitive Graph Propagation across family network
+    propagate_relationship_graph(
+        primary_user_id=payload.user_id,
+        newly_linked_user_id=payload.relative_user_id,
+        rel_type=rel_type_forward,
+        db=db,
+        is_half_sibling=payload.is_half_sibling,
+        shared_parent_id=payload.shared_parent_id,
+        share_clinical_data=payload.share_clinical_data,
+    )
+
     db.commit()
     db.refresh(forward_rel)
 
@@ -480,7 +779,7 @@ def link_family_member(
     "/placeholder",
     response_model=FamilyMemberResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a managed placeholder profile and link it bidirectionally",
+    summary="Create a managed placeholder profile and link it bidirectionally with graph propagation",
 )
 def create_placeholder_profile(
     payload: PlaceholderCreateRequest,
@@ -526,8 +825,19 @@ def create_placeholder_profile(
         share_clinical_data=True,
     )
     db.add_all([forward_rel, reciprocal_rel])
+
+    # Transitive Graph Propagation across family network
+    propagate_relationship_graph(
+        primary_user_id=manager.id,
+        newly_linked_user_id=placeholder_user.id,
+        rel_type=rel_type_forward,
+        db=db,
+        is_half_sibling=payload.is_half_sibling,
+        shared_parent_id=payload.shared_parent_id,
+        share_clinical_data=True,
+    )
+
     db.commit()
-    db.refresh(placeholder_user)
     db.refresh(forward_rel)
 
     health = compute_health_status(placeholder_user.id, db)
@@ -552,6 +862,29 @@ def create_placeholder_profile(
         health_status=HealthStatusInfo(**health),
         created_at=forward_rel.created_at,
     )
+
+
+@router.post(
+    "/confirm-spouse",
+    summary="Confirm or dismiss a suggested spouse link between co-parents",
+)
+def confirm_spouse_link(
+    payload: ConfirmSpouseRequest,
+    db: Session = Depends(get_db),
+):
+    if not payload.confirm:
+        return {"status": "dismissed", "message": "Suggested spouse link dismissed."}
+
+    user1 = db.get(User, payload.user1_id)
+    user2 = db.get(User, payload.user2_id)
+    if not user1 or not user2:
+        raise HTTPException(status_code=404, detail="User profile not found.")
+
+    rel_type1 = "husband" if user2.gender == "male" else "wife" if user2.gender == "female" else "spouse"
+    create_bidirectional_link(payload.user1_id, payload.user2_id, rel_type1, db)
+    db.commit()
+
+    return {"status": "confirmed", "message": f"Linked {user1.full_name} and {user2.full_name} as spouses."}
 
 
 @router.patch(

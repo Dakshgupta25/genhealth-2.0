@@ -1,14 +1,17 @@
-import React, { useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useUpload } from '../context/UploadContext';
+import { useAuth } from '../context/AuthContext';
 import DoodleIcon from '../components/common/DoodleIcon';
 import CameraCapture from '../components/upload/CameraCapture';
 import EditableResultTable from '../components/upload/EditableResultTable';
 import UploadHistory from '../components/upload/UploadHistory';
-import { Button, Card } from '../components/ui';
+import { Button, Card, Badge } from '../components/ui';
 
 export function UploadPage() {
   const {
+    targetProfile,
+    setTargetProfile,
     uploadTab,
     setUploadTab,
     selectedFile,
@@ -31,8 +34,31 @@ export function UploadPage() {
     resetFlow,
   } = useUpload();
 
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef(null);
+
+  // Check URL params for target relative upload
+  useEffect(() => {
+    const targetUserId = searchParams.get('targetUserId');
+    const targetName = searchParams.get('targetName');
+    const relation = searchParams.get('relation');
+
+    if (targetUserId && targetName) {
+      setTargetProfile({
+        id: targetUserId,
+        full_name: decodeURIComponent(targetName),
+        relationship_type: relation ? decodeURIComponent(relation) : 'Relative',
+        is_placeholder: true,
+      });
+    }
+  }, [searchParams, setTargetProfile]);
+
+  const handleClearTarget = () => {
+    setTargetProfile(null);
+    setSearchParams({});
+  };
 
   const acceptedFileExtensions = '.pdf,.jpg,.jpeg,.png,.webp,.gif';
 
@@ -129,16 +155,51 @@ export function UploadPage() {
       {viewMode === 'select' && (
         <div className="space-y-6">
           
-          {/* Header Area with Red Headings */}
-          <div className="space-y-1 pb-4 border-b border-[#E3E3DF] dark:border-[#303030]">
-            <span className="text-[11px] font-bold tracking-widest text-[#B4232F] dark:text-[#E04855] uppercase">
+          {/* Target Profile Notice Banner (when uploading for a managed relative) */}
+          {targetProfile && (
+            <div className="p-4 rounded-[8px] bg-[#E5EFEA] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-full bg-[#1E4D45] text-white flex items-center justify-center font-bold text-xs">
+                  {targetProfile.full_name?.charAt(0) || 'R'}
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                      Uploading for Managed Profile: {targetProfile.full_name}
+                    </span>
+                    <Badge status="juniper" size="sm">
+                      {targetProfile.relationship_type?.toUpperCase() || 'RELATIVE'}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-[#4E6863] dark:text-[#7E9993]">
+                    Extracted biomarkers will be ingested directly into {targetProfile.full_name}'s health record.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearTarget}
+                className="text-xs shrink-0"
+              >
+                Switch to My Own Records
+              </Button>
+            </div>
+          )}
+
+          {/* Header Area with Juniper Headings */}
+          <div className="space-y-1 pb-4 border-b border-[#CBD6D2] dark:border-[#2F433E]">
+            <span className="text-[11px] font-bold tracking-widest text-[#1E4D45] dark:text-[#57BA8E] uppercase">
               Intake Pipeline
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#B4232F] dark:text-[#E04855]">
-              Upload Clinical Report
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#13221F] dark:text-[#EFF5F3]">
+              {targetProfile ? `Upload Report for ${targetProfile.full_name}` : 'Upload Clinical Report'}
             </h1>
-            <p className="text-xs sm:text-sm text-[#5F6368] dark:text-[#A0A0A0]">
-              Add a lab report to your longitudinal health record. AI extracts and standardizes test metrics automatically.
+            <p className="text-xs sm:text-sm text-[#4E6863] dark:text-[#7E9993]">
+              {targetProfile
+                ? `Add a lab report to ${targetProfile.full_name}'s longitudinal health record.`
+                : 'Add a lab report to your longitudinal health record. AI extracts and standardizes test metrics automatically.'}
             </p>
           </div>
 

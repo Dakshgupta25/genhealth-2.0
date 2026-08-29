@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path as FPath
+from fastapi import APIRouter, Depends, HTTPException, Path as FPath, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -94,6 +94,7 @@ def get_family_test_history(
         .join(Report, Report.user_id == User.id)
         .join(ReportResult, ReportResult.report_id == Report.id)
         .where(FamilyRelationship.user_id == user_id)
+        .where(FamilyRelationship.share_clinical_data == True)
         .where(ReportResult.canonical_test_name == canonical_test_name)
         .where(ReportResult.is_duplicate_same_date == False)
         .order_by(Report.created_at.desc())
@@ -171,3 +172,44 @@ def get_patient_disease_summary(
             )
 
     return summaries
+
+
+@router.get(
+    "/patient/{user_id}/relative/{relative_id}/disease/{disease_id}/summary",
+    response_model=List[PatientBiomarkerSummary],
+    summary="Get latest values of disease-relevant tests for a linked relative",
+)
+def get_relative_disease_summary(
+    user_id: uuid.UUID = FPath(...),
+    relative_id: uuid.UUID = FPath(...),
+    disease_id: str = FPath(...),
+    db: Session = Depends(get_db),
+) -> List[PatientBiomarkerSummary]:
+    """
+    Validates that relative_id is linked to user_id, verifies clinical data sharing consent
+    (or managed placeholder status), and queries that relative's latest disease biomarker measurements.
+    """
+    rel = db.execute(
+        select(FamilyRelationship).where(
+            FamilyRelationship.user_id == user_id,
+            FamilyRelationship.relative_user_id == relative_id,
+        )
+    ).scalar_one_or_none()
+
+    relative_user = db.get(User, relative_id)
+    if not relative_user:
+        raise HTTPException(status_code=404, detail="Relative profile not found.")
+
+    if not rel:
+        raise HTTPException(status_code=403, detail="Relative is not linked to this patient's pedigree.")
+
+    # Privacy check: If not a managed placeholder and sharing consent is disabled, block access
+    if not (relative_user.is_placeholder and relative_user.managed_by_user_id == user_id):
+        if not rel.share_clinical_data:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Clinical data sharing is disabled by this relative.",
+            )
+
+    return get_patient_disease_summary(user_id=relative_id, disease_id=disease_id, db=db)
+

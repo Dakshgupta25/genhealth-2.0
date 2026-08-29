@@ -10,6 +10,7 @@ from app.routers import auth
 from app.routers import ingestion
 from app.routers import family
 from app.routers import clinical
+from app.routers import claims
 
 
 @asynccontextmanager
@@ -19,6 +20,12 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE report_results ADD COLUMN IF NOT EXISTS is_duplicate_same_date BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS gender VARCHAR(20) DEFAULT 'unspecified';"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_placeholder BOOLEAN DEFAULT FALSE;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS managed_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL;"))
+            conn.execute(text("ALTER TABLE family_relationships ADD COLUMN IF NOT EXISTS link_group_id UUID;"))
+            conn.execute(text("ALTER TABLE family_relationships ADD COLUMN IF NOT EXISTS share_clinical_data BOOLEAN DEFAULT TRUE;"))
             conn.commit()
     except Exception as e:
         print(f"Warning: Could not connect or migrate database on startup: {e}")
@@ -40,6 +47,7 @@ app.include_router(auth.router)
 app.include_router(ingestion.router)
 app.include_router(family.router)
 app.include_router(clinical.router)
+app.include_router(claims.router)
 
 
 @app.get("/")

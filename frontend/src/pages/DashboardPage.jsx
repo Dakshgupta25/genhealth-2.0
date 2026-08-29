@@ -5,6 +5,7 @@ import { getUserRecentReports, getReportResults } from '../api/reports';
 import { getFamilyMembers } from '../api/family';
 import DoodleIcon from '../components/common/DoodleIcon';
 import { Button, Badge, Card, EmptyState } from '../components/ui';
+import PendingClaimsBanner from '../components/family/PendingClaimsBanner';
 
 export function DashboardPage() {
   const { user, userId, selectedHospital } = useAuth();
@@ -90,6 +91,9 @@ export function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       
+      {/* Pending Incoming Claims Notification */}
+      <PendingClaimsBanner />
+
       {/* 1. PATIENT OVERVIEW CLINICAL HEADER */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-[#E3E3DF] dark:border-[#303030]">

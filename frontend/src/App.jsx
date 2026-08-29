@@ -10,25 +10,41 @@ import DashboardPage from './pages/DashboardPage';
 import UploadPage from './pages/UploadPage';
 import FamilyTreePage from './pages/FamilyTreePage';
 import DoctorPortalPage from './pages/DoctorPortalPage';
+import ClaimantWaitingPage from './pages/ClaimantWaitingPage';
 
 function ProtectedLayout({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isPendingClaim } = useAuth();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If user has a pending claim on a placeholder, gate to waiting screen
+  if (isPendingClaim) {
+    return <ClaimantWaitingPage />;
   }
 
   return <AppShell>{children}</AppShell>;
 }
 
 export function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isPendingClaim } = useAuth();
 
   return (
     <Routes>
       <Route
         path="/login"
-        element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+        element={
+          isAuthenticated ? (
+            isPendingClaim ? (
+              <ClaimantWaitingPage />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          ) : (
+            <LoginPage />
+          )
+        }
       />
 
       {/* Main App Routes - Exact Navigation Order: Dashboard -> Upload -> Family Tree -> Doctor Portal */}

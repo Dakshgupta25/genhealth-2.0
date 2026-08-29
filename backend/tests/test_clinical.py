@@ -75,3 +75,57 @@ def test_patient_cross_family_history(client, db_session):
     assert points[0]["relationship_type"] == "father"
     assert points[0]["numeric_value"] == 210.0
     assert points[0]["abnormality_flag"] == "high"
+
+
+def test_relative_disease_summary_and_privacy_check(client, db_session):
+    # 1. Create patient and relative
+    patient = User(email="patient_p@test.com", password_hash="fakehash", full_name="Patient Privacy", role="patient")
+    relative = User(email="relative_p@test.com", password_hash="fakehash", full_name="Relative Privacy", role="patient")
+    db_session.add_all([patient, relative])
+    db_session.commit()
+    db_session.refresh(patient)
+    db_session.refresh(relative)
+
+    # 2. Link relative with share_clinical_data = True
+    rel = FamilyRelationship(
+        user_id=patient.id,
+        relative_user_id=relative.id,
+        relationship_type="mother",
+        share_clinical_data=True,
+    )
+    db_session.add(rel)
+
+    # Add a report for relative
+    report = Report(user_id=relative.id, original_filename="report.pdf", file_mime_type="application/pdf", status="done")
+    db_session.add(report)
+    db_session.commit()
+    db_session.refresh(report)
+
+    result = ReportResult(
+        report_id=report.id,
+        raw_test_name="Fasting Glucose",
+        canonical_test_name="Fasting Blood Sugar",
+        value="110",
+        numeric_value=110.0,
+        unit="mg/dL",
+        abnormality_flag="warning",
+    )
+    db_session.add(result)
+    db_session.commit()
+
+    # 3. Query relative disease summary with consent enabled -> 200 OK
+    res = client.get(f"/api/v1/clinical/patient/{patient.id}/relative/{relative.id}/disease/diabetes/summary")
+    assert res.status_code == 200
+    summaries = res.json()
+    assert len(summaries) >= 1
+    sugar_summary = next(s for s in summaries if s["canonical_test_name"] == "Fasting Blood Sugar")
+    assert sugar_summary["latest_value"] == "110"
+
+    # 4. Disable clinical data sharing consent -> MUST receive 403 Forbidden
+    rel.share_clinical_data = False
+    db_session.commit()
+
+    blocked_res = client.get(f"/api/v1/clinical/patient/{patient.id}/relative/{relative.id}/disease/diabetes/summary")
+    assert blocked_res.status_code == 403
+    assert "Clinical data sharing is disabled" in blocked_res.json()["detail"]
+

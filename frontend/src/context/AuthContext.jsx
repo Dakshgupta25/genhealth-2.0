@@ -28,8 +28,17 @@ export function AuthProvider({ children }) {
     return userData;
   };
 
-  const signup = async (email, password, fullName) => {
-    const userData = await signupUser({ email, password, full_name: fullName });
+  const signup = async (payload) => {
+    // Accepts object with { email, password, full_name, gender, claim_uuid }
+    // Or legacy positional arguments (email, password, fullName)
+    let body;
+    if (typeof payload === 'object' && payload !== null) {
+      body = payload;
+    } else {
+      const [email, password, fullName] = arguments;
+      body = { email, password, full_name: fullName };
+    }
+    const userData = await signupUser(body);
     setUser(userData);
     return userData;
   };
@@ -42,8 +51,10 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         userId: user?.id || null,
         isAuthenticated: !!user,
+        isPendingClaim: Boolean(user?.is_pending_claim),
         selectedHospital,
         setSelectedHospital,
         login,
@@ -63,3 +74,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

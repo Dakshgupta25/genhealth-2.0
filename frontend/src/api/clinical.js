@@ -21,6 +21,18 @@ export async function getPatientDiseaseSummary(userId, diseaseId) {
 }
 
 /**
+ * Fetch latest disease measurements for a specific linked relative.
+ * @param {string} userId UUID
+ * @param {string} relativeId UUID
+ * @param {string} diseaseId string
+ * @returns {Promise<Array<Object>>}
+ */
+export async function getRelativeDiseaseSummary(userId, relativeId, diseaseId) {
+  const response = await apiClient.get(`/api/v1/clinical/patient/${userId}/relative/${relativeId}/disease/${diseaseId}/summary`);
+  return response.data;
+}
+
+/**
  * Fetch cross-family historical values for a specific canonical test across linked family members.
  * @param {string} userId UUID
  * @param {string} canonicalTestName string

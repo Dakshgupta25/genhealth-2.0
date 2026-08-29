@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import DoodleIcon from '../components/common/DoodleIcon';
-import { Button, Card, FormField, Input } from '../components/ui';
+import { Button, Card, FormField, Input, Select } from '../components/ui';
 
 export function LoginPage() {
   const [portalMode, setPortalMode] = useState('patient'); // 'patient' | 'doctor'
@@ -12,6 +12,9 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState('unspecified');
+  const [hasExistingUuid, setHasExistingUuid] = useState(false);
+  const [claimUuid, setClaimUuid] = useState('');
   const [doctorCode, setDoctorCode] = useState('');
   
   const [loading, setLoading] = useState(false);
@@ -31,7 +34,16 @@ export function LoginPage() {
         if (!fullName.trim()) {
           throw new Error('Please enter your full name.');
         }
-        await signup(email, password, fullName);
+        if (hasExistingUuid && !claimUuid.trim()) {
+          throw new Error('Please enter the placeholder profile UUID to claim.');
+        }
+        await signup({
+          email,
+          password,
+          full_name: fullName.trim(),
+          gender,
+          claim_uuid: hasExistingUuid ? claimUuid.trim() : undefined,
+        });
       } else {
         await login(email, password);
       }
@@ -58,9 +70,9 @@ export function LoginPage() {
         onClick={toggleTheme}
         id="login-theme-toggle"
         title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-[6px] border border-[#E3E3DF] dark:border-[#303030] bg-white/95 dark:bg-[#1E1E1E]/95 shadow-xs text-xs font-semibold text-[#171717] dark:text-[#F0F0F0] hover:bg-[#F4F4F2] dark:hover:bg-[#252525] transition-colors cursor-pointer"
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center space-x-2 px-3 py-1.5 rounded-[6px] border border-[#CBD6D2] dark:border-[#2F433E] bg-white/95 dark:bg-[#151E1C]/95 shadow-xs text-xs font-semibold text-[#13221F] dark:text-[#EFF5F3] hover:bg-[#F4F6F5] dark:hover:bg-[#1C2725] transition-colors cursor-pointer"
       >
-        <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5 text-[#5F6368] dark:text-[#A0A0A0]" />
+        <DoodleIcon name={theme === 'dark' ? 'sun' : 'moon'} className="w-3.5 h-3.5 text-[#4E6863] dark:text-[#7E9993]" />
         <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
       </button>
 
@@ -69,28 +81,28 @@ export function LoginPage() {
         
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-10 h-10 rounded-[8px] items-center justify-center bg-[#141414] text-white shadow-xs mb-1">
+          <div className="inline-flex w-10 h-10 rounded-[8px] items-center justify-center bg-[#1E4D45] text-white shadow-xs mb-1">
             <DoodleIcon name="logo-pulse" className="w-5 h-5 text-white" strokeWidth={1.8} />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#171717] dark:text-[#F0F0F0]">
-              GenHealth <span className="text-[#B4232F] dark:text-[#E04855]">AI</span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#13221F] dark:text-[#EFF5F3]">
+              GenHealth <span className="text-[#1E4D45] dark:text-[#57BA8E]">AI</span>
             </h1>
-            <p className="text-xs sm:text-sm font-medium text-[#5F6368] dark:text-[#A0A0A0] mt-0.5">
+            <p className="text-xs sm:text-sm font-medium text-[#4E6863] dark:text-[#7E9993] mt-0.5">
               Clinical Intelligence &amp; Diagnostic Platform
             </p>
           </div>
         </div>
 
         {/* Portal Mode Segmented Control */}
-        <div className="p-1 rounded-[8px] bg-[#F4F4F2] dark:bg-[#202020] border border-[#E3E3DF] dark:border-[#303030] flex items-center gap-1">
+        <div className="p-1 rounded-[8px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] flex items-center gap-1">
           <button
             type="button"
             onClick={() => { setPortalMode('patient'); setErrorMessage(''); }}
             className={`flex-1 py-2 rounded-[6px] text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               portalMode === 'patient'
-                ? 'bg-white dark:bg-[#1E1E1E] text-[#171717] dark:text-[#F0F0F0] shadow-xs border border-[#E3E3DF] dark:border-[#303030]'
-                : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717]'
+                ? 'bg-white dark:bg-[#151E1C] text-[#13221F] dark:text-[#EFF5F3] shadow-xs border border-[#CBD6D2] dark:border-[#2F433E]'
+                : 'text-[#4E6863] dark:text-[#7E9993] hover:text-[#13221F]'
             }`}
           >
             <DoodleIcon name="user" className="w-3.5 h-3.5" />
@@ -102,8 +114,8 @@ export function LoginPage() {
             onClick={() => { setPortalMode('doctor'); setAuthMode('login'); setErrorMessage(''); }}
             className={`flex-1 py-2 rounded-[6px] text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
               portalMode === 'doctor'
-                ? 'bg-[#B4232F] text-white shadow-xs'
-                : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717]'
+                ? 'bg-[#1E4D45] text-white shadow-xs dark:bg-[#336E63]'
+                : 'text-[#4E6863] dark:text-[#7E9993] hover:text-[#13221F]'
             }`}
           >
             <DoodleIcon name="doctor" className="w-3.5 h-3.5" />
@@ -112,30 +124,30 @@ export function LoginPage() {
         </div>
 
         {/* Authentication Card Form */}
-        <Card radius="lg" className="p-6 sm:p-8 space-y-6 bg-white border border-[#E3E3DF] dark:border-[#303030]">
+        <Card radius="lg" className="p-6 sm:p-8 space-y-6 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E]">
           {/* Header text based on mode */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-[#171717] dark:text-[#F0F0F0]">
+              <h2 className="text-lg font-bold text-[#13221F] dark:text-[#EFF5F3]">
                 {portalMode === 'doctor' 
                   ? 'Clinical Provider Access' 
                   : authMode === 'login' 
                     ? 'Patient Sign In' 
                     : 'Create Patient Account'}
               </h2>
-              <p className="text-xs text-[#5F6368] dark:text-[#A0A0A0] mt-0.5">
+              <p className="text-xs text-[#4E6863] dark:text-[#7E9993] mt-0.5">
                 {portalMode === 'doctor'
                   ? 'Access multi-patient lab analytics and clinical trends'
                   : authMode === 'login'
                     ? 'Enter your credentials to access your health records'
-                    : 'Get your unique medical User ID today'}
+                    : 'Get your unique medical User ID or connect to an existing profile'}
               </p>
             </div>
           </div>
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3.5 rounded-[6px] text-xs font-semibold text-[#B4232F] bg-[#FCEBED] border border-[#E8B4B9] dark:bg-[#2D1416] dark:border-[#522226] dark:text-[#E04855] flex items-center space-x-2">
+            <div className="p-3.5 rounded-[6px] text-xs font-semibold text-[#942728] bg-[#FDF0F0] border border-[#F6C4C5] dark:bg-[#2D1616] dark:border-[#5B292A] dark:text-[#E57373] flex items-center space-x-2">
               <span>⚠️</span>
               <span>{errorMessage}</span>
             </div>
@@ -143,15 +155,29 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4 text-left">
             {portalMode === 'patient' && authMode === 'signup' && (
-              <FormField label="Full Name" required>
-                <Input
-                  type="text"
-                  required
-                  placeholder="e.g. Eleanor Vance"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </FormField>
+              <>
+                <FormField label="Full Name" required>
+                  <Input
+                    type="text"
+                    required
+                    placeholder="e.g. Eleanor Vance"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </FormField>
+
+                <FormField label="Biological Sex / Gender">
+                  <Select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                  >
+                    <option value="unspecified">Unspecified / Decline to state</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </FormField>
+              </>
             )}
 
             <FormField label="Email Address" required>
@@ -174,6 +200,42 @@ export function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </FormField>
+
+            {/* Existing Placeholder Claim Option */}
+            {portalMode === 'patient' && authMode === 'signup' && (
+              <div className="pt-2 border-t border-[#E0E7E4] dark:border-[#22312E] space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="claim-uuid-toggle"
+                    checked={hasExistingUuid}
+                    onChange={(e) => setHasExistingUuid(e.target.checked)}
+                    className="rounded border-[#CBD6D2] text-[#1E4D45] focus:ring-[#1E4D45] cursor-pointer"
+                  />
+                  <label htmlFor="claim-uuid-toggle" className="text-xs font-semibold text-[#13221F] dark:text-[#EFF5F3] cursor-pointer">
+                    I already have a medical profile UUID (Claim placeholder)
+                  </label>
+                </div>
+
+                {hasExistingUuid && (
+                  <FormField
+                    label="Managed Profile UUID to Claim"
+                    required
+                    helperText="Enter the UUID created for you by your family member. This sends an approval request to them."
+                  >
+                    <Input
+                      type="text"
+                      mono
+                      required={hasExistingUuid}
+                      placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
+                      value={claimUuid}
+                      onChange={(e) => setClaimUuid(e.target.value)}
+                      id="claim-uuid-input"
+                    />
+                  </FormField>
+                )}
+              </div>
+            )}
 
             {portalMode === 'doctor' && (
               <FormField label="Hospital / Clinical ID Code (Optional)">
@@ -201,20 +263,22 @@ export function LoginPage() {
                 ? 'Access Doctor Portal'
                 : authMode === 'login'
                 ? 'Sign In to Dashboard'
+                : hasExistingUuid
+                ? 'Claim Profile & Sign Up'
                 : 'Complete Sign Up'}
             </Button>
           </form>
 
           {/* Toggle Login vs Signup (For Patient Portal) */}
           {portalMode === 'patient' && (
-            <div className="pt-2 text-center text-xs text-[#5F6368] dark:text-[#A0A0A0] border-t border-[#E3E3DF] dark:border-[#303030]">
+            <div className="pt-2 text-center text-xs text-[#4E6863] dark:text-[#7E9993] border-t border-[#CBD6D2] dark:border-[#2F433E]">
               {authMode === 'login' ? (
                 <p>
                   Don't have an account yet?{' '}
                   <button
                     type="button"
                     onClick={() => { setAuthMode('signup'); setErrorMessage(''); }}
-                    className="font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline ml-1 cursor-pointer"
+                    className="font-semibold text-[#1E4D45] dark:text-[#57BA8E] hover:underline ml-1 cursor-pointer"
                   >
                     Sign Up
                   </button>
@@ -225,7 +289,7 @@ export function LoginPage() {
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setErrorMessage(''); }}
-                    className="font-semibold text-[#B4232F] dark:text-[#E04855] hover:underline ml-1 cursor-pointer"
+                    className="font-semibold text-[#1E4D45] dark:text-[#57BA8E] hover:underline ml-1 cursor-pointer"
                   >
                     Sign In
                   </button>

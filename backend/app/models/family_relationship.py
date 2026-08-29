@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, String, UUID, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UUID, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -41,6 +41,17 @@ class FamilyRelationship(Base):
     relationship_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+    )
+    link_group_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
+    )
+    share_clinical_data: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="1",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

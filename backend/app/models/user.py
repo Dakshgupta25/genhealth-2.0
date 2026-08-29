@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Date, DateTime, String, UUID, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, String, UUID, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -36,6 +36,27 @@ class User(Base):
         Date,
         nullable=True,
     )
+    gender: Mapped[Optional[str]] = mapped_column(
+        String(20),
+        nullable=True,
+        default="unspecified",
+        server_default="unspecified",
+    )
+    avatar_url: Mapped[Optional[str]] = mapped_column(
+        String,
+        nullable=True,
+    )
+    is_placeholder: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="0",
+    )
+    managed_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     role: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -49,4 +70,5 @@ class User(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"
+        return f"<User(id={self.id}, email='{self.email}', placeholder={self.is_placeholder})>"
+

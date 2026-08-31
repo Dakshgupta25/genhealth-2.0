@@ -8,6 +8,7 @@ export function FamilyTreeNode({
   isDimmed = false,
   onNodeClick,
   onUnlink,
+  onAddLabs,
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -21,15 +22,89 @@ export function FamilyTreeNode({
     }
   };
 
-  const healthStatus = member.health_status?.status || 'neutral';
   const isPlaceholder = Boolean(member.is_placeholder);
-  
-  // Display 'Me' for the primary user account
   const fullName = isSelf ? 'Me' : member.full_name;
   const badgeCode = member.badge_code || (isSelf ? 'SELF' : 'REL');
-  
-  // Consistently resolve node ID for dynamic SVG connectors
   const userId = member.relative_id || member.id || member.relationship_id;
+
+  // 1. Resolve Acute Lab Status (Inner Ring)
+  const acuteLabStatus = member.health_status?.status || (member.total_tests > 0 ? 'normal' : 'neutral');
+  const hasLabRecords = member.health_status?.total_tests > 0 || (acuteLabStatus !== 'neutral');
+
+  // 2. Resolve Predictive / Composite Hereditary Risk Status (Outer Halo)
+  const predictiveStatus =
+    member.hereditary_risk?.risk_label?.toLowerCase() ||
+    member.hereditary_status ||
+    (acuteLabStatus !== 'neutral' ? acuteLabStatus : 'neutral');
+
+  // Compound Ring Design Matrix:
+  // - Outer Halo: Composite predictive/hereditary risk status (optimal, warning/moderate, critical/high, neutral)
+  // - Inner Ring: Acute abnormal lab flag (green normal, amber warning, red critical, slate neutral)
+  const getOuterHaloStyles = (status) => {
+    switch (status) {
+      case 'low':
+      case 'optimal':
+      case 'normal':
+        return {
+          haloClass: 'ring-2 ring-emerald-500/70 dark:ring-emerald-400/70 shadow-[0_0_12px_rgba(16,185,129,0.25)]',
+          haloLabel: 'Optimal Predictive Health',
+          haloDot: 'bg-emerald-500',
+        };
+      case 'moderate':
+      case 'warning':
+        return {
+          haloClass: 'ring-2 ring-amber-500/80 dark:ring-amber-400/80 shadow-[0_0_12px_rgba(245,158,11,0.3)]',
+          haloLabel: 'Moderate Hereditary / Predictive Risk',
+          haloDot: 'bg-amber-500',
+        };
+      case 'high':
+      case 'critical':
+        return {
+          haloClass: 'ring-2 ring-[#B4232F] dark:ring-[#E04855] shadow-[0_0_14px_rgba(180,35,47,0.4)]',
+          haloLabel: 'High Hereditary / Predictive Risk',
+          haloDot: 'bg-[#B4232F]',
+        };
+      default:
+        return {
+          haloClass: 'ring-1 ring-dashed ring-[#CBD6D2] dark:ring-[#383838]',
+          haloLabel: 'No Predictive Pedigree Data',
+          haloDot: 'bg-[#858585]',
+        };
+    }
+  };
+
+  const getInnerRingStyles = (status) => {
+    switch (status) {
+      case 'normal':
+      case 'optimal':
+        return {
+          borderClass: 'border-2 border-[#18573D] dark:border-[#57BA8E]',
+          statusLabel: 'Normal Lab Values',
+          indicatorDot: 'bg-[#18573D] dark:bg-[#57BA8E]',
+        };
+      case 'warning':
+        return {
+          borderClass: 'border-2 border-[#8F5708] dark:border-[#E6A84F]',
+          statusLabel: 'Borderline / Warning Lab Markers',
+          indicatorDot: 'bg-[#8F5708] dark:bg-[#E6A84F]',
+        };
+      case 'critical':
+        return {
+          borderClass: 'border-2 border-[#B4232F] dark:border-[#E04855]',
+          statusLabel: 'Critical Lab Flag',
+          indicatorDot: 'bg-[#B4232F] dark:bg-[#E04855]',
+        };
+      default:
+        return {
+          borderClass: 'border border-slate-300 dark:border-slate-700',
+          statusLabel: 'No Lab Records',
+          indicatorDot: 'bg-slate-400',
+        };
+    }
+  };
+
+  const outerHaloMeta = getOuterHaloStyles(predictiveStatus);
+  const innerRingMeta = getInnerRingStyles(acuteLabStatus);
 
   // Biological Sex / Gender Icon Component
   const renderGenderIndicator = () => {
@@ -42,43 +117,6 @@ export function FamilyTreeNode({
     }
     return null;
   };
-
-  // Health Status Ring Config
-  const getHealthRingStyles = (status) => {
-    switch (status) {
-      case 'normal':
-      case 'optimal':
-        return {
-          ringColor: 'border-[#18573D] dark:border-[#57BA8E]',
-          glow: 'shadow-[0_0_10px_rgba(24,87,61,0.25)]',
-          dot: 'bg-[#18573D] dark:bg-[#57BA8E]',
-          statusLabel: 'Optimal Health (Normal Labs)',
-        };
-      case 'warning':
-        return {
-          ringColor: 'border-[#8F5708] dark:border-[#E6A84F]',
-          glow: 'shadow-[0_0_10px_rgba(230,168,79,0.3)]',
-          dot: 'bg-[#8F5708] dark:bg-[#E6A84F]',
-          statusLabel: 'Warning (Borderline Labs)',
-        };
-      case 'critical':
-        return {
-          ringColor: 'border-[#B4232F] dark:border-[#E04855]',
-          glow: 'shadow-[0_0_12px_rgba(180,35,47,0.4)]',
-          dot: 'bg-[#B4232F] dark:bg-[#E04855]',
-          statusLabel: 'Critical Alert',
-        };
-      default:
-        return {
-          ringColor: 'border-[#CBD6D2] dark:border-[#303030]',
-          glow: 'shadow-none',
-          dot: 'bg-[#858585]',
-          statusLabel: 'No Lab Records',
-        };
-    }
-  };
-
-  const healthMeta = getHealthRingStyles(healthStatus);
 
   return (
     <div
@@ -116,11 +154,11 @@ export function FamilyTreeNode({
           )}
         </div>
 
-        {/* Circular Avatar Node with Health Ring */}
+        {/* Circular Avatar Node with COMPOUND RING (Outer Predictive Halo + Inner Acute Lab Ring) */}
         <div className="relative my-0.5">
           <div
-            className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full p-[1.5px] transition-transform duration-300 group-hover:scale-110 border-2 ${healthMeta.ringColor} ${healthMeta.glow}`}
-            title={`Health Status: ${healthMeta.statusLabel}`}
+            className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full p-[2px] transition-transform duration-300 group-hover:scale-110 ${outerHaloMeta.haloClass} ${innerRingMeta.borderClass}`}
+            title={`Predictive Status: ${outerHaloMeta.haloLabel} | Labs: ${innerRingMeta.statusLabel}`}
           >
             {member.avatar_url ? (
               <img
@@ -145,13 +183,13 @@ export function FamilyTreeNode({
 
           {/* Health Status Indicator Pip */}
           <span
-            className={`absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white dark:border-[#1E1E1E] ${healthMeta.dot}`}
-            title={healthMeta.statusLabel}
+            className={`absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white dark:border-[#1E1E1E] ${innerRingMeta.indicatorDot}`}
+            title={innerRingMeta.statusLabel}
           />
         </div>
 
         {/* Member Name, Gender Marker & Relation Code */}
-        <div className="mb-1 sm:mb-1.5 w-full px-1">
+        <div className="mb-0.5 sm:mb-1 w-full px-1">
           <div className="flex items-center justify-center space-x-0.5 sm:space-x-1">
             <span
               className={`text-[9px] sm:text-[10px] md:text-[11px] font-bold truncate max-w-[55px] sm:max-w-[70px] md:max-w-[80px] ${
@@ -170,6 +208,23 @@ export function FamilyTreeNode({
           <p className="text-[8px] sm:text-[9px] font-semibold text-[#5F6368] dark:text-[#A0A0A0] truncate">
             {isSelf ? 'Patient' : (member.relationship_type ? member.relationship_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Relative')}
           </p>
+
+          {/* Empty-state prompt for relatives with zero lab reports */}
+          {!isSelf && !hasLabRecords && (
+            <div className="mt-0.5">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onAddLabs) onAddLabs(member);
+                  else if (onNodeClick) onNodeClick(member);
+                }}
+                className="text-[7.5px] sm:text-[8px] font-semibold text-[#1E4D45] dark:text-[#57BA8E] hover:underline cursor-pointer inline-flex items-center space-x-0.5"
+                title="Upload or record laboratory measurements for this relative"
+              >
+                <span>+ Add Labs</span>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Floating Action Buttons on Hover */}

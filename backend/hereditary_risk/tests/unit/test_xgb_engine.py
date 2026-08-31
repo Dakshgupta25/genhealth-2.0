@@ -65,6 +65,23 @@ class TestXGBEngine:
         assert "fasting_glucose" in res["feature_values"]
         assert res["feature_values"]["fasting_glucose"] == 95.0
 
+    def test_unanchored_feature_handles_nan_without_zero_fallback(self, monkeypatch):
+        """
+        Verify that features not in POPULATION_MEDIANS are not assigned arbitrary 0.0,
+        and are instead passed as NaN and tracked in imputed_features.
+        """
+        import numpy as np
+        from hereditary_risk.app.ml import xgb_engine
+
+        # Temporarily mock POPULATION_MEDIANS without fasting_glucose
+        mock_medians = {k: v for k, v in xgb_engine.POPULATION_MEDIANS.items() if k != "fasting_glucose"}
+        monkeypatch.setattr(xgb_engine, "POPULATION_MEDIANS", mock_medians)
+
+        res = predict_disease_ml("type_2_diabetes", {})
+        assert res["ml_available"] is True
+        assert np.isnan(res["feature_values"]["fasting_glucose"])
+        assert any("unanchored_nan" in s for s in res["imputed_features"])
+
     def test_fallback_on_invalid_disease(self):
         res = predict_disease_ml(
             disease_key="non_existent_disease",

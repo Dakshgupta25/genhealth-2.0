@@ -11,8 +11,9 @@ import uuid
 import datetime
 from typing import Dict, List, Any, Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Header, Depends
 
+from hereditary_risk.app.config.settings import settings
 from hereditary_risk.app.schemas.input import (
     NormalizeBiomarkerRequest,
     HereditaryRiskAssessmentRequest,
@@ -47,7 +48,31 @@ from hereditary_risk.app.narrative.gemini_narrative import (
     generate_clinical_narrative,
 )
 
-router = APIRouter(prefix="/api/v1/hereditary-risk", tags=["Hereditary Risk Engine"])
+
+def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Key")):
+    """
+    Fail-closed API Key verification for standalone Hereditary Risk service.
+    - If HEREDITARY_RISK_API_KEY is not configured: reject with HTTP 503 Service Unavailable.
+    - If HEREDITARY_RISK_API_KEY is configured: require matching X-API-Key header (HTTP 401 if missing/invalid).
+    """
+    if not settings.HEREDITARY_RISK_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Hereditary Risk Engine standalone API is unavailable: HEREDITARY_RISK_API_KEY is not configured (fail-closed mode).",
+        )
+    if not x_api_key or x_api_key != settings.HEREDITARY_RISK_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing X-API-Key header for Hereditary Risk Engine.",
+        )
+    return True
+
+
+router = APIRouter(
+    prefix="/api/v1/hereditary-risk",
+    tags=["Hereditary Risk Engine"],
+    dependencies=[Depends(verify_api_key)],
+)
 
 
 def _extract_biomarkers_dict(raw_input: Any) -> Dict[str, Any]:
@@ -267,6 +292,37 @@ def predict_hereditary_risk(payload: HereditaryRiskAssessmentRequest):
             for fb in agg_res["family_breakdown"]
         ]
 
+        # Data Sufficiency & Missing Biomarker Gating Evaluation
+        primary_markers = d_meta.get("primary_biomarkers", [])
+        ml_features = d_meta.get("ml_feature_biomarkers", [])
+        mandatory_anchors = d_meta.get("mandatory_anchors", [])
+        min_required = d_meta.get("min_required_biomarkers", 1)
+
+        provided_primary_keys = [
+            k for k in primary_markers
+            if k in self_canonical_biomarkers and self_canonical_biomarkers[k] is not None
+        ]
+
+        missing_mandatory: List[str] = []
+        for anchor_group in mandatory_anchors:
+            has_anchor = any(
+                k in self_canonical_biomarkers and self_canonical_biomarkers[k] is not None
+                for k in anchor_group
+            )
+            if not has_anchor:
+                missing_mandatory.append(" or ".join(anchor_group))
+
+        is_sufficient = (len(provided_primary_keys) >= min_required) and (len(missing_mandatory) == 0)
+        data_sufficiency_status = "SUFFICIENT" if is_sufficient else "INSUFFICIENT_DATA"
+
+        if not is_sufficient:
+            if missing_mandatory:
+                sufficiency_msg = f"Insufficient data — add {' and '.join(missing_mandatory)} to enable {d_meta['display_name']} assessment."
+            else:
+                sufficiency_msg = f"Insufficient data — at least {min_required} biomarkers required (currently provided: {len(provided_primary_keys)})."
+        else:
+            sufficiency_msg = None
+
         pop_heritability = d_meta.get("heritability_estimate")
         is_cal = ml_res.get("is_calibrated", False)
 
@@ -291,6 +347,13 @@ def predict_hereditary_risk(payload: HereditaryRiskAssessmentRequest):
             imputed_features=ml_res.get("imputed_features", []),
             rule_ml_disagreement=rule_ml_disagreement,
             disagreement_explanation=disagreement_explanation,
+            data_sufficiency_status=data_sufficiency_status,
+            is_sufficient_data=is_sufficient,
+            missing_mandatory_biomarkers=missing_mandatory,
+            sufficiency_message=sufficiency_msg,
+            primary_clinical_biomarkers=primary_markers,
+            ml_feature_biomarkers=ml_features,
+            formula_breakdown=agg_res.get("formula_breakdown", {}),
             risk_label=risk_label,
             highest_severity=agg_res["highest_severity"],
             rule_evidence=rule_evidence_schemas,

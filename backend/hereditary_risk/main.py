@@ -47,13 +47,21 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(router)
+
+
+@app.on_event("startup")
+def verify_standalone_auth_config():
+    if not settings.HEREDITARY_RISK_API_KEY:
+        logger.warning(
+            "HEREDITARY_RISK_API_KEY is not configured. Standalone API endpoints will reject requests with HTTP 503 (fail-closed mode)."
+        )
 
 
 @app.get("/", tags=["Health"])
@@ -74,7 +82,7 @@ def health() -> dict:
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        host=settings.HEREDITARY_RISK_HOST,
         port=settings.HEREDITARY_RISK_PORT,
         reload=True,
         log_level=settings.LOG_LEVEL.lower(),

@@ -4,6 +4,7 @@ Layer 2 Subsystem: Kinship-Weighted Family Risk Aggregation.
 
 from typing import Dict, List, Optional, TypedDict, Any
 from hereditary_risk.app.config.kinship import KINSHIP_WEIGHTS, get_kinship_weight, is_genetic_relationship
+from hereditary_risk.app.config.diseases import get_disease_heritability_reference
 from hereditary_risk.app.rules.clinical_rule_engine import evaluate_disease_rules, DiseaseRuleEvaluationResult, BiomarkerRuleEvidence
 
 
@@ -30,6 +31,8 @@ class FamilyDiseaseAggregationResult(TypedDict):
     self_score: float
     self_rule_score: float
     family_weighted_risk: float
+    heritability_estimate: float
+    genetic_bump: float
     combined_hereditary_score: float
     risk_label: str
     highest_severity: str
@@ -39,6 +42,7 @@ class FamilyDiseaseAggregationResult(TypedDict):
     self_rule_evidence: List[BiomarkerRuleEvidence]
     family_breakdown: List[FamilyMemberRiskContribution]
     member_breakdown: List[FamilyMemberRiskContribution]
+    formula_breakdown: Dict[str, Any]
     transparent_formula: str
 
 
@@ -109,16 +113,61 @@ def aggregate_family_disease_risk(
     else:
         family_weighted_risk = 0.0
 
-    if genetic_count > 0 and total_family_weight > 0.0:
-        combined_score = round(0.60 * self_score + 0.40 * family_weighted_risk, 4)
+    # Retrieve disease-specific heritability consensus reference
+    h2 = get_disease_heritability_reference(disease_key)
+    if h2 is None:
+        h2 = 0.50
+
+    # Option C: Bayesian Asymmetric Floor Formula
+    # Combined Score = max(S_self, S_self + (1.0 - S_self) * (0.5 * h^2 * R_fam))
+    # This guarantees abnormal personal labs are NEVER diluted by good family history,
+    # while normal personal labs receive an additive bump scaled by disease heritability and family risk.
+    if genetic_count > 0 and total_family_weight > 0.0 and family_weighted_risk > 0.0:
+        genetic_bump = round((1.0 - self_score) * (0.5 * h2 * family_weighted_risk), 4)
+        combined_score = round(max(self_score, self_score + genetic_bump), 4)
+
+        formula_breakdown = {
+            "personal_score": self_score,
+            "family_weighted_risk": family_weighted_risk,
+            "heritability_estimate": h2,
+            "genetic_bump": genetic_bump,
+            "combined_score": combined_score,
+            "mode": "asymmetric_bayesian_floor",
+        }
+
         formula_str = (
-            f"Combined Risk = 0.60 * SelfScore({self_score}) + "
-            f"0.40 * FamilyWeightedRisk({family_weighted_risk}) "
-            f"[Weights Sum = {total_family_weight}]"
+            f"Your lab results score: {self_score*100:.1f}%. "
+            f"Family history adds an additional +{genetic_bump*100:.1f}% based on your linked relatives' "
+            f"disease history and this condition's {h2*100:.0f}% heritability (h²). "
+            f"Combined estimate: {combined_score*100:.1f}%."
+        )
+    elif self_score > 0.0:
+        genetic_bump = 0.0
+        combined_score = self_score
+        formula_breakdown = {
+            "personal_score": self_score,
+            "family_weighted_risk": 0.0,
+            "heritability_estimate": h2,
+            "genetic_bump": 0.0,
+            "combined_score": self_score,
+            "mode": "personal_labs_only",
+        }
+        formula_str = (
+            f"Your lab results score: {self_score*100:.1f}%. "
+            f"No genetic family risk detected or linked. Combined estimate: {combined_score*100:.1f}%."
         )
     else:
-        combined_score = self_score
-        formula_str = f"Combined Risk = 1.00 * SelfScore({self_score}) [No genetic family data]"
+        genetic_bump = 0.0
+        combined_score = 0.0
+        formula_breakdown = {
+            "personal_score": 0.0,
+            "family_weighted_risk": 0.0,
+            "heritability_estimate": h2,
+            "genetic_bump": 0.0,
+            "combined_score": 0.0,
+            "mode": "baseline_normal",
+        }
+        formula_str = "Personal lab biomarkers and linked family risk are in optimal ranges (0.0%)."
 
     risk_label = calculate_risk_label(combined_score)
 
@@ -127,6 +176,8 @@ def aggregate_family_disease_risk(
         "self_score": self_score,
         "self_rule_score": self_score,
         "family_weighted_risk": family_weighted_risk,
+        "heritability_estimate": h2,
+        "genetic_bump": genetic_bump,
         "combined_hereditary_score": combined_score,
         "risk_label": risk_label,
         "highest_severity": self_eval["highest_severity"],
@@ -136,6 +187,7 @@ def aggregate_family_disease_risk(
         "self_rule_evidence": self_eval["evidence"],
         "family_breakdown": member_breakdown,
         "member_breakdown": member_breakdown,
+        "formula_breakdown": formula_breakdown,
         "transparent_formula": formula_str,
     }
 

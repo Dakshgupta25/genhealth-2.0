@@ -468,7 +468,7 @@ class DiseaseThresholdDict(dict):
         
         disease_map = {
             "type_2_diabetes": ["hba1c", "fasting_glucose", "postprandial_glucose", "fasting_insulin", "triglycerides"],
-            "dyslipidemia": ["total_cholesterol", "ldl", "hdl", "triglycerides", "vldl"],
+            "dyslipidemia": ["total_cholesterol", "ldl", "hdl", "triglycerides", "fasting_glucose", "vldl"],
             "hypothyroidism": ["tsh", "t3", "t4", "free_t4"],
             "ckd": ["creatinine", "bun", "uric_acid", "egfr"],
             "anemia": ["hemoglobin", "mcv", "mch", "ferritin", "serum_iron"],

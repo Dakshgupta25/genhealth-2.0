@@ -26,7 +26,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 app.include_router(router)
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": "test-api-key"})
 
 
 class TestPreIntegrationReview:
@@ -146,7 +146,8 @@ class TestPreIntegrationReview:
         assert agg_res["self_score"] == 0.0
         assert agg_res["family_weighted_risk"] > 0.0
         assert agg_res["combined_hereditary_score"] > 0.0
-        assert agg_res["combined_hereditary_score"] == pytest.approx(0.40 * agg_res["family_weighted_risk"], abs=0.01)
+        # Option C: Combined = 0.5 * h^2 * family_weighted_risk (h^2=0.50 for T2D -> 0.25 * family_risk)
+        assert agg_res["combined_hereditary_score"] == pytest.approx(0.5 * 0.50 * agg_res["family_weighted_risk"], abs=0.01)
 
     def test_self_only_risk_calculation(self):
         """Verify risk calculation when patient provides biomarkers but no family history is provided."""

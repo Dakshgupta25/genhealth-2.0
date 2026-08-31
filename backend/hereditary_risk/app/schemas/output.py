@@ -127,11 +127,34 @@ class DiseaseRiskResultSchema(BaseModel):
     disagreement_explanation: Optional[str] = Field(
         None, description="Human-readable explanation of discrepancy between rule/family assessment and ML probability estimate"
     )
+    # Data Sufficiency & Missing Biomarker Gating
+    data_sufficiency_status: str = Field(
+        "SUFFICIENT", description="'SUFFICIENT' | 'INSUFFICIENT_DATA'"
+    )
+    is_sufficient_data: bool = Field(
+        True, description="True if patient provides required mandatory anchor biomarkers and minimum test count"
+    )
+    missing_mandatory_biomarkers: List[str] = Field(
+        default_factory=list, description="List of missing required anchor biomarkers needed to unlock this assessment"
+    )
+    sufficiency_message: Optional[str] = Field(
+        None, description="Clear guidance on what laboratory tests are required to unlock or complete this assessment"
+    )
+    primary_clinical_biomarkers: List[str] = Field(
+        default_factory=list, description="Biomarkers evaluated by Layer 2 Clinical Diagnostic Rule Engine"
+    )
+    ml_feature_biomarkers: List[str] = Field(
+        default_factory=list, description="Biomarkers consumed by Layer 3 XGBoost ML Model"
+    )
+    formula_breakdown: Dict[str, Any] = Field(
+        default_factory=dict, description="Structured plain-language parameter breakdown of the Bayesian asymmetric combined score"
+    )
+    
     risk_label: str = Field(..., description="'HIGH' | 'MODERATE' | 'LOW'")
     highest_severity: str = Field(..., description="'HIGH' | 'NORMAL'")
     rule_evidence: List[BiomarkerRuleEvidenceSchema] = Field(default_factory=list)
     family_breakdown: List[FamilyMemberBreakdownSchema] = Field(default_factory=list)
-    transparent_formula: str = Field(..., description="Explicit mathematical calculation formula")
+    transparent_formula: str = Field(..., description="Explicit mathematical calculation formula in plain language")
     explanation: Dict[str, Any] = Field(default_factory=dict, description="SHAP feature importance details")
     narrative: Optional[str] = Field(None, description="Layer 4 LLM generated clinical summary")
 

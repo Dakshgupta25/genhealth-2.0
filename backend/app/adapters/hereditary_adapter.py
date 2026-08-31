@@ -39,6 +39,13 @@ KINSHIP_RELATIONSHIP_MAP: Dict[str, str] = {
     "brother": "brother",
     "sister": "sister",
     "sibling": "brother",  # Generic fallback
+    # Half-Siblings (2nd Degree, r = 0.25)
+    "half_sibling": "half_sibling",
+    "half_brother": "half_brother",
+    "half_sister": "half_sister",
+    "half brother": "half_brother",
+    "half sister": "half_sister",
+    "half sibling": "half_sibling",
     # Children
     "son": "son",
     "daughter": "daughter",

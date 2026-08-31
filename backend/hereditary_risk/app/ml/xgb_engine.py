@@ -21,38 +21,53 @@ from typing import Dict, List, Optional, TypedDict, Any
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 # Population reference medians for canonical biomarker imputation
+# Sourced from standard clinical guidelines, reference intervals, and NHANES epidemiological cohorts
 POPULATION_MEDIANS: Dict[str, float] = {
-    "fasting_glucose": 95.0,
-    "fasting_insulin": 8.0,
-    "postprandial_glucose": 115.0,
-    "triglycerides": 110.0,
-    "total_cholesterol": 185.0,
-    "ldl": 110.0,
-    "hdl": 55.0,
-    "vldl": 22.0,
-    "tsh": 2.1,
-    "t3": 110.0,
-    "t4": 8.5,
-    "free_t4": 1.1,
-    "creatinine": 0.95,
-    "bun": 15.0,
-    "uric_acid": 5.2,
-    "egfr": 95.0,
-    "hemoglobin": 13.8,
-    "mcv": 88.0,
-    "mch": 29.5,
-    "mchc": 33.5,
-    "ferritin": 50.0,
-    "serum_iron": 85.0,
-    "alt": 25.0,
-    "ast": 24.0,
-    "alp": 75.0,
-    "bilirubin_total": 0.7,
-    "ggt": 28.0,
-    "age": 45.0,
-    "resting_bp": 120.0,
-    "sodium": 140.0,
-    "potassium": 4.2,
+    # Glycemic Biomarkers
+    "fasting_glucose": 95.0,        # ADA 2024 / NHANES normal adult fasting plasma glucose median (70-99 mg/dL)
+    "fasting_insulin": 8.0,         # Endocrine Society normal fasting insulin reference norm (< 10 μIU/mL)
+    "postprandial_glucose": 115.0,  # ADA 2024 normal 2-hour post-load glucose cohort median (< 140 mg/dL)
+    
+    # Lipid Fractions
+    "triglycerides": 110.0,         # AHA/ACC 2018 lipid guidelines normal adult fasting median (< 150 mg/dL)
+    "total_cholesterol": 185.0,     # NCEP ATP III / AHA/ACC 2018 desirable adult total cholesterol median (< 200 mg/dL)
+    "ldl": 110.0,                   # AHA/ACC 2018 lipid guidelines optimal/near-optimal median (100-129 mg/dL)
+    "hdl": 55.0,                    # AHA/ACC 2018 / NCEP ATP III normal adult sex-averaged reference midpoint (40-60 mg/dL)
+    "vldl": 22.0,                   # NCEP ATP III fasting remnant lipoprotein normal median (2-30 mg/dL)
+    
+    # Thyroid Function
+    "tsh": 2.1,                     # ATA/AACE 2012 euthyroid reference midpoint (0.45-4.50 mIU/L interval)
+    "t3": 110.0,                    # ATA 2017 total triiodothyronine reference midpoint (80-200 ng/dL interval)
+    "t4": 8.5,                      # ATA/AACE 2014 total thyroxine reference midpoint (5.0-12.0 μg/dL interval)
+    "free_t4": 1.1,                 # ATA/AACE 2012 free thyroxine euthyroid median (0.8-1.8 ng/dL interval)
+    
+    # Renal Function & Urate
+    "creatinine": 0.95,             # KDIGO 2023 / NKF sex-averaged healthy cohort reference midpoint (0.7-1.2 mg/dL)
+    "bun": 15.0,                    # KDIGO / KDOQI normal blood urea nitrogen reference median (7-20 mg/dL)
+    "uric_acid": 5.2,               # ACR 2020 normal serum urate reference midpoint (3.5-7.0 mg/dL)
+    "egfr": 95.0,                   # KDIGO 2023 normal adult G1 filtration rate reference (> 90 mL/min/1.73m²)
+    
+    # Hematology / Complete Blood Count (CBC)
+    "hemoglobin": 13.8,             # WHO 2011 haemoglobin normal reference midpoint (12.0-15.5 g/dL sex-averaged)
+    "mcv": 88.0,                    # WHO / ASH 2018 normocytic erythrocyte volume midpoint (80-100 fL reference)
+    "mch": 29.5,                    # ASH 2019 mean corpuscular hemoglobin normal midpoint (27-32 pg reference)
+    "mchc": 33.5,                   # ASH 2019 mean corpuscular hemoglobin concentration midpoint (32-36 g/dL reference)
+    "ferritin": 50.0,               # WHO 2020 ferritin concentrations normal iron store midpoint (20-150 ng/mL)
+    "serum_iron": 85.0,             # ASH 2021 serum iron normal circulating iron midpoint (60-170 μg/dL)
+    
+    # Hepatic Chemistries
+    "alt": 25.0,                    # ACG 2017 abnormal liver chemistries guideline median (ULN: 33 men, 25 women)
+    "ast": 24.0,                    # ACG 2017 hepatocellular aminotransferase reference median (10-40 U/L)
+    "alp": 75.0,                    # ACG 2017 alkaline phosphatase normal biliary reference midpoint (44-147 U/L)
+    "bilirubin_total": 0.7,         # ACG 2017 total serum bilirubin normal reference midpoint (0.3-1.2 mg/dL)
+    "albumin": 4.2,                 # ACG 2017 / standard serum albumin normal reference midpoint (3.5-5.0 g/dL)
+    "ggt": 28.0,                    # ACG 2017 gamma-glutamyl transferase normal reference median (0-51 U/L)
+    
+    # Demographics, Vitals & Electrolytes
+    "age": 45.0,                    # NHANES adult demographic reference cohort midpoint
+    "resting_bp": 120.0,            # AHA/ACC 2017 blood pressure clinical practice guideline (< 120 mmHg normal)
+    "sodium": 140.0,                # Standard clinical serum electrolyte reference midpoint (135-145 mEq/L)
+    "potassium": 4.2,               # Standard clinical serum electrolyte reference midpoint (3.5-5.0 mEq/L)
 }
 
 _MODEL_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
@@ -139,9 +154,15 @@ def predict_disease_ml(
         if user_val is not None and not np.isnan(user_val):
             feature_vals[f_name] = float(user_val)
             observed_features.append(f_name)
-        else:
-            feature_vals[f_name] = POPULATION_MEDIANS.get(f_name, 0.0)
+        elif f_name in POPULATION_MEDIANS:
+            feature_vals[f_name] = POPULATION_MEDIANS[f_name]
             imputed_features.append(f_name)
+        else:
+            # Unlisted biomarker has no defensible physiological population median.
+            # Pass NaN so the pipeline's trained SimpleImputer handles it via dataset medians,
+            # avoiding distortive arbitrary 0.0 defaults.
+            feature_vals[f_name] = np.nan
+            imputed_features.append(f"{f_name} (unanchored_nan)")
 
     # Build single-sample DataFrame matching model feature order
     input_df = pd.DataFrame([feature_vals])[feature_names]

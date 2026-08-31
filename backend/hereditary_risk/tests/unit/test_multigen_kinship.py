@@ -71,6 +71,7 @@ def test_multigen_family_tree_aggregation_math():
     f_risk = round(0.65 / 0.875, 4)
     assert round(res["family_weighted_risk"], 4) == f_risk
 
-    # Combined formula = 0.60 * 0.0 + 0.40 * 0.7429 = 0.2972
-    expected_combined = round(0.40 * f_risk, 4)
+    # Option C formula:
+    # genetic_bump = (1.0 - 0.0) * (0.5 * 0.50 * 0.7429) = 0.1857
+    expected_combined = round(0.5 * 0.50 * f_risk, 4)
     assert round(res["combined_hereditary_score"], 4) == expected_combined

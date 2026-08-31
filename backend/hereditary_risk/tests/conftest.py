@@ -12,6 +12,13 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 
+@pytest.fixture(autouse=True)
+def configure_default_test_api_key(monkeypatch):
+    """Ensure standalone API key is set for test suites by default."""
+    from hereditary_risk.app.config.settings import settings
+    monkeypatch.setattr(settings, "HEREDITARY_RISK_API_KEY", "test-api-key")
+
+
 @pytest.fixture
 def synthetic_raw_biomarkers():
     """Synthetic raw lab report test data fixture."""

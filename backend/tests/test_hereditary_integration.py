@@ -200,6 +200,105 @@ class TestHereditaryIntegration:
         assert t2d_res["family_weighted_risk"] == 0.0
         assert t2d_res["heuristic_combined_risk_signal"] >= 0.0
 
+    def test_half_sibling_kinship_weight_regression(self, client: TestClient, db_session):
+        """
+        Regression Test: Ensure half-siblings (half_brother, half_sister, half_sibling)
+        are mapped to Wright's kinship coefficient r = 0.25 (not fallen through to 0.00 unsupported).
+        """
+        # 1. Create Patient
+        patient = User(
+            id=uuid.uuid4(),
+            email="patient.halfsib@genhealth.ai",
+            password_hash="hashed_pw",
+            full_name="Patient With Half Sib",
+            gender="female",
+        )
+
+        # 2. Create Half-Brother
+        half_bro = User(
+            id=uuid.uuid4(),
+            email="halfbro.test@genhealth.ai",
+            password_hash="hashed_pw",
+            full_name="John Half Brother",
+            gender="male",
+        )
+
+        db_session.add_all([patient, half_bro])
+        db_session.commit()
+
+        # 3. Create Patient normal lab result
+        p_report = Report(
+            id=uuid.uuid4(),
+            user_id=patient.id,
+            original_filename="patient_normal_lab.pdf",
+            file_mime_type="application/pdf",
+        )
+        db_session.add(p_report)
+        db_session.flush()
+
+        pr1 = ReportResult(
+            report_id=p_report.id,
+            raw_test_name="Fasting Blood Glucose",
+            canonical_test_name="fasting_glucose",
+            value="90.0",
+            numeric_value=90.0,
+            unit="mg/dL",
+            abnormality_flag="normal",
+        )
+        db_session.add(pr1)
+
+        # 4. Create Half-Brother lab with elevated Fasting Glucose (diabetes range)
+        hb_report = Report(
+            id=uuid.uuid4(),
+            user_id=half_bro.id,
+            original_filename="halfbro_lab.pdf",
+            file_mime_type="application/pdf",
+        )
+        db_session.add(hb_report)
+        db_session.flush()
+
+        hbr1 = ReportResult(
+            report_id=hb_report.id,
+            raw_test_name="Fasting Glucose",
+            canonical_test_name="fasting_glucose",
+            value="155.0",
+            numeric_value=155.0,
+            unit="mg/dL",
+            abnormality_flag="high",
+        )
+        db_session.add(hbr1)
+
+        # 5. Link Half-Brother to Patient with relationship_type="half_brother"
+        rel = FamilyRelationship(
+            user_id=patient.id,
+            relative_user_id=half_bro.id,
+            relationship_type="half_brother",
+            share_clinical_data=True,
+        )
+        db_session.add(rel)
+        db_session.commit()
+
+        token = create_access_token(patient.id)
+
+        response = client.get(
+            f"/api/v1/hereditary-risk/patient/{patient.id}/assessment",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, response.text
+        data = response.json()
+
+        t2d_res = data["diseases"]["type_2_diabetes"]
+        # Verify half-brother is identified as a genetic relative with weight 0.25
+        assert len(t2d_res["family_breakdown"]) == 1
+        member = t2d_res["family_breakdown"][0]
+        assert member["member_id"] == str(half_bro.id)
+        assert member["relationship"] == "half_brother"
+        assert member["is_genetic"] is True
+        assert member["kinship_weight"] == 0.25, f"Expected 0.25 kinship weight for half_brother, got {member['kinship_weight']}"
+        assert member["member_rule_score"] > 0.0
+        assert member["weighted_contribution"] == round(member["member_rule_score"] * 0.25, 4)
+        assert t2d_res["family_weighted_risk"] > 0.0
+
     def test_existing_genhealth_routes_remain_functional(self, client: TestClient):
         """Verify host application existing routes are unaffected by integration."""
         assert client.get("/health").status_code == 200

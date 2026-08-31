@@ -382,23 +382,27 @@ export function FamilyTreePage() {
       {/* 2. Responsive Health Status & Lineage Key Legend Bar */}
       <div className="p-3 rounded-[12px] bg-white dark:bg-[#1E1E1E] border border-[#D98A91]/80 dark:border-[#303030] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs shadow-xs overflow-x-auto">
         <div className="flex flex-wrap items-center gap-4 text-[11px]">
-          {/* Health Status Indicators */}
+          {/* Compound Ring Health Status Indicators */}
           <div className="flex items-center space-x-3 pr-3 border-r border-[#E3E3DF] dark:border-[#303030] shrink-0">
             <div className="flex items-center space-x-1 font-bold text-[#B4232F] dark:text-[#E04855]">
               <DoodleIcon name="pulse" className="w-3.5 h-3.5 text-[#B4232F] dark:text-[#E04855]" />
-              <span>Status:</span>
+              <span>Compound Ring:</span>
             </div>
-            <div className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#18573D] border border-[#C8E6D6]" />
+            <div className="flex items-center space-x-1" title="Outer Halo: Low Hereditary Risk | Inner Ring: Normal Lab Values">
+              <span className="w-3 h-3 rounded-full ring-2 ring-emerald-500/80 border border-[#18573D] bg-emerald-500" />
               <span className="text-[#5F6368] dark:text-[#A0A0A0]">Optimal</span>
             </div>
-            <div className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#8F5708] border border-[#F6DCB1]" />
-              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Warning</span>
+            <div className="flex items-center space-x-1" title="Outer Halo: Moderate Hereditary Risk | Inner Ring: Warning / Borderline Labs">
+              <span className="w-3 h-3 rounded-full ring-2 ring-amber-500/80 border border-[#8F5708] bg-amber-500" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Moderate Risk</span>
             </div>
-            <div className="flex items-center space-x-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#B4232F] border border-[#F6C4C5]" />
-              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Critical</span>
+            <div className="flex items-center space-x-1" title="Outer Halo: High Hereditary Risk | Inner Ring: Critical Lab Flag">
+              <span className="w-3 h-3 rounded-full ring-2 ring-[#B4232F] border border-[#B4232F] bg-[#B4232F]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Critical Alert</span>
+            </div>
+            <div className="flex items-center space-x-1" title="No laboratory records recorded for this relative">
+              <span className="w-3 h-3 rounded-full ring-1 ring-dashed ring-slate-400 border border-slate-300 bg-slate-200 dark:bg-slate-700" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">No Lab Data</span>
             </div>
           </div>
 

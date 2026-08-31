@@ -9,9 +9,11 @@ import {
   unlinkFamilyMember,
   confirmSpouseLink,
 } from '../api/family';
+import { getGenerationLabel } from '../utils/relationshipGraph';
 import DoodleIcon from '../components/common/DoodleIcon';
 import FamilyTreeNode from '../components/family/FamilyTreeNode';
 import FamilyTreeConnectors from '../components/family/FamilyTreeConnectors';
+import NodeContextCard from '../components/family/NodeContextCard';
 import PendingClaimsBanner from '../components/family/PendingClaimsBanner';
 import { Button, Card, FormField, Input, Select, Modal, EmptyState, Badge } from '../components/ui';
 
@@ -21,6 +23,19 @@ export function FamilyTreePage() {
   const [treeData, setTreeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // View Mode State: 'radial' | 'hierarchical'
+  const [viewMode, setViewMode] = useState('radial');
+
+  // Zoom & Focus State
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [activeNode, setActiveNode] = useState(null);
+
+  // Drag-to-pan state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
 
   // Link / Create Modal State
   const [modalOpen, setModalOpen] = useState(false);
@@ -51,7 +66,6 @@ export function FamilyTreePage() {
   const [editAvatar, setEditAvatar] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState('');
-  const fileInputRef = useRef(null);
 
   const loadTree = useCallback(async () => {
     if (!userId) return;
@@ -69,6 +83,27 @@ export function FamilyTreePage() {
   useEffect(() => {
     loadTree();
   }, [loadTree]);
+
+  // Drag-to-pan handlers for canvas container
+  const handleMouseDown = (e) => {
+    if (!containerRef.current) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setScrollStart({
+      left: containerRef.current.scrollLeft,
+      top: containerRef.current.scrollTop,
+    });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !containerRef.current) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    containerRef.current.scrollLeft = scrollStart.left - dx;
+    containerRef.current.scrollTop = scrollStart.top - dy;
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
 
   // Handle linking existing user
   const handleLinkSubmit = async (e) => {
@@ -89,7 +124,7 @@ export function FamilyTreePage() {
         is_half_sibling: isHalfSibling,
         shared_parent_id: isHalfSibling && sharedParentId ? sharedParentId : undefined,
       });
-      setSuccessMessage('Family member linked successfully with bidirectional graph synchronization.');
+      setSuccessMessage('Family member linked successfully.');
       setTargetUserId('');
       setIsHalfSibling(false);
       setSharedParentId('');
@@ -143,24 +178,24 @@ export function FamilyTreePage() {
     }
   };
 
-  const handleNodeClick = (member) => {
+  const handleNodeSelect = (member) => {
+    const activeId = activeNode?.relative_id || activeNode?.id || activeNode?.relationship_id;
+    const memberId = member.relative_id || member.id || member.relationship_id;
+
+    if (activeId === memberId) {
+      setActiveNode(null);
+    } else {
+      setActiveNode(member);
+    }
+  };
+
+  const handleOpenEditModal = (member) => {
     setSelectedNode(member);
     setEditName(member.full_name || '');
     setEditGender(member.gender || 'unspecified');
     setEditAvatar(member.avatar_url || '');
     setEditError('');
     setEditModalOpen(true);
-  };
-
-  const handleAvatarFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setEditAvatar(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleSaveNodeEdit = async (e) => {
@@ -192,18 +227,20 @@ export function FamilyTreePage() {
   };
 
   const handleUnlink = async (relationshipId, relativeName) => {
-    if (!window.confirm(`Are you sure you want to unlink ${relativeName || 'this relative'} from your family pedigree?`)) {
+    if (!window.confirm(`Are you sure you want to delete ${relativeName || 'this member'} from your family network?`)) {
       return;
     }
 
     try {
       await unlinkFamilyMember(relationshipId);
-      setSuccessMessage(`Unlinked ${relativeName || 'relative'} successfully.`);
-      loadTree();
+      setSuccessMessage(`Removed ${relativeName || 'member'} successfully.`);
+      setActiveNode(null);
+      setEditModalOpen(false);
+      await loadTree();
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (err) {
-      console.error('Failed to unlink relative:', err);
-      alert('Failed to unlink relative.');
+      console.error('Failed to delete member:', err);
+      alert('Failed to delete member.');
     }
   };
 
@@ -216,34 +253,123 @@ export function FamilyTreePage() {
     }
   };
 
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.15, 1.5));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.15, 0.65));
+  const handleResetZoom = () => setZoomLevel(1);
+
   const totalMembers = treeData?.all_members?.length || 0;
   const isSiblingRelation = (rel) => ['brother', 'sister', 'sibling'].includes((rel || '').toLowerCase());
 
+  // Determine focused selection & dimming states
+  const activeNodeId = activeNode?.relative_id || activeNode?.id || activeNode?.relationship_id;
+  const selfId = treeData?.self_node?.relative_id || treeData?.self_node?.id;
+
+  const isNodeDimmed = (member) => {
+    if (!activeNodeId) return false;
+    const memberId = member.relative_id || member.id || member.relationship_id;
+    if (memberId === activeNodeId) return false;
+    if (activeNodeId === selfId) return false;
+    if (memberId === selfId) return false;
+    return true;
+  };
+
+  // Separate Grandparents by Paternal (Father's side) vs Maternal (Mother's side)
+  const grandparents = treeData?.grandparents || [];
+  const paternalGrandparents = grandparents.filter((g, idx) => {
+    const rel = (g.relationship_type || '').toLowerCase();
+    const side = (g.side || '').toLowerCase();
+    if (rel.includes('paternal') || side === 'paternal') return true;
+    if (rel.includes('maternal') || side === 'maternal') return false;
+    return idx < grandparents.length / 2;
+  });
+
+  const maternalGrandparents = grandparents.filter((g, idx) => {
+    const rel = (g.relationship_type || '').toLowerCase();
+    const side = (g.side || '').toLowerCase();
+    if (rel.includes('maternal') || side === 'maternal') return true;
+    if (rel.includes('paternal') || side === 'paternal') return false;
+    return idx >= grandparents.length / 2;
+  });
+
+  // Group Parents
+  const parents = treeData?.parents || [];
+  const fatherNode = parents.find((p) =>
+    (p.relationship_type || '').toLowerCase() === 'father' || (p.gender || '').toLowerCase() === 'male'
+  );
+  const motherNode = parents.find((p) =>
+    (p.relationship_type || '').toLowerCase() === 'mother' || (p.gender || '').toLowerCase() === 'female'
+  );
+
+  const siblings = treeData?.peers?.filter((m) =>
+    ['brother', 'sister', 'sibling'].includes(m.relationship_type?.toLowerCase())
+  ) || [];
+
+  const spouse = treeData?.peers?.find((m) =>
+    ['spouse', 'husband', 'wife', 'partner'].includes(m.relationship_type?.toLowerCase())
+  );
+
+  const descendantsAndExtended = [
+    ...(treeData?.children || []),
+    ...(treeData?.extended || []),
+  ];
+
+  const halfSiblingsCount = Math.ceil(siblings.length / 2);
+  const leftSiblings = siblings.slice(0, halfSiblingsCount);
+  const rightSiblings = siblings.slice(halfSiblingsCount);
+
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200 w-full max-w-full overflow-x-hidden">
       
       {/* Pending Incoming Claims Notification */}
       <PendingClaimsBanner onClaimResolved={loadTree} />
 
-      {/* 1. Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#CBD6D2] dark:border-[#2F433E]">
+      {/* 1. Header Section — Fully Responsive Flexbox */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-[#E3E3DF] dark:border-[#303030]">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold tracking-widest text-[#1E4D45] dark:text-[#57BA8E] uppercase">
-            Genealogical Intelligence
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#13221F] dark:text-[#EFF5F3]">
-            Family Health Pedigree
+          <div className="flex items-center space-x-2">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest bg-[#FCEBED] text-[#B4232F] dark:bg-[#2D1416] dark:text-[#E04855] uppercase">
+              Centered Relationship Engine
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#B4232F] dark:text-[#E04855]">
+            Family Health Relationship Network
           </h1>
-          <p className="text-xs sm:text-sm text-[#4E6863] dark:text-[#7E9993]">
-            Continuous genealogical chart with dynamic health status rings and hereditary biomarker tracking.
+          <p className="text-xs text-[#5F6368] dark:text-[#A0A0A0]">
+            Direct genealogical relationship graph mapping paternal and maternal lineages centered on your patient account (ME).
           </p>
         </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center space-x-2">
+        {/* View Toggle & Action Toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Dual Synchronized View Toggle */}
+          <div className="p-1 rounded-[10px] bg-[#F7F7F5] dark:bg-[#222222] border border-[#E3E3DF] dark:border-[#303030] flex items-center gap-1 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('radial')}
+              className={`px-3 py-1.5 rounded-[7px] text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                viewMode === 'radial'
+                  ? 'bg-white dark:bg-[#1E1E1E] text-[#B4232F] dark:text-[#E04855] shadow-xs border border-[#D98A91]/80 dark:border-[#422225]'
+                  : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717] dark:hover:text-white'
+              }`}
+            >
+              <span>🌐 Visual Radial Graph</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('hierarchical')}
+              className={`px-3 py-1.5 rounded-[7px] text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                viewMode === 'hierarchical'
+                  ? 'bg-white dark:bg-[#1E1E1E] text-[#B4232F] dark:text-[#E04855] shadow-xs border border-[#D98A91]/80 dark:border-[#422225]'
+                  : 'text-[#5F6368] dark:text-[#A0A0A0] hover:text-[#171717] dark:hover:text-white'
+              }`}
+            >
+              <span>📊 Generational Hierarchy</span>
+            </button>
+          </div>
+
           <Button
             variant="primary"
-            size="md"
+            size="sm"
             onClick={() => { setModalOpen(true); setModalError(''); }}
             id="open-add-member-modal-btn"
             leftIcon={<DoodleIcon name="plus" className="w-3.5 h-3.5 text-white" />}
@@ -253,49 +379,106 @@ export function FamilyTreePage() {
         </div>
       </div>
 
-      {/* Health Status Legend */}
-      <div className="p-3 rounded-[8px] bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E] flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
-        <div className="flex items-center space-x-2 font-semibold text-[#13221F] dark:text-[#EFF5F3]">
-          <DoodleIcon name="pulse" className="w-4 h-4 text-[#1E4D45] dark:text-[#57BA8E]" />
-          <span>Health Ring Legend:</span>
-        </div>
+      {/* 2. Responsive Health Status & Lineage Key Legend Bar */}
+      <div className="p-3 rounded-[12px] bg-white dark:bg-[#1E1E1E] border border-[#D98A91]/80 dark:border-[#303030] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs shadow-xs overflow-x-auto">
         <div className="flex flex-wrap items-center gap-4 text-[11px]">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#18573D] border border-[#C8E6D6]" />
-            <span className="text-[#3D524E] dark:text-[#A0B6B0]">Optimal (All Normal)</span>
+          {/* Health Status Indicators */}
+          <div className="flex items-center space-x-3 pr-3 border-r border-[#E3E3DF] dark:border-[#303030] shrink-0">
+            <div className="flex items-center space-x-1 font-bold text-[#B4232F] dark:text-[#E04855]">
+              <DoodleIcon name="pulse" className="w-3.5 h-3.5 text-[#B4232F] dark:text-[#E04855]" />
+              <span>Status:</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#18573D] border border-[#C8E6D6]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Optimal</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#8F5708] border border-[#F6DCB1]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Warning</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#B4232F] border border-[#F6C4C5]" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Critical</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#8F5708] border border-[#F6DCB1]" />
-            <span className="text-[#3D524E] dark:text-[#A0B6B0]">Warning (Borderline)</span>
+
+          {/* Pedigree Connector Line Legend */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-bold text-[#171717] dark:text-[#F0F0F0]">Pedigree Connectors:</span>
+            
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-0.5 bg-[#7E22CE] inline-block" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Grandparent → Parent</span>
+            </div>
+
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-0.5 bg-[#15803D] inline-block" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Parent → ME</span>
+            </div>
+
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-[#B4232F] inline-block" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Spouse Link</span>
+            </div>
+
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-0.5 border-b-2 border-dashed border-[#0284C7] inline-block" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Siblings</span>
+            </div>
+
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-0.5 bg-[#16A34A] inline-block" />
+              <span className="text-[#5F6368] dark:text-[#A0A0A0]">Children</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#942728] border border-[#F6C4C5]" />
-            <span className="text-[#3D524E] dark:text-[#A0B6B0]">Critical (High/Low Alert)</span>
-          </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-3 rounded-full bg-[#7E9993] border border-[#CBD6D2]" />
-            <span className="text-[#3D524E] dark:text-[#A0B6B0]">No Lab Data</span>
-          </div>
+        </div>
+
+        {/* Canvas Zoom Controls */}
+        <div className="flex items-center space-x-1 bg-[#F7F7F5] dark:bg-[#222222] p-1 rounded-lg border border-[#E3E3DF] dark:border-[#303030] shrink-0 self-end lg:self-auto">
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded hover:bg-white dark:hover:bg-[#1E1E1E] text-[#5F6368] dark:text-[#A0A0A0] cursor-pointer"
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={handleResetZoom}
+            title="Reset Zoom (100%)"
+            className="px-2 py-0.5 text-[10px] font-mono font-bold rounded hover:bg-white dark:hover:bg-[#1E1E1E] text-[#171717] dark:text-[#F0F0F0] cursor-pointer"
+          >
+            {Math.round(zoomLevel * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            title="Zoom In"
+            className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded hover:bg-white dark:hover:bg-[#1E1E1E] text-[#5F6368] dark:text-[#A0A0A0] cursor-pointer"
+          >
+            +
+          </button>
         </div>
       </div>
 
       {/* Suggested Co-Parent Link Prompt Banner */}
       {treeData?.suggested_links && treeData.suggested_links.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {treeData.suggested_links.map((sug, idx) => (
             <Card
               key={idx}
               radius="lg"
-              className="p-4 bg-[#FEF7EB] dark:bg-[#2B1F0E] border border-[#F6DCB1] dark:border-[#573E1B] shadow-xs"
+              className="p-3 bg-[#FEF7EB] dark:bg-[#2B1F0E] border border-[#F6DCB1] dark:border-[#573E1B] shadow-xs"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center space-x-3">
-                  <span className="text-xl">💡</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-base">💡</span>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold text-[#8F5708] dark:text-[#E6A84F]">
                       Suggested Relationship Link
                     </p>
-                    <p className="text-xs text-[#13221F] dark:text-[#EFF5F3]">
+                    <p className="text-xs text-[#171717] dark:text-[#F0F0F0]">
                       {sug.reason} Would you like to link them as Spouses/Partners?
                     </p>
                   </div>
@@ -306,7 +489,7 @@ export function FamilyTreePage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleConfirmSpouse(sug, false)}
-                    className="text-xs"
+                    className="text-xs py-1"
                   >
                     Dismiss
                   </Button>
@@ -315,7 +498,7 @@ export function FamilyTreePage() {
                     size="sm"
                     onClick={() => handleConfirmSpouse(sug, true)}
                     leftIcon={<DoodleIcon name="check" className="w-3 h-3 text-white" />}
-                    className="text-xs"
+                    className="text-xs py-1"
                   >
                     Link as Spouses
                   </Button>
@@ -326,9 +509,27 @@ export function FamilyTreePage() {
         </div>
       )}
 
+      {/* Node Context Overlay Breakdown */}
+      {activeNode && (
+        <NodeContextCard
+          selectedNode={activeNode}
+          treeData={treeData}
+          onClose={() => setActiveNode(null)}
+          onUploadReport={(m) => {
+            navigate(
+              `/upload?targetUserId=${m.relative_id || m.id}&targetName=${encodeURIComponent(
+                m.full_name
+              )}&relation=${encodeURIComponent(m.relationship_type || 'Self')}`
+            );
+          }}
+          onEditNode={handleOpenEditModal}
+          onUnlinkNode={handleUnlink}
+        />
+      )}
+
       {/* Success Notification Banner */}
       {successMessage && (
-        <div className="p-3.5 rounded-[8px] text-xs font-semibold bg-[#F0F8F4] text-[#18573D] border border-[#C8E6D6] dark:bg-[#11251B] dark:text-[#57BA8E] dark:border-[#224D37] flex items-center justify-between shadow-xs">
+        <div className="p-3 rounded-[8px] text-xs font-semibold bg-[#FCEBED] text-[#B4232F] border border-[#E8B4B9] dark:bg-[#2D1416] dark:text-[#E04855] dark:border-[#422225] flex items-center justify-between shadow-xs">
           <div className="flex items-center space-x-2">
             <span>✓</span>
             <span>{successMessage}</span>
@@ -336,24 +537,24 @@ export function FamilyTreePage() {
           <button
             type="button"
             onClick={() => setSuccessMessage('')}
-            className="text-[#18573D] dark:text-[#57BA8E] font-bold underline ml-2 cursor-pointer"
+            className="text-[#B4232F] dark:text-[#E04855] font-bold underline ml-2 cursor-pointer"
           >
             Dismiss
           </button>
         </div>
       )}
 
-      {/* 2. CONTINUOUS PEDIGREE CANVAS WITH DYNAMIC CONNECTOR LINES */}
+      {/* 3. RESPONSIVE FAMILY TREE CANVAS */}
       {loading ? (
-        <Card radius="lg" className="p-12 text-center space-y-3 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E]">
-          <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1E4D45] dark:border-[#57BA8E] border-t-transparent animate-spin" />
-          <p className="text-xs text-[#7E9993]">Loading genealogical pedigree tree...</p>
+        <Card radius="lg" className="p-12 text-center space-y-3 bg-white dark:bg-[#1E1E1E] border border-[#D98A91]/80 dark:border-[#422225]">
+          <div className="w-6 h-6 mx-auto rounded-full border-2 border-[#B4232F] border-t-transparent animate-spin" />
+          <p className="text-xs text-[#858585]">Constructing relationship network graph...</p>
         </Card>
       ) : !treeData || (!treeData.self_node && totalMembers === 0) ? (
         <EmptyState
-          icon={<DoodleIcon name="tree" className="w-5 h-5" />}
+          icon={<DoodleIcon name="tree" className="w-6 h-6 text-[#B4232F]" />}
           title="No family members linked yet"
-          description="Link an existing user by UUID or create a managed placeholder profile to start mapping your multi-generational pedigree."
+          description="Link an existing user by UUID or create a managed placeholder profile to start mapping your relationship network."
           action={
             <Button
               variant="primary"
@@ -366,177 +567,416 @@ export function FamilyTreePage() {
           }
         />
       ) : (
-        /* SINGLE CONTINUOUS CANVAS (No boxed containers per tier) */
         <div
-          ref={canvasRef}
-          className="relative max-w-5xl mx-auto py-4 px-2 space-y-10 min-h-[500px]"
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          className={`relative w-full rounded-[16px] bg-white dark:bg-[#171717] border border-[#D98A91]/80 dark:border-[#422225] p-2 sm:p-4 md:p-8 overflow-auto min-h-[480px] sm:min-h-[550px] shadow-xs flex flex-col items-center justify-center select-none ${
+            isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          }`}
         >
-          {/* Dynamic SVG Orthogonal Connector Lines Layer */}
-          <FamilyTreeConnectors containerRef={canvasRef} treeData={treeData} />
+          <div
+            ref={canvasRef}
+            className="relative w-full max-w-7xl mx-auto space-y-6 sm:space-y-10 md:space-y-14 transition-transform duration-200 origin-top flex flex-col items-center justify-center py-2"
+            style={{ transform: `scale(${zoomLevel})` }}
+          >
+            {/* Dynamic Direct SVG Connection Lines Layer */}
+            <FamilyTreeConnectors
+              containerRef={canvasRef}
+              treeData={treeData}
+              selectedNodeId={activeNodeId}
+            />
 
-          {/* TIER 1: Grandparents Header & Nodes */}
-          {treeData.grandparents && treeData.grandparents.length > 0 && (
-            <div className="space-y-3 relative z-10">
-              <div className="text-center">
-                <span className="text-[11px] font-bold tracking-widest text-[#7E9993] uppercase">
-                  Grandparents ({treeData.grandparents.length})
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                {treeData.grandparents.map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+            {/* VIEW MODE 1: VISUAL RADIAL / GRAPH VIEW */}
+            {viewMode === 'radial' ? (
+              <>
+                {/* ROW 1 (TOP): GRANDPARENTS (PATERNAL LEFT | MATERNAL RIGHT) */}
+                {grandparents.length > 0 && (
+                  <div className="relative z-10 w-full flex justify-center px-2">
+                    <div className="flex flex-wrap items-center justify-around sm:justify-between w-full max-w-5xl gap-4 sm:gap-6">
+                      {/* Paternal Grandparents (Father's Side) */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 md:gap-6">
+                        {paternalGrandparents.map((m) => {
+                          const id = m.relative_id || m.id || m.relationship_id;
+                          return (
+                            <FamilyTreeNode
+                              key={id}
+                              member={m}
+                              isSelected={id === activeNodeId}
+                              isDimmed={isNodeDimmed(m)}
+                              onNodeClick={handleNodeSelect}
+                              onUnlink={handleUnlink}
+                            />
+                          );
+                        })}
+                      </div>
 
-          {/* TIER 2: Parents Header & Nodes */}
-          <div className="space-y-3 relative z-10">
-            <div className="text-center">
-              <span className="text-[11px] font-bold tracking-widest text-[#1E4D45] dark:text-[#57BA8E] uppercase">
-                Parents ({treeData.parents?.length || 0})
-              </span>
-            </div>
-            
-            {treeData.parents && treeData.parents.length > 0 ? (
-              <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                {treeData.parents.map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-              </div>
+                      {/* Maternal Grandparents (Mother's Side) */}
+                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 md:gap-6">
+                        {maternalGrandparents.map((m) => {
+                          const id = m.relative_id || m.id || m.relationship_id;
+                          return (
+                            <FamilyTreeNode
+                              key={id}
+                              member={m}
+                              isSelected={id === activeNodeId}
+                              isDimmed={isNodeDimmed(m)}
+                              onNodeClick={handleNodeSelect}
+                              onUnlink={handleUnlink}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ROW 2: PARENTS (FATHER LEFT | MOTHER RIGHT) */}
+                {parents.length > 0 && (
+                  <div className="relative z-10 w-full flex justify-center px-2">
+                    <div className="flex items-center justify-center gap-6 sm:gap-16 md:gap-24 lg:gap-32">
+                      {fatherNode && (
+                        <FamilyTreeNode
+                          key={fatherNode.relative_id || fatherNode.id || fatherNode.relationship_id}
+                          member={fatherNode}
+                          isSelected={(fatherNode.relative_id || fatherNode.id) === activeNodeId}
+                          isDimmed={isNodeDimmed(fatherNode)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      )}
+                      {motherNode && (
+                        <FamilyTreeNode
+                          key={motherNode.relative_id || motherNode.id || motherNode.relationship_id}
+                          member={motherNode}
+                          isSelected={(motherNode.relative_id || motherNode.id) === activeNodeId}
+                          isDimmed={isNodeDimmed(motherNode)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ROW 3 (CENTER): PRIMARY USER ("ME") AT ABSOLUTE CENTER WITH FLANKING SIBLINGS & SPOUSE */}
+                <div className="relative z-10 w-full flex justify-center">
+                  <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 md:gap-12">
+                    {/* Left Flank Siblings */}
+                    {leftSiblings.map((m) => {
+                      const id = m.relative_id || m.id || m.relationship_id;
+                      return (
+                        <FamilyTreeNode
+                          key={id}
+                          member={m}
+                          isSelected={id === activeNodeId}
+                          isDimmed={isNodeDimmed(m)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      );
+                    })}
+
+                    {/* PRIMARY USER NODE ("ME") — ABSOLUTE CENTER */}
+                    <FamilyTreeNode
+                      member={treeData.self_node}
+                      isSelf={true}
+                      isSelected={selfId === activeNodeId}
+                      isDimmed={isNodeDimmed(treeData.self_node)}
+                      onNodeClick={handleNodeSelect}
+                    />
+
+                    {/* Spouse / Partner Node */}
+                    {spouse && (
+                      <FamilyTreeNode
+                        key={spouse.relative_id || spouse.id || spouse.relationship_id}
+                        member={spouse}
+                        isSelected={(spouse.relative_id || spouse.id) === activeNodeId}
+                        isDimmed={isNodeDimmed(spouse)}
+                        onNodeClick={handleNodeSelect}
+                        onUnlink={handleUnlink}
+                      />
+                    )}
+
+                    {/* Right Flank Siblings */}
+                    {rightSiblings.map((m) => {
+                      const id = m.relative_id || m.id || m.relationship_id;
+                      return (
+                        <FamilyTreeNode
+                          key={id}
+                          member={m}
+                          isSelected={id === activeNodeId}
+                          isDimmed={isNodeDimmed(m)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ROW 4 (BOTTOM): DESCENDANTS & EXTENDED KIN */}
+                {descendantsAndExtended.length > 0 && (
+                  <div className="relative z-10 w-full flex justify-center">
+                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 md:gap-12">
+                      {descendantsAndExtended.map((m) => {
+                        const id = m.relative_id || m.id || m.relationship_id;
+                        return (
+                          <FamilyTreeNode
+                            key={id}
+                            member={m}
+                            isSelected={id === activeNodeId}
+                            isDimmed={isNodeDimmed(m)}
+                            onNodeClick={handleNodeSelect}
+                            onUnlink={handleUnlink}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-center py-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalTab('placeholder');
-                    setPlaceholderRelationType('father');
-                    setModalOpen(true);
-                  }}
-                  className="text-xs font-semibold text-[#1E4D45] dark:text-[#57BA8E] hover:underline cursor-pointer"
-                >
-                  + Add Parent Profile
-                </button>
+              /* VIEW MODE 2: GENERATIONAL HIERARCHY VIEW */
+              <div className="w-full space-y-8">
+                {/* GENERATION +2: GRANDPARENTS (PATERNAL LEFT | MATERNAL RIGHT) */}
+                {grandparents.length > 0 && (
+                  <div className="relative z-10 w-full p-4 rounded-[12px] bg-[#F7F7F5]/60 dark:bg-[#222222]/60 border border-[#E3E3DF] dark:border-[#303030]">
+                    <div className="mb-3 pb-1 border-b border-[#E3E3DF] dark:border-[#303030] flex items-center justify-between">
+                      <span className="text-xs font-bold font-mono tracking-wider text-[#7E22CE] uppercase">
+                        {getGenerationLabel(2)}
+                      </span>
+                      <span className="text-[10px] text-[#858585]">
+                        {grandparents.length} Member(s)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 divide-y md:divide-y-0 md:divide-x divide-[#E3E3DF] dark:divide-[#303030]">
+                      {/* Paternal Lineage (Father's Side) */}
+                      <div className="pt-2 md:pt-0 md:pr-4 space-y-2">
+                        <p className="text-[10px] font-bold tracking-wider text-[#7E22CE] uppercase text-center">
+                          Father's Lineage (Paternal)
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-4">
+                          {paternalGrandparents.map((m) => {
+                            const id = m.relative_id || m.id || m.relationship_id;
+                            return (
+                              <FamilyTreeNode
+                                key={id}
+                                member={m}
+                                isSelected={id === activeNodeId}
+                                isDimmed={isNodeDimmed(m)}
+                                onNodeClick={handleNodeSelect}
+                                onUnlink={handleUnlink}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Maternal Lineage (Mother's Side) */}
+                      <div className="pt-4 md:pt-0 md:pl-4 space-y-2">
+                        <p className="text-[10px] font-bold tracking-wider text-[#7E22CE] uppercase text-center">
+                          Mother's Lineage (Maternal)
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-4">
+                          {maternalGrandparents.map((m) => {
+                            const id = m.relative_id || m.id || m.relationship_id;
+                            return (
+                              <FamilyTreeNode
+                                key={id}
+                                member={m}
+                                isSelected={id === activeNodeId}
+                                isDimmed={isNodeDimmed(m)}
+                                onNodeClick={handleNodeSelect}
+                                onUnlink={handleUnlink}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* GENERATION +1: PARENTS & ASCENDANTS */}
+                {parents.length > 0 && (
+                  <div className="relative z-10 w-full p-4 rounded-[12px] bg-[#F7F7F5]/60 dark:bg-[#222222]/60 border border-[#E3E3DF] dark:border-[#303030]">
+                    <div className="mb-3 pb-1 border-b border-[#E3E3DF] dark:border-[#303030] flex items-center justify-between">
+                      <span className="text-xs font-bold font-mono tracking-wider text-[#15803D] uppercase">
+                        {getGenerationLabel(1)}
+                      </span>
+                      <span className="text-[10px] text-[#858585]">
+                        {parents.length} Member(s)
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-8">
+                      {parents.map((m) => {
+                        const id = m.relative_id || m.id || m.relationship_id;
+                        return (
+                          <FamilyTreeNode
+                            key={id}
+                            member={m}
+                            isSelected={id === activeNodeId}
+                            isDimmed={isNodeDimmed(m)}
+                            onNodeClick={handleNodeSelect}
+                            onUnlink={handleUnlink}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* GENERATION 0: SELF, SPOUSE & SIBLINGS (YOUR GENERATION) */}
+                <div className="relative z-10 w-full p-4 rounded-[12px] bg-[#FCEBED]/40 dark:bg-[#2D1416]/40 border-2 border-[#B4232F]/40 dark:border-[#E04855]/40 shadow-xs">
+                  <div className="mb-3 pb-1 border-b border-[#E8B4B9] dark:border-[#422225] flex items-center justify-between">
+                    <span className="text-xs font-extrabold font-mono tracking-wider text-[#B4232F] dark:text-[#E04855] uppercase">
+                      ✦ {getGenerationLabel(0)}
+                    </span>
+                    <span className="text-[10px] text-[#B4232F] dark:text-[#E04855] font-bold">
+                      Central Anchor Tier
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-6">
+                    {/* Left Siblings */}
+                    {leftSiblings.map((m) => {
+                      const id = m.relative_id || m.id || m.relationship_id;
+                      return (
+                        <FamilyTreeNode
+                          key={id}
+                          member={m}
+                          isSelected={id === activeNodeId}
+                          isDimmed={isNodeDimmed(m)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      );
+                    })}
+
+                    {/* ME */}
+                    <FamilyTreeNode
+                      member={treeData.self_node}
+                      isSelf={true}
+                      isSelected={selfId === activeNodeId}
+                      isDimmed={isNodeDimmed(treeData.self_node)}
+                      onNodeClick={handleNodeSelect}
+                    />
+
+                    {/* Spouse */}
+                    {spouse && (
+                      <FamilyTreeNode
+                        key={spouse.relative_id || spouse.id || spouse.relationship_id}
+                        member={spouse}
+                        isSelected={(spouse.relative_id || spouse.id) === activeNodeId}
+                        isDimmed={isNodeDimmed(spouse)}
+                        onNodeClick={handleNodeSelect}
+                        onUnlink={handleUnlink}
+                      />
+                    )}
+
+                    {/* Right Siblings */}
+                    {rightSiblings.map((m) => {
+                      const id = m.relative_id || m.id || m.relationship_id;
+                      return (
+                        <FamilyTreeNode
+                          key={id}
+                          member={m}
+                          isSelected={id === activeNodeId}
+                          isDimmed={isNodeDimmed(m)}
+                          onNodeClick={handleNodeSelect}
+                          onUnlink={handleUnlink}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* GENERATION -1: CHILDREN & DESCENDANTS */}
+                {(treeData.children || []).length > 0 && (
+                  <div className="relative z-10 w-full p-4 rounded-[12px] bg-[#F7F7F5]/60 dark:bg-[#222222]/60 border border-[#E3E3DF] dark:border-[#303030]">
+                    <div className="mb-3 pb-1 border-b border-[#E3E3DF] dark:border-[#303030] flex items-center justify-between">
+                      <span className="text-xs font-bold font-mono tracking-wider text-[#16A34A] uppercase">
+                        {getGenerationLabel(-1)}
+                      </span>
+                      <span className="text-[10px] text-[#858585]">
+                        {treeData.children.length} Member(s)
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-6">
+                      {treeData.children.map((m) => {
+                        const id = m.relative_id || m.id || m.relationship_id;
+                        return (
+                          <FamilyTreeNode
+                            key={id}
+                            member={m}
+                            isSelected={id === activeNodeId}
+                            isDimmed={isNodeDimmed(m)}
+                            onNodeClick={handleNodeSelect}
+                            onUnlink={handleUnlink}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* EXTENDED KINSHIP BRANCH */}
+                {(treeData.extended || []).length > 0 && (
+                  <div className="relative z-10 w-full p-4 rounded-[12px] bg-[#FEF7EB]/40 dark:bg-[#2B1F0E]/40 border border-[#F6DCB1] dark:border-[#573E1B]">
+                    <div className="mb-3 pb-1 border-b border-[#F6DCB1] dark:border-[#573E1B] flex items-center justify-between">
+                      <span className="text-xs font-bold font-mono tracking-wider text-[#D97706] uppercase">
+                        EXTENDED KINSHIP BRANCH
+                      </span>
+                      <span className="text-[10px] text-[#858585]">
+                        {treeData.extended.length} Member(s)
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-6">
+                      {treeData.extended.map((m) => {
+                        const id = m.relative_id || m.id || m.relationship_id;
+                        return (
+                          <FamilyTreeNode
+                            key={id}
+                            member={m}
+                            isSelected={id === activeNodeId}
+                            isDimmed={isNodeDimmed(m)}
+                            onNodeClick={handleNodeSelect}
+                            onUnlink={handleUnlink}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
           </div>
-
-          {/* TIER 3: Self, Spouse & Siblings (Peer Level) */}
-          <div className="space-y-3 relative z-10">
-            <div className="text-center">
-              <span className="text-[11px] font-bold tracking-widest text-[#1E4D45] dark:text-[#57BA8E] uppercase">
-                Self, Spouse &amp; Siblings
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-              {/* Siblings on Left/Middle */}
-              {treeData.peers
-                ?.filter((m) => ['brother', 'sister', 'sibling'].includes(m.relationship_type?.toLowerCase()))
-                .map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-
-              {/* Primary User Node (Self) */}
-              <FamilyTreeNode
-                member={treeData.self_node}
-                isSelf={true}
-                onNodeClick={handleNodeClick}
-              />
-
-              {/* Spouse / Partner on Right */}
-              {treeData.peers
-                ?.filter((m) => ['spouse', 'husband', 'wife', 'partner'].includes(m.relationship_type?.toLowerCase()))
-                .map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-            </div>
-          </div>
-
-          {/* TIER 4: Children & Descendants */}
-          {treeData.children && treeData.children.length > 0 && (
-            <div className="space-y-3 relative z-10">
-              <div className="text-center">
-                <span className="text-[11px] font-bold tracking-widest text-[#7E9993] uppercase">
-                  Children &amp; Descendants ({treeData.children.length})
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                {treeData.children.map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TIER 5: Extended Kinship (Uncles, Aunts, Cousins) */}
-          {treeData.extended && treeData.extended.length > 0 && (
-            <div className="space-y-3 relative z-10 pt-4 border-t border-[#E0E7E4] dark:border-[#22312E]">
-              <div className="text-center">
-                <span className="text-[11px] font-bold tracking-widest text-[#7E9993] uppercase">
-                  Extended Kinship • Uncles, Aunts &amp; Cousins ({treeData.extended.length})
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-                {treeData.extended.map((m) => (
-                  <FamilyTreeNode
-                    key={m.relationship_id}
-                    member={m}
-                    onNodeClick={handleNodeClick}
-                    onUnlink={handleUnlink}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
       )}
 
-      {/* 3. MODAL: Add Relative (Link UUID or Create Placeholder) */}
+      {/* 4. MODAL: Add Relative (Link UUID or Create Placeholder) */}
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title="Add Family Relative"
         subtitle="Connect existing accounts by User ID or create managed placeholder profiles"
-        icon={<DoodleIcon name="plus" className="w-4 h-4 text-[#1E4D45] dark:text-[#57BA8E]" />}
+        icon={<DoodleIcon name="plus" className="w-4 h-4 text-[#B4232F]" />}
       >
         <div className="space-y-4">
           
           {/* Modal Tab Switcher */}
-          <div className="p-1 rounded-[8px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] flex items-center gap-1">
+          <div className="p-1 rounded-[8px] bg-[#F7F7F5] dark:bg-[#222222] border border-[#E3E3DF] dark:border-[#303030] flex items-center gap-1">
             <button
               type="button"
               onClick={() => { setModalTab('link'); setModalError(''); }}
               className={`flex-1 py-1.5 rounded-[6px] text-xs font-semibold transition-all cursor-pointer ${
                 modalTab === 'link'
-                  ? 'bg-white dark:bg-[#151E1C] text-[#13221F] dark:text-[#EFF5F3] shadow-xs border border-[#CBD6D2] dark:border-[#2F433E]'
-                  : 'text-[#4E6863] dark:text-[#7E9993]'
+                  ? 'bg-white dark:bg-[#1E1E1E] text-[#B4232F] dark:text-[#E04855] shadow-xs border border-[#D98A91]/80 dark:border-[#422225]'
+                  : 'text-[#5F6368] dark:text-[#A0A0A0]'
               }`}
             >
               Link by User ID (UUID)
@@ -546,8 +986,8 @@ export function FamilyTreePage() {
               onClick={() => { setModalTab('placeholder'); setModalError(''); }}
               className={`flex-1 py-1.5 rounded-[6px] text-xs font-semibold transition-all cursor-pointer ${
                 modalTab === 'placeholder'
-                  ? 'bg-white dark:bg-[#151E1C] text-[#13221F] dark:text-[#EFF5F3] shadow-xs border border-[#CBD6D2] dark:border-[#2F433E]'
-                  : 'text-[#4E6863] dark:text-[#7E9993]'
+                  ? 'bg-white dark:bg-[#1E1E1E] text-[#B4232F] dark:text-[#E04855] shadow-xs border border-[#D98A91]/80 dark:border-[#422225]'
+                  : 'text-[#5F6368] dark:text-[#A0A0A0]'
               }`}
             >
               + Create Managed Profile
@@ -555,7 +995,7 @@ export function FamilyTreePage() {
           </div>
 
           {modalError && (
-            <div className="p-3 rounded-[6px] text-xs font-medium bg-[#FDF0F0] border border-[#F6C4C5] text-[#942728] dark:bg-[#2D1616] dark:border-[#5B292A] dark:text-[#E57373] flex items-center space-x-2">
+            <div className="p-3 rounded-[6px] text-xs font-medium bg-[#FDF0F0] border border-[#F6C4C5] text-[#B4232F] dark:bg-[#2D1416] dark:border-[#422225] dark:text-[#E04855] flex items-center space-x-2">
               <span>⚠️</span>
               <span>{modalError}</span>
             </div>
@@ -586,26 +1026,43 @@ export function FamilyTreePage() {
                   onChange={(e) => setLinkRelationType(e.target.value)}
                   id="link-relationship-type-select"
                 >
-                  <optgroup label="Tier 1 • Grandparents">
+                  <optgroup label="Grandparents (Father's Side)">
+                    <option value="paternal_grandfather">Paternal Grandfather (Father's Father)</option>
+                    <option value="paternal_grandmother">Paternal Grandmother (Father's Mother)</option>
+                  </optgroup>
+                  <optgroup label="Grandparents (Mother's Side)">
+                    <option value="maternal_grandfather">Maternal Grandfather (Mother's Father)</option>
+                    <option value="maternal_grandmother">Maternal Grandmother (Mother's Mother)</option>
+                  </optgroup>
+                  <optgroup label="General Grandparents">
                     <option value="grandfather">Grandfather</option>
                     <option value="grandmother">Grandmother</option>
                     <option value="grandparent">Grandparent</option>
                   </optgroup>
-                  <optgroup label="Tier 2 • Parents & Ascendants">
+                  <optgroup label="Parents & Ascendants">
                     <option value="father">Father</option>
                     <option value="mother">Mother</option>
                     <option value="parent">Parent</option>
+                    <option value="stepfather">Stepfather</option>
+                    <option value="stepmother">Stepmother</option>
+                    <option value="stepparent">Stepparent</option>
                   </optgroup>
-                  <optgroup label="Tier 3 • Peers">
+                  <optgroup label="Peers & Siblings">
                     <option value="spouse">Spouse / Partner</option>
                     <option value="brother">Brother</option>
                     <option value="sister">Sister</option>
                     <option value="sibling">Sibling</option>
+                    <option value="stepbrother">Stepbrother</option>
+                    <option value="stepsister">Stepsister</option>
+                    <option value="stepsibling">Stepsibling</option>
                   </optgroup>
-                  <optgroup label="Tier 4 • Descendants">
+                  <optgroup label="Descendants">
                     <option value="son">Son</option>
                     <option value="daughter">Daughter</option>
                     <option value="child">Child</option>
+                    <option value="stepson">Stepson</option>
+                    <option value="stepdaughter">Stepdaughter</option>
+                    <option value="stepchild">Stepchild</option>
                   </optgroup>
                   <optgroup label="Extended Kinship">
                     <option value="uncle">Uncle</option>
@@ -620,16 +1077,16 @@ export function FamilyTreePage() {
 
               {/* Sibling Options: Full vs Half Sibling */}
               {isSiblingRelation(linkRelationType) && (
-                <div className="p-3 rounded-[6px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] space-y-2 text-xs">
+                <div className="p-3 rounded-[6px] bg-[#F7F7F5] dark:bg-[#222222] border border-[#E3E3DF] dark:border-[#303030] space-y-2 text-xs">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       id="half-sibling-toggle-link"
                       checked={isHalfSibling}
                       onChange={(e) => setIsHalfSibling(e.target.checked)}
-                      className="rounded border-[#CBD6D2] text-[#1E4D45] focus:ring-[#1E4D45] cursor-pointer"
+                      className="rounded border-[#D98A91] text-[#B4232F] focus:ring-[#B4232F] cursor-pointer"
                     />
-                    <label htmlFor="half-sibling-toggle-link" className="font-semibold text-[#13221F] dark:text-[#EFF5F3] cursor-pointer">
+                    <label htmlFor="half-sibling-toggle-link" className="font-semibold text-[#171717] dark:text-[#F0F0F0] cursor-pointer">
                       Half-Sibling (shares only one parent)
                     </label>
                   </div>
@@ -658,14 +1115,14 @@ export function FamilyTreePage() {
                   id="share-consent-checkbox"
                   checked={shareConsent}
                   onChange={(e) => setShareConsent(e.target.checked)}
-                  className="rounded border-[#CBD6D2] text-[#1E4D45] focus:ring-[#1E4D45] cursor-pointer"
+                  className="rounded border-[#D98A91] text-[#B4232F] focus:ring-[#B4232F] cursor-pointer"
                 />
-                <label htmlFor="share-consent-checkbox" className="text-[#3D524E] dark:text-[#A0B6B0] cursor-pointer">
+                <label htmlFor="share-consent-checkbox" className="text-[#5F6368] dark:text-[#A0A0A0] cursor-pointer">
                   Allow clinical disease history data sharing with this relative
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-[#CBD6D2] dark:border-[#2F433E]">
+              <div className="flex justify-end space-x-2 pt-2 border-t border-[#E3E3DF] dark:border-[#303030]">
                 <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)} disabled={submitting}>
                   Cancel
                 </Button>
@@ -699,23 +1156,31 @@ export function FamilyTreePage() {
                     onChange={(e) => setPlaceholderRelationType(e.target.value)}
                     id="placeholder-relationship-type-select"
                   >
-                    <optgroup label="Tier 1 • Grandparents">
+                    <optgroup label="Grandparents (Father's Side)">
+                      <option value="paternal_grandfather">Paternal Grandfather (Father's Father)</option>
+                      <option value="paternal_grandmother">Paternal Grandmother (Father's Mother)</option>
+                    </optgroup>
+                    <optgroup label="Grandparents (Mother's Side)">
+                      <option value="maternal_grandfather">Maternal Grandfather (Mother's Father)</option>
+                      <option value="maternal_grandmother">Maternal Grandmother (Mother's Mother)</option>
+                    </optgroup>
+                    <optgroup label="General Grandparents">
                       <option value="grandfather">Grandfather</option>
                       <option value="grandmother">Grandmother</option>
                       <option value="grandparent">Grandparent</option>
                     </optgroup>
-                    <optgroup label="Tier 2 • Parents & Ascendants">
+                    <optgroup label="Parents & Ascendants">
                       <option value="father">Father</option>
                       <option value="mother">Mother</option>
                       <option value="parent">Parent</option>
                     </optgroup>
-                    <optgroup label="Tier 3 • Peers">
+                    <optgroup label="Peers">
                       <option value="spouse">Spouse / Partner</option>
                       <option value="brother">Brother</option>
                       <option value="sister">Sister</option>
                       <option value="sibling">Sibling</option>
                     </optgroup>
-                    <optgroup label="Tier 4 • Descendants">
+                    <optgroup label="Descendants">
                       <option value="son">Son</option>
                       <option value="daughter">Daughter</option>
                       <option value="child">Child</option>
@@ -747,16 +1212,16 @@ export function FamilyTreePage() {
 
               {/* Sibling Options: Full vs Half Sibling */}
               {isSiblingRelation(placeholderRelationType) && (
-                <div className="p-3 rounded-[6px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] space-y-2 text-xs">
+                <div className="p-3 rounded-[6px] bg-[#F7F7F5] dark:bg-[#222222] border border-[#E3E3DF] dark:border-[#303030] space-y-2 text-xs">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       id="half-sibling-toggle-placeholder"
                       checked={isHalfSibling}
                       onChange={(e) => setIsHalfSibling(e.target.checked)}
-                      className="rounded border-[#CBD6D2] text-[#1E4D45] focus:ring-[#1E4D45] cursor-pointer"
+                      className="rounded border-[#D98A91] text-[#B4232F] focus:ring-[#B4232F] cursor-pointer"
                     />
-                    <label htmlFor="half-sibling-toggle-placeholder" className="font-semibold text-[#13221F] dark:text-[#EFF5F3] cursor-pointer">
+                    <label htmlFor="half-sibling-toggle-placeholder" className="font-semibold text-[#171717] dark:text-[#F0F0F0] cursor-pointer">
                       Half-Sibling (shares only one parent)
                     </label>
                   </div>
@@ -789,7 +1254,7 @@ export function FamilyTreePage() {
                 />
               </FormField>
 
-              <div className="flex justify-end space-x-2 pt-2 border-t border-[#CBD6D2] dark:border-[#2F433E]">
+              <div className="flex justify-end space-x-2 pt-2 border-t border-[#E3E3DF] dark:border-[#303030]">
                 <Button variant="secondary" size="sm" onClick={() => setModalOpen(false)} disabled={submitting}>
                   Cancel
                 </Button>
@@ -799,106 +1264,41 @@ export function FamilyTreePage() {
               </div>
             </form>
           )}
-
         </div>
       </Modal>
 
-      {/* 4. MODAL: Node Details / Edit Avatar Dialog */}
+      {/* 5. MODAL: Node Details, Clinical Diagnostic Summary & Universal Health Record Upload */}
       <Modal
         isOpen={editModalOpen}
         onClose={() => setEditModalOpen(false)}
-        title={selectedNode?.can_edit || selectedNode?.relationship_type === 'self' ? 'Edit Profile & Avatar' : 'Relative Pedigree Details'}
-        subtitle={
-          selectedNode?.can_edit
-            ? 'Update profile photo and metadata for this node'
-            : 'View-only health status and pedigree profile'
-        }
-        icon={<DoodleIcon name="user" className="w-4 h-4 text-[#1E4D45] dark:text-[#57BA8E]" />}
+        title={selectedNode?.full_name || 'Relative Details'}
+        subtitle={`Role: ${selectedNode?.relationship_type?.toUpperCase() || 'PROFILE'}`}
+        icon={<DoodleIcon name="user" className="w-4 h-4 text-[#B4232F]" />}
       >
         {selectedNode && (
           <div className="space-y-4">
-            
             {editError && (
-              <div className="p-3 rounded-[6px] text-xs font-medium bg-[#FDF0F0] border border-[#F6C4C5] text-[#942728] dark:bg-[#2D1616] dark:border-[#5B292A] dark:text-[#E57373] flex items-center space-x-2">
-                <span>⚠️</span>
-                <span>{editError}</span>
+              <div className="p-3 rounded-[6px] text-xs font-medium bg-[#FDF0F0] border border-[#F6C4C5] text-[#B4232F] dark:bg-[#2D1416] dark:border-[#422225] dark:text-[#E04855]">
+                {editError}
               </div>
             )}
 
-            {/* Avatar Preview & Upload Area */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-[10px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E]">
-              <div className="w-16 h-16 rounded-full p-1 border-2 border-[#1E4D45] dark:border-[#57BA8E] shadow-sm shrink-0">
-                {editAvatar ? (
-                  <img src={editAvatar} alt="Avatar Preview" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-[#1E4D45] text-white flex items-center justify-center font-bold text-lg select-none">
-                    {editName ? editName.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5 text-center sm:text-left flex-1">
-                <h4 className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3]">{editName || 'Relative'}</h4>
-                <p className="text-[11px] text-[#4E6863] dark:text-[#7E9993]">
-                  {selectedNode.is_placeholder ? '⚙️ Managed Placeholder Profile' : '✓ Claimed Independent Profile'}
-                </p>
-
-                {(selectedNode.can_edit || selectedNode.relationship_type === 'self') && (
-                  <div className="flex items-center gap-2 pt-1">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleAvatarFileChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      📁 Upload Photo
-                    </Button>
-                    {editAvatar && (
-                      <button
-                        type="button"
-                        onClick={() => setEditAvatar('')}
-                        className="text-[11px] text-[#942728] dark:text-[#E57373] hover:underline cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Health Status Diagnostics Box */}
-            <div className="p-3.5 rounded-[8px] border border-[#CBD6D2] dark:border-[#2F433E] bg-white dark:bg-[#151E1C] space-y-2">
+            {/* Clinical Health Status & Lab Test Breakdown Summary */}
+            <div className="p-3.5 rounded-[8px] bg-[#F7F7F5] dark:bg-[#222222] border border-[#E3E3DF] dark:border-[#303030] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3]">Diagnostic Health Status</span>
-                <Badge
-                  status={
-                    selectedNode.health_status?.status === 'normal'
-                      ? 'normal'
-                      : selectedNode.health_status?.status === 'warning'
-                      ? 'warning'
-                      : selectedNode.health_status?.status === 'critical'
-                      ? 'critical'
-                      : 'neutral'
-                  }
-                  size="sm"
-                  dot
-                >
+                <span className="text-xs font-bold text-[#171717] dark:text-[#F0F0F0] flex items-center space-x-1.5">
+                  <DoodleIcon name="pulse" className="w-3.5 h-3.5 text-[#B4232F]" />
+                  <span>Clinical Health Summary</span>
+                </span>
+                <Badge status={selectedNode.health_status?.status || 'neutral'} size="sm">
                   {selectedNode.health_status?.label || 'No Data'}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1">
-                <div className="p-2 rounded-[6px] bg-[#F4F6F5] dark:bg-[#1C2725]">
-                  <p className="text-[10px] text-[#4E6863] dark:text-[#7E9993]">Total Tests</p>
-                  <p className="font-bold font-mono text-[#13221F] dark:text-[#EFF5F3]">
+                <div className="p-2 rounded-[6px] bg-white dark:bg-[#1E1E1E] border border-[#E3E3DF] dark:border-[#303030]">
+                  <p className="text-[10px] text-[#5F6368] dark:text-[#A0A0A0]">Total Tests</p>
+                  <p className="font-bold font-mono text-[#171717] dark:text-[#F0F0F0]">
                     {selectedNode.health_status?.total_tests || 0}
                   </p>
                 </div>
@@ -908,68 +1308,53 @@ export function FamilyTreePage() {
                     {selectedNode.health_status?.abnormal_count || 0}
                   </p>
                 </div>
-                <div className="p-2 rounded-[6px] bg-[#FDF0F0] dark:bg-[#2D1616]">
-                  <p className="text-[10px] text-[#942728] dark:text-[#E57373]">Critical</p>
-                  <p className="font-bold font-mono text-[#942728] dark:text-[#E57373]">
+                <div className="p-2 rounded-[6px] bg-[#FDF0F0] dark:bg-[#2D1416]">
+                  <p className="text-[10px] text-[#B4232F] dark:text-[#E04855]">Critical</p>
+                  <p className="font-bold font-mono text-[#B4232F] dark:text-[#E04855]">
                     {selectedNode.health_status?.critical_count || 0}
                   </p>
                 </div>
               </div>
 
               {selectedNode.health_status?.latest_report_date && (
-                <p className="text-[10px] text-[#7E9993] text-right pt-1 font-mono">
+                <p className="text-[10px] text-[#858585] text-right pt-1 font-mono">
                   Latest: {new Date(selectedNode.health_status.latest_report_date).toLocaleDateString()}
                 </p>
               )}
             </div>
 
-            {/* Lab Report Upload Action Section */}
-            <div className="p-3.5 rounded-[8px] border border-[#CBD6D2] dark:border-[#2F433E] bg-[#F4F6F5] dark:bg-[#1C2725] space-y-2">
+            {/* Universal Clinical Records Ingestion Upload Action */}
+            <div className="p-3.5 rounded-[8px] border border-[#D98A91]/80 dark:border-[#422225] bg-white dark:bg-[#1E1E1E] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3] flex items-center space-x-1.5">
-                  <DoodleIcon name="file" className="w-3.5 h-3.5 text-[#1E4D45] dark:text-[#57BA8E]" />
+                <span className="text-xs font-bold text-[#171717] dark:text-[#F0F0F0] flex items-center space-x-1.5">
+                  <DoodleIcon name="file" className="w-3.5 h-3.5 text-[#B4232F] dark:text-[#E04855]" />
                   <span>Clinical Records Ingestion</span>
                 </span>
-                <Badge status={selectedNode.can_edit || selectedNode.relationship_type === 'self' ? 'normal' : 'neutral'} size="sm">
-                  {selectedNode.can_edit || selectedNode.relationship_type === 'self' ? 'Direct Upload Enabled' : 'View Only'}
+                <Badge status="normal" size="sm">
+                  Direct Upload Enabled
                 </Badge>
               </div>
 
-              {selectedNode.can_edit || selectedNode.relationship_type === 'self' ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs font-semibold"
-                  onClick={() => {
-                    setEditModalOpen(false);
-                    navigate(
-                      `/upload?targetUserId=${selectedNode.id}&targetName=${encodeURIComponent(
-                        selectedNode.full_name
-                      )}&relation=${encodeURIComponent(selectedNode.relationship_type || 'Self')}`
-                    );
-                  }}
-                  leftIcon={<DoodleIcon name="upload" className="w-3.5 h-3.5 text-[#1E4D45] dark:text-[#57BA8E]" />}
-                >
-                  Upload Lab Document for {selectedNode.full_name}
-                </Button>
-              ) : (
-                <div className="space-y-1.5 pt-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full py-2 px-3 rounded-[6px] text-xs font-semibold bg-[#EAEAEA] dark:bg-[#252525] text-[#7E9993] border border-[#CBD6D2] dark:border-[#2F433E] cursor-not-allowed flex items-center justify-center space-x-1.5 opacity-60"
-                  >
-                    <span>🔒 Upload Lab Document (Disabled)</span>
-                  </button>
-                  <p className="text-[11px] text-[#7E9993] text-center">
-                    This relative manages their own health records. Direct report uploads are enabled for managed placeholder profiles.
-                  </p>
-                </div>
-              )}
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                className="w-full text-xs font-semibold"
+                onClick={() => {
+                  setEditModalOpen(false);
+                  navigate(
+                    `/upload?targetUserId=${selectedNode.relative_id || selectedNode.id}&targetName=${encodeURIComponent(
+                      selectedNode.full_name
+                    )}&relation=${encodeURIComponent(selectedNode.relationship_type || 'Self')}`
+                  );
+                }}
+                leftIcon={<DoodleIcon name="upload" className="w-3.5 h-3.5 text-white" />}
+              >
+                Upload Lab Document for {selectedNode.full_name}
+              </Button>
             </div>
 
-            {/* Edit Form (if permitted) */}
+            {/* Profile Details Edit Form */}
             {selectedNode.can_edit || selectedNode.relationship_type === 'self' ? (
               <form onSubmit={handleSaveNodeEdit} className="space-y-3">
                 <FormField label="Full Name" required>
@@ -993,7 +1378,7 @@ export function FamilyTreePage() {
                   </Select>
                 </FormField>
 
-                <FormField label="Avatar Image URL (or use file upload above)">
+                <FormField label="Avatar Image URL">
                   <Input
                     type="text"
                     placeholder="https://..."
@@ -1002,21 +1387,43 @@ export function FamilyTreePage() {
                   />
                 </FormField>
 
-                <div className="flex justify-end space-x-2 pt-2 border-t border-[#CBD6D2] dark:border-[#2F433E]">
-                  <Button variant="secondary" size="sm" onClick={() => setEditModalOpen(false)} disabled={savingEdit}>
-                    Cancel
-                  </Button>
-                  <Button variant="primary" size="sm" type="submit" loading={savingEdit}>
-                    Save Changes
-                  </Button>
+                <div className="flex items-center justify-between pt-2 border-t border-[#E3E3DF] dark:border-[#303030]">
+                  {selectedNode.relationship_type !== 'self' ? (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleUnlink(selectedNode.relationship_id || selectedNode.relative_id || selectedNode.id, selectedNode.full_name)}
+                      leftIcon={<DoodleIcon name="trash" className="w-3.5 h-3.5 text-white" />}
+                    >
+                      Delete Member
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex space-x-2">
+                    <Button variant="secondary" size="sm" onClick={() => setEditModalOpen(false)} disabled={savingEdit}>
+                      Cancel
+                    </Button>
+                    <Button variant="primary" size="sm" type="submit" loading={savingEdit}>
+                      Save Changes
+                    </Button>
+                  </div>
                 </div>
               </form>
             ) : (
-              <div className="p-3 rounded-[6px] bg-[#F4F6F5] dark:bg-[#1C2725] text-xs text-[#4E6863] dark:text-[#7E9993] flex items-center space-x-2">
-                <span>🔒</span>
-                <span>
-                  This is an independent claimed user account. Only the account owner can edit their personal profile and avatar.
-                </span>
+              <div className="space-y-3">
+                <div className="p-3 rounded-[6px] bg-[#F7F7F5] dark:bg-[#222222] text-xs text-[#5F6368] dark:text-[#A0A0A0] flex items-center space-x-2 border border-[#E3E3DF] dark:border-[#303030]">
+                  <span>ℹ️</span>
+                  <span>
+                    Independent claimed account profile. You can upload clinical lab reports for {selectedNode.full_name} using the button above.
+                  </span>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <Button variant="secondary" size="sm" onClick={() => setEditModalOpen(false)}>
+                    Close
+                  </Button>
+                </div>
               </div>
             )}
 

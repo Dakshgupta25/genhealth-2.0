@@ -5,6 +5,7 @@ psycopg2-binary
 pydantic
 pydantic-settings
 python-jose[cryptography]
+PyJWT
 pwdlib[bcrypt]
 pytest
 python-dotenv

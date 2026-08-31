@@ -34,6 +34,9 @@ class UserLoginRequest(BaseModel):
     password: str = Field(..., min_length=1, description="Account password")
 
 
+from app.dependencies.auth import create_access_token
+
+
 class UserResponse(BaseModel):
     """Response schema exposing safe user attributes and claim status."""
     id: uuid.UUID
@@ -49,6 +52,7 @@ class UserResponse(BaseModel):
     claim_placeholder_id: Optional[uuid.UUID] = None
     claim_manager_name: Optional[str] = None
     created_at: datetime
+    access_token: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -72,6 +76,8 @@ def _enrich_user_response(user: User, db: Session) -> UserResponse:
         manager = db.get(User, pending_claim.manager_user_id)
         claim_manager_name = manager.full_name if manager else "Family Member"
 
+    token = create_access_token(user.id)
+
     return UserResponse(
         id=user.id,
         email=user.email,
@@ -86,6 +92,7 @@ def _enrich_user_response(user: User, db: Session) -> UserResponse:
         claim_placeholder_id=claim_placeholder_id,
         claim_manager_name=claim_manager_name,
         created_at=user.created_at,
+        access_token=token,
     )
 
 

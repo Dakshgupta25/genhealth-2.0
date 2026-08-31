@@ -30,9 +30,17 @@ import time
 from pathlib import Path
 from typing import Any
 
-from google import genai
-from google.genai import types as genai_types
-from google.genai import errors as genai_errors
+GENAI_SDK_AVAILABLE = False
+try:
+    from google import genai
+    from google.genai import types as genai_types
+    from google.genai import errors as genai_errors
+    GENAI_SDK_AVAILABLE = True
+except ImportError:
+    GENAI_SDK_AVAILABLE = False
+    genai = None
+    genai_types = None
+    genai_errors = None
 
 from app.config import settings
 
@@ -84,8 +92,12 @@ Rules:
 """
 
 
-def _build_client() -> genai.Client:
+def _build_client() -> Any:
     """Build and return an authenticated Gemini client using the API key from config."""
+    if not GENAI_SDK_AVAILABLE:
+        raise ValueError(
+            "google-genai Python SDK is not installed in the environment."
+        )
     if not settings.GEMINI_API_KEY:
         raise ValueError(
             "GEMINI_API_KEY is not set. Add it to your .env file. "
@@ -131,6 +143,14 @@ def extract(file_path: "str | Path") -> "dict[str, Any]":
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"Lab report file not found: {path}")
+
+    if not GENAI_SDK_AVAILABLE:
+        return {
+            "parsed": None,
+            "raw_text": "",
+            "model": _DEFAULT_MODEL,
+            "error": "google-genai SDK not installed",
+        }
 
     client = _build_client()
     mime_type = _detect_mime_type(path)

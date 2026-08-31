@@ -6,6 +6,7 @@ import { getFamilyMembers } from '../api/family';
 import DoodleIcon from '../components/common/DoodleIcon';
 import { Button, Badge, Card, EmptyState } from '../components/ui';
 import PendingClaimsBanner from '../components/family/PendingClaimsBanner';
+import HereditaryRiskPanel from '../components/hereditary/HereditaryRiskPanel';
 
 export function DashboardPage() {
   const { user, userId, selectedHospital } = useAuth();
@@ -312,6 +313,9 @@ export function DashboardPage() {
           />
         )}
       </div>
+
+      {/* Integrated Hereditary Risk Assessment Panel */}
+      {userId && <HereditaryRiskPanel userId={userId} />}
 
       {/* 5. STRUCTURED CLINICAL PREVIEW MODULES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">

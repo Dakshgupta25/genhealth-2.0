@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hereditary Risk ML Model Testing Playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-teal: #14b8a6;
+      --accent-teal-glow: rgba(20, 184, 166, 0.2);
+      --accent-blue: #38bdf8;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-emerald: #10b981;
+      --input-bg: rgba(15, 23, 42, 0.6);
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header & Branding */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-space: space-between;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .title-area h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .title-area h1 span.badge-tag {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .title-area p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--accent-emerald);
+      font-family: var(--font-mono);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    /* Cards Grid Layout */
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Controls & Forms */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+    }
+
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: #ffffff;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent-teal);
+      box-shadow: 0 0 0 3px var(--accent-teal-glow);
+    }
+
+    .hint-text {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    /* Presets Bar */
+    .presets-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .btn-preset {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-preset:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.85rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(20, 184, 166, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(20, 184, 166, 0.4);
+    }
+
+    /* Metadata Pills */
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .pill {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+
+    .pill.highlight {
+      color: var(--accent-teal);
+      border-color: rgba(20, 184, 166, 0.3);
+    }
+
+    /* Prediction Results Display */
+    .result-gauge-box {
+      text-align: center;
+      padding: 1.5rem;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 1.25rem;
+    }
+
+    .prob-val {
+      font-size: 2.8rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .prob-val.positive {
+      color: var(--accent-rose);
+      text-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+    }
+
+    .prob-val.negative {
+      color: var(--accent-emerald);
+      text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .prediction-badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .prediction-badge.positive {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+
+    .prediction-badge.negative {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    /* Explanation Table */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    th, td {
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    th {
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    td.mono {
+      font-family: var(--font-mono);
+    }
+
+    .impact-pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .impact-pill.increases {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+    }
+
+    .impact-pill.decreases {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+    }
+
+    .impact-pill.neutral {
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+    }
+
+    /* JSON Viewer */
+    details {
+      margin-top: 1.25rem;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    summary {
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--accent-blue);
+    }
+
+    pre {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      overflow-x: auto;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      background: #090d16;
+      border-radius: 6px;
+    }
+
+    .error-banner {
+      padding: 0.85rem;
+      border-radius: 8px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fca5a5;
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="title-area">
+        <h1>
+          HEREDITARY ML MODEL TEST LAB
+          <span class="badge-tag">Standalone Playground</span>
+        </h1>
+        <p>Direct inference &amp; SHAP feature explanation playground for trained .joblib models.</p>
+      </div>
+
+      <div class="server-status" id="serverStatus">
+        <div class="status-dot"></div>
+        <span id="statusText">Server Status: Loading...</span>
+      </div>
+    </header>
+
+    <!-- MAIN GRID -->
+    <div class="grid-layout">
+      
+      <!-- LEFT COLUMN: INPUT CONTROLS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>⚙️</span> Model Configuration &amp; Inputs
+          </div>
+        </div>
+
+        <!-- Error Notification -->
+        <div class="error-banner" id="errorBanner"></div>
+
+        <!-- Disease Model Selector -->
+        <div class="form-group">
+          <label for="modelSelect">Target Disease Model</label>
+          <select id="modelSelect">
+            <option value="">Loading models...</option>
+          </select>
+          <div class="meta-pills" id="modelMetaPills"></div>
+        </div>
+
+        <!-- Presets -->
+        <div class="form-group">
+          <label>Synthetic Test Presets</label>
+          <div class="presets-bar" id="presetsBar">
+            <button class="btn-preset" onclick="loadPreset('low')">Low Risk</button>
+            <button class="btn-preset" onclick="loadPreset('high')">High Risk</button>
+            <button class="btn-preset" onclick="loadPreset('extreme')">Extreme Values</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Inputs Form -->
+        <div id="dynamicInputsForm">
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Select a model to view feature inputs.</p>
+        </div>
+
+        <button class="btn-primary" id="btnRunPrediction" onclick="executePrediction()">
+          ▶ RUN MODEL PREDICTION
+        </button>
+      </div>
+
+      <!-- RIGHT COLUMN: RESULTS & SHAP EXPLANATION -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📊</span> Inference Output &amp; SHAP Feature Impact
+          </div>
+        </div>
+
+        <!-- Prediction Gauge Box -->
+        <div class="result-gauge-box">
+          <div class="prob-val" id="probVal">--</div>
+          <div class="prediction-badge" id="predictionBadge">No Prediction Run</div>
+          <p class="hint-text" id="calibHint" style="margin-top: 0.6rem;">
+            Run a prediction to evaluate model probability.
+          </p>
+        </div>
+
+        <!-- SHAP Explanation Table -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">
+            Feature Contributions &amp; SHAP
+          </h3>
+          <span class="pill highlight" id="explainerBadge">Explainer: N/A</span>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Biomarker Feature</th>
+                <th>Value</th>
+                <th>SHAP Contribution</th>
+                <th>Impact</th>
+              </tr>
+            </thead>
+            <tbody id="explanationTbody">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                  No prediction data available.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Collapsible Raw JSON -->
+        <details>
+          <summary>🔍 Collapsible Raw JSON Response</summary>
+          <pre id="jsonViewer">{ "notice": "Execute prediction to view raw payload." }</pre>
+        </details>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:8100';
+    let modelsRegistry = [];
+    let presetsRegistry = [];
+    let currentSelectedModel = null;
+
+    // Population Reference Medians for defaults
+    const MEDIAN_DEFAULTS = {
+      fasting_glucose: 95.0,
+      fasting_insulin: 8.0,
+      bmi: 24.5,
+      resting_bp: 120.0,
+      age: 45.0,
+      hemoglobin: 13.8,
+      mcv: 88.0,
+      mch: 29.5,
+      mchc: 33.5,
+      creatinine: 0.95,
+      bun: 15.0,
+      total_cholesterol: 185.0,
+      tsh: 2.1,
+      t3: 110.0,
+      t4: 8.5,
+      free_t4: 1.1,
+      alt: 25.0,
+      ast: 24.0,
+      alp: 75.0,
+      bilirubin_total: 0.7,
+      albumin: 4.2
+    };
+
+    // 1. Initialize & Fetch Models
+    async function initPlayground() {
+      try {
+        const healthRes = await fetch(`${API_BASE}/health`);
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          document.getElementById('statusText').innerText = `Server Status: Connected ✓ (${healthData.models_loaded} Models Loaded)`;
+        } else {
+          document.getElementById('statusText').innerText = 'Server Status: Warning (Health check failed)';
+        }
+
+        // Fetch Models
+        const modelsRes = await fetch(`${API_BASE}/api/models`);
+        const modelsData = await modelsRes.json();
+        modelsRegistry = modelsData.models || [];
+
+        // Fetch Presets
+        const presetsRes = await fetch(`${API_BASE}/api/presets`);
+        const presetsData = await presetsRes.json();
+        presetsRegistry = presetsData.presets || [];
+
+        // Populate Model Select
+        const select = document.getElementById('modelSelect');
+        select.innerHTML = '';
+        modelsRegistry.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.disease_key;
+          opt.innerText = `${m.disease_key.replace(/_/g, ' ').toUpperCase()} (${m.filename})`;
+          select.appendChild(opt);
+        });
+
+        select.addEventListener('change', onModelChange);
+        if (modelsRegistry.length > 0) {
+          select.value = modelsRegistry[0].disease_key;
+          onModelChange();
+        }
+      } catch (err) {
+        showError(`Failed to connect to backend server at ${API_BASE}. Ensure model_test_server is running.`);
+      }
+    }
+
+    // 2. Handle Model Change
+    function onModelChange() {
+      hideError();
+      const diseaseKey = document.getElementById('modelSelect').value;
+      currentSelectedModel = modelsRegistry.find(m => m.disease_key === diseaseKey);
+
+      if (!currentSelectedModel) return;
+
+      // Render Metadata Pills
+      const metaContainer = document.getElementById('modelMetaPills');
+      metaContainer.innerHTML = `
+        <span class="pill highlight">Version: ${currentSelectedModel.model_version}</span>
+        <span class="pill">Calibration: ${currentSelectedModel.calibration_method}</span>
+        <span class="pill">Features: ${currentSelectedModel.feature_names.length}</span>
+        <span class="pill">Dataset: ${currentSelectedModel.dataset_name || 'Public Clinical'}</span>
+      `;
+
+      // Render Feature Inputs
+      const formContainer = document.getElementById('dynamicInputsForm');
+      formContainer.innerHTML = '';
+
+      currentSelectedModel.feature_names.forEach(fName => {
+        const defaultVal = MEDIAN_DEFAULTS[fName] || 0.0;
+        const group = document.createElement('div');
+        group.className = 'form-group';
+        group.innerHTML = `
+          <label for="input_${fName}">${fName.replace(/_/g, ' ').toUpperCase()}</label>
+          <input type="number" step="any" id="input_${fName}" name="${fName}" value="${defaultVal}" />
+          <div class="hint-text">Population Median: ${defaultVal}</div>
+        `;
+        formContainer.appendChild(group);
+      });
+    }
+
+    // 3. Load Synthetic Presets
+    function loadPreset(type) {
+      if (!currentSelectedModel) return;
+
+      const dKey = currentSelectedModel.disease_key;
+      const matched = presetsRegistry.find(p => p.disease_key === dKey && p.name.toLowerCase().includes(type));
+
+      if (matched) {
+        Object.entries(matched.features).forEach(([fName, val]) => {
+          const inputEl = document.getElementById(`input_${fName}`);
+          if (inputEl) inputEl.value = val;
+        });
+      } else if (type === 'extreme') {
+        // Apply synthetic extreme values
+        currentSelectedModel.feature_names.forEach(fName => {
+          const inputEl = document.getElementById(`input_${fName}`);
+          if (inputEl) inputEl.value = (MEDIAN_DEFAULTS[fName] || 10) * 3.5;
+        });
+      }
+    }
+
+    // 4. Execute Prediction API
+    async function executePrediction() {
+      hideError();
+      if (!currentSelectedModel) return;
+
+      const diseaseKey = currentSelectedModel.disease_key;
+      const featureDict = {};
+
+      currentSelectedModel.feature_names.forEach(fName => {
+        const inputEl = document.getElementById(`input_${fName}`);
+        if (inputEl && inputEl.value !== '') {
+          featureDict[fName] = parseFloat(inputEl.value);
+        }
+      });
+
+      try {
+        const res = await fetch(`${API_BASE}/api/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            disease: diseaseKey,
+            features: featureDict
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.detail || 'Inference execution failed.');
+          return;
+        }
+
+        renderResults(data);
+      } catch (err) {
+        showError(`Network error executing prediction: ${err.message}`);
+      }
+    }
+
+    // 5. Render Output Results & SHAP Table
+    function renderResults(data) {
+      const probPct = (data.ml_probability_estimate * 100).toFixed(2) + '%';
+      const isPositive = data.prediction === 1;
+
+      const probEl = document.getElementById('probVal');
+      probEl.innerText = probPct;
+      probEl.className = `prob-val ${isPositive ? 'positive' : 'negative'}`;
+
+      const badgeEl = document.getElementById('predictionBadge');
+      badgeEl.innerText = data.prediction_label;
+      badgeEl.className = `prediction-badge ${isPositive ? 'positive' : 'negative'}`;
+
+      document.getElementById('calibHint').innerText = 
+        `Method: ${data.calibration_method.toUpperCase()} (${data.is_calibrated ? 'Calibrated' : 'Uncalibrated Estimate'}) • Model v${data.model_version}`;
+
+      // Explainer Badge
+      document.getElementById('explainerBadge').innerText = `Explainer: ${data.explanation.explainer_type}`;
+
+      // Render Explanation Table
+      const tbody = document.getElementById('explanationTbody');
+      tbody.innerHTML = '';
+
+      if (data.explanation.all_feature_contributions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No feature contributions returned.</td></tr>';
+      } else {
+        data.explanation.all_feature_contributions.forEach(item => {
+          const tr = document.createElement('tr');
+          const impactClass = item.impact === 'increases_risk' ? 'increases' : (item.impact === 'decreases_risk' ? 'decreases' : 'neutral');
+          
+          tr.innerHTML = `
+            <td style="font-weight: 600;">${item.feature}</td>
+            <td class="mono">${item.feature_value}</td>
+            <td class="mono" style="font-weight: 700;">${item.shap_value > 0 ? '+' : ''}${item.shap_value}</td>
+            <td><span class="impact-pill ${impactClass}">${item.impact.replace('_', ' ').toUpperCase()}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Render Raw JSON
+      document.getElementById('jsonViewer').innerText = JSON.stringify(data, null, 2);
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      banner.innerText = msg;
+      banner.style.display = 'block';
+    }
+
+    function hideError() {
+      const banner = document.getElementById('errorBanner');
+      banner.style.display = 'none';
+    }
+
+    window.onload = initPlayground;
+  </script>
+</body>
+</html>

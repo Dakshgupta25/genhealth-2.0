@@ -11,6 +11,7 @@ from app.routers import ingestion
 from app.routers import family
 from app.routers import clinical
 from app.routers import claims
+from app.routers import hereditary
 
 
 @asynccontextmanager
@@ -48,6 +49,7 @@ app.include_router(ingestion.router)
 app.include_router(family.router)
 app.include_router(clinical.router)
 app.include_router(claims.router)
+app.include_router(hereditary.router)
 
 
 @app.get("/")
@@ -63,5 +65,3 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
-

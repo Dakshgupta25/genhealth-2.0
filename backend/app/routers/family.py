@@ -34,12 +34,26 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
             return "daughter"
         return "child"
 
+    elif r in ("stepfather", "stepmother", "stepparent", "step_father", "step_mother", "step_parent"):
+        if gender == "male":
+            return "stepson"
+        elif gender == "female":
+            return "stepdaughter"
+        return "stepchild"
+
     elif r in ("son", "daughter", "child"):
         if gender == "male":
             return "father"
         elif gender == "female":
             return "mother"
         return "parent"
+
+    elif r in ("stepson", "stepdaughter", "stepchild", "step_son", "step_daughter", "step_child"):
+        if gender == "male":
+            return "stepfather"
+        elif gender == "female":
+            return "stepmother"
+        return "stepparent"
 
     elif r in ("brother", "sister", "sibling"):
         if gender == "male":
@@ -48,6 +62,13 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
             return "sister"
         return "sibling"
 
+    elif r in ("stepbrother", "stepsister", "stepsibling", "step_brother", "step_sister", "step_sibling"):
+        if gender == "male":
+            return "stepbrother"
+        elif gender == "female":
+            return "stepsister"
+        return "stepsibling"
+
     elif r in ("spouse", "husband", "wife", "partner"):
         if gender == "male":
             return "husband"
@@ -55,7 +76,7 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
             return "wife"
         return "spouse"
 
-    elif r in ("grandfather", "grandmother", "grandparent"):
+    elif r in ("grandfather", "grandmother", "grandparent", "paternal_grandfather", "paternal_grandmother", "paternal_grandparent", "maternal_grandfather", "maternal_grandmother", "maternal_grandparent", "step_grandfather", "step_grandmother", "step_grandparent"):
         if gender == "male":
             return "grandson"
         elif gender == "female":
@@ -69,7 +90,7 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
             return "grandmother"
         return "grandparent"
 
-    elif r in ("uncle", "aunt"):
+    elif r in ("uncle", "aunt", "paternal_uncle", "paternal_aunt", "maternal_uncle", "maternal_aunt"):
         if gender == "male":
             return "nephew"
         elif gender == "female":
@@ -91,24 +112,50 @@ def get_reciprocal_relationship(rel_type: str, user_gender: Optional[str] = "uns
 
 def get_generational_tier(rel_type: str) -> str:
     """
-    Maps a genealogical relationship type into one of 4 generational tiers:
-    - grandparents
-    - parents
-    - peers (self, spouse, siblings)
-    - children (descendants)
-    - extended (uncles, aunts, cousins)
+    Maps a genealogical relationship type into one of 5 generational tiers:
+    - grandparents (Grandparents, Paternal/Maternal Grandparents, Step-Grandparents)
+    - parents (Parents, Step-Parents)
+    - peers (Self, Spouse, Siblings, Step-Siblings)
+    - children (Children, Step-Children, Grandchildren)
+    - extended (Uncles, Aunts, Nephews, Nieces, Cousins, Extended Kin)
     """
     r = (rel_type or "").strip().lower()
-    if r in ("grandfather", "grandmother", "grandparent"):
+
+    if r in (
+        "grandfather", "grandmother", "grandparent",
+        "paternal_grandfather", "paternal_grandmother", "paternal_grandparent",
+        "maternal_grandfather", "maternal_grandmother", "maternal_grandparent",
+        "step_grandfather", "step_grandmother", "step_grandparent"
+    ) or "grandfather" in r or "grandmother" in r or "grandparent" in r:
         return "grandparents"
-    if r in ("father", "mother", "parent", "dad", "mom"):
+
+    if r in (
+        "father", "mother", "parent", "dad", "mom",
+        "stepfather", "stepmother", "stepparent",
+        "step_father", "step_mother", "step_parent"
+    ):
         return "parents"
-    if r in ("self", "spouse", "husband", "wife", "partner", "brother", "sister", "sibling"):
+
+    if r in (
+        "self", "spouse", "husband", "wife", "partner",
+        "brother", "sister", "sibling",
+        "stepbrother", "stepsister", "stepsibling",
+        "step_brother", "step_sister", "step_sibling",
+        "half_brother", "half_sister", "half_sibling"
+    ):
         return "peers"
-    if r in ("son", "daughter", "child", "grandson", "granddaughter", "grandchild"):
+
+    if r in (
+        "son", "daughter", "child",
+        "stepson", "stepdaughter", "stepchild",
+        "step_son", "step_daughter", "step_child",
+        "grandson", "granddaughter", "grandchild"
+    ):
         return "children"
+
     if r in ("uncle", "aunt", "nephew", "niece", "nephew_niece", "cousin", "relative"):
         return "extended"
+
     return "extended"
 
 
@@ -120,18 +167,42 @@ def get_relation_badge_code(rel_type: str) -> str:
         "father": "F",
         "mother": "M",
         "parent": "P",
+        "stepfather": "STPF",
+        "step_father": "STPF",
+        "stepmother": "STPM",
+        "step_mother": "STPM",
+        "stepparent": "STPP",
+        "step_parent": "STPP",
         "brother": "B",
         "sister": "S",
         "sibling": "SIB",
+        "stepbrother": "STPB",
+        "step_brother": "STPB",
+        "stepsister": "STPS",
+        "step_sister": "STPS",
+        "stepsibling": "STPS",
+        "step_sibling": "STPS",
         "spouse": "SP",
         "husband": "H",
         "wife": "W",
         "son": "SON",
         "daughter": "DAU",
         "child": "CH",
+        "stepson": "STPS",
+        "step_son": "STPS",
+        "stepdaughter": "STPD",
+        "step_daughter": "STPD",
+        "stepchild": "STPC",
+        "step_child": "STPC",
         "grandfather": "GF",
+        "paternal_grandfather": "PGF",
+        "maternal_grandfather": "MGF",
         "grandmother": "GM",
+        "paternal_grandmother": "PGM",
+        "maternal_grandmother": "MGM",
         "grandparent": "GP",
+        "paternal_grandparent": "PGP",
+        "maternal_grandparent": "MGP",
         "grandson": "GS",
         "granddaughter": "GD",
         "grandchild": "GC",
@@ -303,6 +374,8 @@ class FamilyMemberResponse(BaseModel):
     badge_code: str = "REL"
     can_edit: bool = False
     share_clinical_data: bool = True
+    is_half_sibling: bool = False
+    shared_parent_id: Optional[uuid.UUID] = None
     health_status: HealthStatusInfo
     created_at: datetime
 
@@ -622,6 +695,38 @@ def get_family_tree(
 
     # 2. Fetch linked relatives
     all_members = get_family_members(user_id=user_id, db=db)
+
+    # Graph Auto-Sync: Ensure grandparents, parents, and siblings are fully populated for user_id from connected relatives
+    existing_ids = {m.relative_id for m in all_members}
+    has_synced = False
+    for member in list(all_members):
+        if member.relationship_type in ("brother", "sister", "sibling", "father", "mother", "parent", "spouse", "husband", "wife"):
+            rel_relatives = db.execute(
+                select(FamilyRelationship, User)
+                .join(User, FamilyRelationship.relative_user_id == User.id)
+                .where(FamilyRelationship.user_id == member.relative_id)
+            ).all()
+            for rel, r_user in rel_relatives:
+                if r_user.id != user_id and r_user.id not in existing_ids:
+                    inferred_rel = rel.relationship_type
+                    # Infer role relative to user_id
+                    if member.relationship_type in ("brother", "sister", "sibling"):
+                        inferred_rel = rel.relationship_type
+                    elif member.relationship_type in ("father", "mother", "parent"):
+                        if rel.relationship_type in ("father", "mother", "parent", "dad", "mom"):
+                            if member.relationship_type == "father":
+                                inferred_rel = "paternal_grandmother" if r_user.gender == "female" else "paternal_grandfather"
+                            elif member.relationship_type == "mother":
+                                inferred_rel = "maternal_grandmother" if r_user.gender == "female" else "maternal_grandfather"
+                            else:
+                                inferred_rel = "grandparent"
+                    create_bidirectional_link(user_id, r_user.id, inferred_rel, db, rel.share_clinical_data)
+                    existing_ids.add(r_user.id)
+                    has_synced = True
+
+    if has_synced:
+        db.commit()
+        all_members = get_family_members(user_id=user_id, db=db)
 
     grandparents = [m for m in all_members if m.tier == "grandparents"]
     parents = [m for m in all_members if m.tier == "parents"]
@@ -976,29 +1081,69 @@ def update_sharing_consent(
 @router.delete(
     "/{relationship_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Unlink a family relationship (severs bidirectional connection atomically)",
+    summary="Unlink/delete a family relationship or managed placeholder profile",
 )
 def unlink_family_member(
     relationship_id: uuid.UUID = FPath(...),
     db: Session = Depends(get_db),
 ):
-    stmt = select(FamilyRelationship).where(FamilyRelationship.id == relationship_id)
-    rel = db.execute(stmt).scalar_one_or_none()
-    if not rel:
-        raise HTTPException(status_code=404, detail="Family relationship not found.")
+    # 1. Try to locate FamilyRelationship by ID, or by relative_user_id / user_id
+    rel = db.execute(
+        select(FamilyRelationship).where(FamilyRelationship.id == relationship_id)
+    ).scalar_one_or_none()
 
-    # If linked via link_group_id, remove both sides atomically
-    if rel.link_group_id:
-        db.execute(delete(FamilyRelationship).where(FamilyRelationship.link_group_id == rel.link_group_id))
+    relative_user_id = None
+    if rel:
+        relative_user_id = rel.relative_user_id
     else:
-        # Fallback reciprocal delete
-        db.execute(
-            delete(FamilyRelationship).where(
-                (FamilyRelationship.user_id == rel.relative_user_id)
-                & (FamilyRelationship.relative_user_id == rel.user_id)
+        # Check if relationship_id was passed as a User ID (relative_user_id)
+        user_rel = db.execute(
+            select(FamilyRelationship).where(
+                (FamilyRelationship.relative_user_id == relationship_id) |
+                (FamilyRelationship.user_id == relationship_id)
             )
-        )
-        db.delete(rel)
+        ).scalars().first()
+        if user_rel:
+            rel = user_rel
+            relative_user_id = relationship_id
+        else:
+            # Check if relationship_id is directly a placeholder User ID
+            target_user = db.get(User, relationship_id)
+            if target_user and target_user.is_placeholder:
+                relative_user_id = target_user.id
+            else:
+                raise HTTPException(status_code=404, detail="Family relationship or member not found.")
+
+    # 2. Gather all related relationship records to delete across graph
+    rels_to_delete = []
+    if rel:
+        if rel.link_group_id:
+            group_rels = db.execute(
+                select(FamilyRelationship).where(FamilyRelationship.link_group_id == rel.link_group_id)
+            ).scalars().all()
+            rels_to_delete.extend(group_rels)
+
+    if relative_user_id:
+        user_rels = db.execute(
+            select(FamilyRelationship).where(
+                (FamilyRelationship.user_id == relative_user_id) |
+                (FamilyRelationship.relative_user_id == relative_user_id)
+            )
+        ).scalars().all()
+        rels_to_delete.extend(user_rels)
+
+    # Remove duplicate relationship instances
+    seen_ids = set()
+    for r in rels_to_delete:
+        if r.id not in seen_ids:
+            seen_ids.add(r.id)
+            db.delete(r)
+
+    # 3. If target user is a managed placeholder, delete the placeholder User entity completely
+    if relative_user_id:
+        target_user = db.get(User, relative_user_id)
+        if target_user and target_user.is_placeholder:
+            db.delete(target_user)
 
     db.commit()
     return None

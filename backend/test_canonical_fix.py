@@ -83,15 +83,16 @@ def run_tests(label, tests, include_desc=False):
     print(f"\n  Result: {passed} passed, {failed} failed")
     return failed
 
-total_failures = 0
-total_failures += run_tests("REGRESSION TESTS (must not break)", REGRESSION_TESTS)
-total_failures += run_tests("BUG FIX TESTS (must now be correct)", BUG_FIX_TESTS, include_desc=True)
-total_failures += run_tests("NEW ENTRY TESTS (previously unmapped)", NEW_ENTRY_TESTS)
+if __name__ == "__main__":
+    total_failures = 0
+    total_failures += run_tests("REGRESSION TESTS (must not break)", REGRESSION_TESTS)
+    total_failures += run_tests("BUG FIX TESTS (must now be correct)", BUG_FIX_TESTS, include_desc=True)
+    total_failures += run_tests("NEW ENTRY TESTS (previously unmapped)", NEW_ENTRY_TESTS)
 
-print(f"\n{'='*70}")
-if total_failures == 0:
-    print("  ALL TESTS PASSED")
-else:
-    print(f"  TOTAL FAILURES: {total_failures}")
-print(f"{'='*70}\n")
-sys.exit(0 if total_failures == 0 else 1)
+    print(f"\n{'='*70}")
+    if total_failures == 0:
+        print("  ALL TESTS PASSED")
+    else:
+        print(f"  TOTAL FAILURES: {total_failures}")
+    print(f"{'='*70}\n")
+    sys.exit(0 if total_failures == 0 else 1)

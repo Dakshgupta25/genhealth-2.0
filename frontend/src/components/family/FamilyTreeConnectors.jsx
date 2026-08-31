@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { getConnectorStyle } from '../../utils/relationshipGraph';
 
-export function FamilyTreeConnectors({ containerRef, treeData }) {
+export function FamilyTreeConnectors({ containerRef, treeData, selectedNodeId = null }) {
   const [paths, setPaths] = useState([]);
-  const [junctions, setJunctions] = useState([]);
 
   const computeLines = useCallback(() => {
     if (!containerRef?.current || !treeData) return;
@@ -10,190 +10,337 @@ export function FamilyTreeConnectors({ containerRef, treeData }) {
     const container = containerRef.current;
     const containerRect = container.getBoundingClientRect();
 
-    const getNodeCenter = (nodeId) => {
+    // 100% Accurate relative coordinate calculator using BoundingClientRect
+    const getNodePos = (nodeId) => {
       if (!nodeId) return null;
       const el = container.querySelector(`[data-node-id="${nodeId}"]`);
       if (!el) return null;
-      const rect = el.getBoundingClientRect();
+
+      const elRect = el.getBoundingClientRect();
+      if (elRect.width === 0 || elRect.height === 0) return null;
+
+      const x = (elRect.left - containerRect.left) + elRect.width / 2;
+      const y = (elRect.top - containerRect.top) + elRect.height / 2;
+      const radius = Math.min(elRect.width, elRect.height) / 2;
+
       return {
         id: nodeId,
-        x: rect.left - containerRect.left + rect.width / 2,
-        y: rect.top - containerRect.top + rect.height / 2,
-        top: rect.top - containerRect.top,
-        bottom: rect.bottom - containerRect.top,
-        left: rect.left - containerRect.left,
-        right: rect.right - containerRect.left,
-        width: rect.width,
-        height: rect.height,
+        x,
+        y,
+        radius: radius > 0 ? radius : 65,
       };
     };
 
-    const newPaths = [];
-    const newJunctions = [];
+    const getPosForMember = (m) => {
+      if (!m) return null;
+      const pos = (
+        getNodePos(m.relative_id) ||
+        getNodePos(m.id) ||
+        getNodePos(m.relationship_id)
+      );
+      if (!pos) return null;
+      return { ...pos, member: m };
+    };
 
-    const selfPos = getNodeCenter(treeData.self_node?.id);
+    // Primary User ("ME") Position
+    const selfPos = getPosForMember(treeData.self_node);
     if (!selfPos) return;
 
-    const parentPositions = (treeData.parents || [])
-      .map((p) => getNodeCenter(p.relative_id))
-      .filter(Boolean);
+    const categorizedPaths = [];
 
-    const grandparentPositions = (treeData.grandparents || [])
-      .map((gp) => getNodeCenter(gp.relative_id))
-      .filter(Boolean);
+    // Helper to calculate top/bottom/side circle border anchors and smooth paths
+    const createSegment = (posA, posB, relType, customKey = '') => {
+      if (!posA || !posB) return null;
+      const dx = posB.x - posA.x;
+      const dy = posB.y - posA.y;
+      const dist = Math.hypot(dx, dy);
 
-    // 1. CONNECT GRANDPARENTS (Tier 1) TO PARENTS (Tier 2) OR SELF
-    if (grandparentPositions.length > 0) {
-      if (parentPositions.length > 0) {
-        const gpBottom = Math.max(...grandparentPositions.map((gp) => gp.bottom));
-        const pTop = Math.min(...parentPositions.map((p) => p.top));
-        const midY = (gpBottom + pTop) / 2;
+      if (dist <= 10) return null;
 
-        grandparentPositions.forEach((gp) => {
-          newPaths.push(`M ${gp.x} ${gp.bottom} L ${gp.x} ${midY}`);
-          newJunctions.push({ x: gp.x, y: midY });
-        });
+      let startX, startY, endX, endY, pathD;
 
-        const minGpX = Math.min(...grandparentPositions.map((gp) => gp.x));
-        const maxGpX = Math.max(...grandparentPositions.map((gp) => gp.x));
-        newPaths.push(`M ${minGpX} ${midY} L ${maxGpX} ${midY}`);
+      const isHorizontal = Math.abs(dy) < 35 || relType === 'spouse';
 
-        parentPositions.forEach((p) => {
-          newPaths.push(`M ${p.x} ${midY} L ${p.x} ${p.top}`);
-          newJunctions.push({ x: p.x, y: midY });
-        });
+      if (isHorizontal) {
+        // Horizontal connections (e.g. Spouse / Peer links across same row)
+        if (dx >= 0) {
+          startX = posA.x + posA.radius;
+          startY = posA.y;
+          endX = posB.x - posB.radius;
+          endY = posB.y;
+        } else {
+          startX = posA.x - posA.radius;
+          startY = posA.y;
+          endX = posB.x + posB.radius;
+          endY = posB.y;
+        }
+        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
       } else {
-        // Direct Grandparents to Self if parents not listed
-        const gpBottom = Math.max(...grandparentPositions.map((gp) => gp.bottom));
-        const midY = (gpBottom + selfPos.top) / 2;
+        // Generational / Vertical connections (Grandparent -> Parent, Parent -> Child)
+        if (dy > 0) {
+          // posA is ABOVE posB: Exit BOTTOM of posA, Enter TOP of posB
+          startX = posA.x;
+          startY = posA.y + posA.radius;
+          endX = posB.x;
+          endY = posB.y - posB.radius;
+        } else {
+          // posA is BELOW posB: Exit TOP of posA, Enter BOTTOM of posB
+          startX = posA.x;
+          startY = posA.y - posA.radius;
+          endX = posB.x;
+          endY = posB.y + posB.radius;
+        }
 
-        grandparentPositions.forEach((gp) => {
-          newPaths.push(`M ${gp.x} ${gp.bottom} L ${gp.x} ${midY}`);
-        });
-        const minGpX = Math.min(...grandparentPositions.map((gp) => gp.x));
-        const maxGpX = Math.max(...grandparentPositions.map((gp) => gp.x));
-        newPaths.push(`M ${minGpX} ${midY} L ${maxGpX} ${midY}`);
-        newPaths.push(`M ${selfPos.x} ${midY} L ${selfPos.x} ${selfPos.top}`);
-        newJunctions.push({ x: selfPos.x, y: midY });
+        // Straight direct connector lines
+        pathD = `M ${startX} ${startY} L ${endX} ${endY}`;
       }
+
+      const style = getConnectorStyle(relType);
+      const isConnectedToSelected =
+        selectedNodeId && (posA.id === selectedNodeId || posB.id === selectedNodeId);
+
+      const pathId = customKey || `line-${posA.id}-${posB.id}`;
+
+      return {
+        id: pathId,
+        d: pathD,
+        color: style.color,
+        dash: style.dash,
+        width: isConnectedToSelected ? style.width + 0.8 : style.width,
+        isDimmed: Boolean(selectedNodeId && !isConnectedToSelected),
+        label: style.label,
+      };
+    };
+
+    // Find Parent Nodes (Father vs Mother)
+    const parents = treeData.parents || [];
+    let fatherPos = null;
+    let motherPos = null;
+
+    parents.forEach((p) => {
+      const pPos = getPosForMember(p);
+      if (!pPos) return;
+      const rel = (p.relationship_type || '').toLowerCase();
+      const gender = (p.gender || '').toLowerCase();
+
+      if (rel === 'father' || (rel === 'parent' && gender === 'male')) {
+        fatherPos = pPos;
+      } else if (rel === 'mother' || (rel === 'parent' && gender === 'female')) {
+        motherPos = pPos;
+      } else if (!fatherPos) {
+        fatherPos = pPos;
+      } else if (!motherPos) {
+        motherPos = pPos;
+      }
+    });
+
+    // 1. Connect PARENTS -> ME
+    if (fatherPos) {
+      const line = createSegment(fatherPos, selfPos, 'father', `father-to-self`);
+      if (line) categorizedPaths.push(line);
+    }
+    if (motherPos) {
+      const line = createSegment(motherPos, selfPos, 'mother', `mother-to-self`);
+      if (line) categorizedPaths.push(line);
     }
 
-    // 2. CONNECT PARENTS (Tier 2) TO SELF & SIBLINGS (Tier 3)
-    if (parentPositions.length > 0) {
-      const parentBottom = Math.max(...parentPositions.map((p) => p.bottom));
-      const midY = (parentBottom + selfPos.top) / 2;
+    // 2. Connect GRANDPARENTS -> Respective PARENT (Father's side vs Mother's side)
+    const grandparents = treeData.grandparents || [];
+    const grandPosList = grandparents.map((g) => ({
+      member: g,
+      pos: getPosForMember(g),
+    })).filter((item) => item.pos !== null);
 
-      if (parentPositions.length === 1) {
-        const p = parentPositions[0];
-        newPaths.push(`M ${p.x} ${p.bottom} L ${p.x} ${midY} L ${selfPos.x} ${midY} L ${selfPos.x} ${selfPos.top}`);
+    // Determine average horizontal position of grandparents to separate paternal (left) vs maternal (right) if untagged
+    const grandXCoords = grandPosList.map((g) => g.pos.x);
+    const midX = grandXCoords.length > 0 ? grandXCoords.reduce((a, b) => a + b, 0) / grandXCoords.length : selfPos.x;
+
+    const paternalGrand = [];
+    const maternalGrand = [];
+
+    grandPosList.forEach((item, idx) => {
+      const rel = (item.member.relationship_type || '').toLowerCase();
+      const side = (item.member.side || '').toLowerCase();
+
+      if (rel.includes('paternal') || side === 'paternal') {
+        paternalGrand.push(item);
+      } else if (rel.includes('maternal') || side === 'maternal') {
+        maternalGrand.push(item);
       } else {
-        const minX = Math.min(...parentPositions.map((p) => p.x));
-        const maxX = Math.max(...parentPositions.map((p) => p.x));
-
-        // Horizontal bus connecting parents
-        parentPositions.forEach((p) => {
-          newPaths.push(`M ${p.x} ${p.bottom} L ${p.x} ${midY}`);
-          newJunctions.push({ x: p.x, y: midY });
-        });
-        newPaths.push(`M ${minX} ${midY} L ${maxX} ${midY}`);
-
-        // Stem from bus to Self
-        newPaths.push(`M ${selfPos.x} ${midY} L ${selfPos.x} ${selfPos.top}`);
-        newJunctions.push({ x: selfPos.x, y: midY });
-
-        // Horizontal spouse connector between Father and Mother
-        if (parentPositions.length === 2) {
-          const p1 = parentPositions[0];
-          const p2 = parentPositions[1];
-          const leftP = p1.x < p2.x ? p1 : p2;
-          const rightP = p1.x < p2.x ? p2 : p1;
-          newPaths.push(`M ${leftP.right} ${leftP.y} L ${rightP.left} ${rightP.y}`);
+        // Infer by screen coordinates or order (left half = Paternal/Father, right half = Maternal/Mother)
+        if (fatherPos && motherPos) {
+          if (item.pos.x < midX || idx < grandPosList.length / 2) {
+            paternalGrand.push(item);
+          } else {
+            maternalGrand.push(item);
+          }
+        } else if (fatherPos) {
+          paternalGrand.push(item);
+        } else if (motherPos) {
+          maternalGrand.push(item);
+        } else {
+          paternalGrand.push(item);
         }
       }
+    });
 
-      // SIBLINGS: connect to parent-descent bus
-      const siblingPositions = (treeData.peers || [])
-        .filter((p) => ['brother', 'sister', 'sibling'].includes(p.relationship_type?.toLowerCase()))
-        .map((s) => getNodeCenter(s.relative_id))
-        .filter(Boolean);
+    // Connect Paternal Grandparents -> Father (or ME if no father node)
+    paternalGrand.forEach((item) => {
+      const targetParentPos = fatherPos || selfPos;
+      const line = createSegment(item.pos, targetParentPos, 'grandfather', `grandpaternal-${item.pos.id}`);
+      if (line) categorizedPaths.push(line);
+    });
 
-      if (siblingPositions.length > 0) {
-        siblingPositions.forEach((s) => {
-          newPaths.push(`M ${s.x} ${midY} L ${s.x} ${s.top}`);
-          newJunctions.push({ x: s.x, y: midY });
-        });
-        const allPeerX = [selfPos.x, ...parentPositions.map((p) => p.x), ...siblingPositions.map((s) => s.x)];
-        const minPeerX = Math.min(...allPeerX);
-        const maxPeerX = Math.max(...allPeerX);
-        newPaths.push(`M ${minPeerX} ${midY} L ${maxPeerX} ${midY}`);
+    // Connect Maternal Grandparents -> Mother (or ME if no mother node)
+    maternalGrand.forEach((item) => {
+      const targetParentPos = motherPos || selfPos;
+      const line = createSegment(item.pos, targetParentPos, 'grandmother', `grandmaternal-${item.pos.id}`);
+      if (line) categorizedPaths.push(line);
+    });
+
+    // 3. Connect SPOUSES (Father ↔ Mother, Paternal Couple, Maternal Couple)
+    if (fatherPos && motherPos) {
+      const line = createSegment(fatherPos, motherPos, 'spouse', `spouse-parents`);
+      if (line) categorizedPaths.push(line);
+    }
+
+    if (paternalGrand.length >= 2) {
+      const line = createSegment(paternalGrand[0].pos, paternalGrand[1].pos, 'spouse', `spouse-paternal-grand`);
+      if (line) categorizedPaths.push(line);
+    }
+
+    if (maternalGrand.length >= 2) {
+      const line = createSegment(maternalGrand[0].pos, maternalGrand[1].pos, 'spouse', `spouse-maternal-grand`);
+      if (line) categorizedPaths.push(line);
+    }
+
+    // 4. Connect PEERS (Siblings & Spouse)
+    const peers = treeData.peers || [];
+    let spousePos = null;
+
+    // First pass to detect Spouse position
+    peers.forEach((p) => {
+      const rel = (p.relationship_type || '').toLowerCase();
+      if (['spouse', 'husband', 'wife', 'partner'].includes(rel)) {
+        spousePos = getPosForMember(p);
       }
-    }
+    });
 
-    // 3. CONNECT PEERS (SPOUSE)
-    const spouseNode = (treeData.peers || [])
-      .find((p) => ['spouse', 'husband', 'wife', 'partner'].includes(p.relationship_type?.toLowerCase()));
-    const spousePos = spouseNode ? getNodeCenter(spouseNode.relative_id) : null;
+    peers.forEach((p) => {
+      const pPos = getPosForMember(p);
+      if (!pPos) return;
 
-    if (spousePos) {
-      const leftNode = selfPos.x < spousePos.x ? selfPos : spousePos;
-      const rightNode = selfPos.x < spousePos.x ? spousePos : selfPos;
-      newPaths.push(`M ${leftNode.right} ${leftNode.y} L ${rightNode.left} ${rightNode.y}`);
-    }
+      const rel = (p.relationship_type || '').toLowerCase();
 
-    // 4. CONNECT SELF/SPOUSE TO CHILDREN (Tier 4)
-    const childPositions = (treeData.children || [])
-      .map((c) => getNodeCenter(c.relative_id))
-      .filter(Boolean);
+      if (['spouse', 'husband', 'wife', 'partner'].includes(rel)) {
+        const line = createSegment(selfPos, pPos, 'spouse', `spouse-${selfPos.id}-${pPos.id}`);
+        if (line) categorizedPaths.push(line);
+        return;
+      }
 
-    if (childPositions.length > 0) {
-      const originX = spousePos ? (selfPos.x + spousePos.x) / 2 : selfPos.x;
-      const originY = spousePos ? (selfPos.bottom + spousePos.bottom) / 2 : selfPos.bottom;
-      const childTop = Math.min(...childPositions.map((c) => c.top));
-      const midY = (originY + childTop) / 2;
+      const isStepOrHalf = p.is_half_sibling || Boolean(p.shared_parent_id) || rel.includes('half') || rel.includes('step') || rel.includes('stpb') || rel.includes('stps');
 
-      // Descent stem
-      newPaths.push(`M ${originX} ${originY} L ${originX} ${midY}`);
-      newJunctions.push({ x: originX, y: midY });
+      if (isStepOrHalf) {
+        // Step-Sibling or Half-Sibling: Connect ONLY to their designated single parent!
+        let sharedParentPos = null;
+        const parentId = p.shared_parent_id || p.parent_id;
 
-      if (childPositions.length === 1) {
-        const c = childPositions[0];
-        newPaths.push(`M ${originX} ${midY} L ${c.x} ${midY} L ${c.x} ${c.top}`);
+        if (parentId && fatherPos && (
+          parentId === fatherPos.id ||
+          parentId === fatherPos.member?.relative_id ||
+          parentId === fatherPos.member?.id ||
+          parentId === fatherPos.member?.relationship_id
+        )) {
+          sharedParentPos = fatherPos;
+        } else if (parentId && motherPos && (
+          parentId === motherPos.id ||
+          parentId === motherPos.member?.relative_id ||
+          parentId === motherPos.member?.id ||
+          parentId === motherPos.member?.relationship_id
+        )) {
+          sharedParentPos = motherPos;
+        } else if (rel.includes('paternal') || (p.side || '').toLowerCase() === 'paternal' || rel.includes('father')) {
+          sharedParentPos = fatherPos || selfPos;
+        } else if (rel.includes('maternal') || (p.side || '').toLowerCase() === 'maternal' || rel.includes('mother')) {
+          sharedParentPos = motherPos || selfPos;
+        } else {
+          // Default fallback for half/step siblings: connect to Father if present, else Mother
+          sharedParentPos = fatherPos || motherPos || selfPos;
+        }
+
+        if (sharedParentPos && sharedParentPos !== selfPos) {
+          const lineParent = createSegment(sharedParentPos, pPos, 'step-child', `step-sib-parent-${sharedParentPos.id}-${pPos.id}`);
+          if (lineParent) categorizedPaths.push(lineParent);
+        }
+
+        // Peer connection to ME
+        const lineMe = createSegment(selfPos, pPos, 'step-sibling', `step-sib-me-${selfPos.id}-${pPos.id}`);
+        if (lineMe) categorizedPaths.push(lineMe);
       } else {
-        const minChildX = Math.min(...childPositions.map((c) => c.x));
-        const maxChildX = Math.max(...childPositions.map((c) => c.x));
-        newPaths.push(`M ${minChildX} ${midY} L ${maxChildX} ${midY}`);
-
-        childPositions.forEach((c) => {
-          newPaths.push(`M ${c.x} ${midY} L ${c.x} ${c.top}`);
-          newJunctions.push({ x: c.x, y: midY });
-        });
+        // Full Sibling: Connect to BOTH Father & Mother (if present) via Parent links, and to ME via Sibling link
+        if (fatherPos) {
+          const lineF = createSegment(fatherPos, pPos, 'parent', `sib-father-${fatherPos.id}-${pPos.id}`);
+          if (lineF) categorizedPaths.push(lineF);
+        }
+        if (motherPos) {
+          const lineM = createSegment(motherPos, pPos, 'parent', `sib-mother-${motherPos.id}-${pPos.id}`);
+          if (lineM) categorizedPaths.push(lineM);
+        }
+        const line = createSegment(selfPos, pPos, 'sibling', `peer-${selfPos.id}-${pPos.id}`);
+        if (line) categorizedPaths.push(line);
       }
-    }
+    });
 
-    setPaths(newPaths);
-    setJunctions(newJunctions);
-  }, [containerRef, treeData]);
+    // 5. Connect DESCENDANTS (Children) -> EACH Parent (ME + Spouse/Co-parent)
+    const children = treeData.children || [];
+    children.forEach((c) => {
+      const cPos = getPosForMember(c);
+      if (!cPos) return;
+
+      // Primary Parent (ME) -> Child
+      const lineSelf = createSegment(selfPos, cPos, 'child', `child-self-${selfPos.id}-${cPos.id}`);
+      if (lineSelf) categorizedPaths.push(lineSelf);
+
+      // Co-Parent (Spouse) -> Child (if spouse node exists)
+      if (spousePos) {
+        const lineSpouse = createSegment(spousePos, cPos, 'child', `child-spouse-${spousePos.id}-${cPos.id}`);
+        if (lineSpouse) categorizedPaths.push(lineSpouse);
+      }
+    });
+
+    // 6. Connect EXTENDED KIN -> Respective Parent or ME
+    const extended = treeData.extended || [];
+    extended.forEach((ext) => {
+      const extPos = getPosForMember(ext);
+      if (!extPos) return;
+
+      const rel = (ext.relationship_type || '').toLowerCase();
+      const targetPos = (rel.includes('uncle') || rel.includes('aunt')) && fatherPos ? fatherPos : selfPos;
+      const line = createSegment(targetPos, extPos, 'relative', `ext-${targetPos.id}-${extPos.id}`);
+      if (line) categorizedPaths.push(line);
+    });
+
+    setPaths(categorizedPaths);
+  }, [containerRef, treeData, selectedNodeId]);
 
   useEffect(() => {
     computeLines();
-    const handleResize = () => computeLines();
-    window.addEventListener('resize', handleResize);
+    const t1 = setTimeout(computeLines, 50);
+    const t2 = setTimeout(computeLines, 200);
 
-    const observer = new ResizeObserver(() => {
-      computeLines();
-    });
+    window.addEventListener('resize', computeLines);
+
+    let observer;
     if (containerRef?.current) {
+      observer = new ResizeObserver(computeLines);
       observer.observe(containerRef.current);
     }
 
-    const timer1 = setTimeout(computeLines, 80);
-    const timer2 = setTimeout(computeLines, 300);
-
     return () => {
-      window.removeEventListener('resize', handleResize);
-      observer.disconnect();
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', computeLines);
+      if (observer) observer.disconnect();
     };
   }, [computeLines, containerRef]);
 
@@ -201,31 +348,21 @@ export function FamilyTreeConnectors({ containerRef, treeData }) {
 
   return (
     <svg
-      className="absolute inset-0 w-full h-full pointer-events-none z-0 transition-opacity duration-300"
-      style={{ overflow: 'visible' }}
+      className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible"
+      style={{ minWidth: '100%', minHeight: '100%' }}
     >
-      {/* Bloodline Connector Lines */}
-      {paths.map((d, index) => (
+      {paths.map((p) => (
         <path
-          key={`path-${index}`}
-          d={d}
+          key={p.id}
+          d={p.d}
           fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
+          stroke={p.color}
+          strokeWidth={p.width}
+          strokeDasharray={p.dash || undefined}
           strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-[#1E4D45]/70 dark:text-[#57BA8E]/80"
-        />
-      ))}
-
-      {/* Lineage Branch Junction Dots */}
-      {junctions.map((j, idx) => (
-        <circle
-          key={`junc-${idx}`}
-          cx={j.x}
-          cy={j.y}
-          r={3}
-          className="fill-[#1E4D45] dark:fill-[#57BA8E]"
+          className={`transition-all duration-300 ${
+            p.isDimmed ? 'opacity-25 stroke-dasharray-[4,4]' : 'opacity-100'
+          }`}
         />
       ))}
     </svg>

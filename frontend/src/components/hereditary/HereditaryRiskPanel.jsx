@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getPatientHereditaryAssessment, getHereditaryDiseaseRegistry } from '../../api/hereditary';
 import DoodleIcon from '../common/DoodleIcon';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '../ui';
@@ -50,6 +50,43 @@ export function HereditaryRiskPanel({ userId }) {
     fetchAssessment();
   }, [fetchAssessment]);
 
+  // Sort compact disease summary cards: computed risk descending, with insufficient-data cards at the bottom
+  const sortedDiseases = useMemo(() => {
+    if (!registry || registry.length === 0 || !assessment?.diseases) return registry;
+
+    return [...registry].sort((a, b) => {
+      const aRes = assessment.diseases[a.disease_key];
+      const bRes = assessment.diseases[b.disease_key];
+
+      const aSufficient = aRes?.is_sufficient_data !== false;
+      const bSufficient = bRes?.is_sufficient_data !== false;
+
+      // Group incomplete/insufficient data cards at the bottom
+      if (aSufficient && !bSufficient) return -1;
+      if (!aSufficient && bSufficient) return 1;
+
+      // If both have sufficient data, sort by score descending
+      const aScore = isFamilyMode
+        ? (aRes?.heuristic_combined_risk_signal ?? aRes?.combined_risk_signal ?? aRes?.rule_based_risk_score ?? 0)
+        : (aRes?.rule_based_risk_score ?? 0);
+
+      const bScore = isFamilyMode
+        ? (bRes?.heuristic_combined_risk_signal ?? bRes?.combined_risk_signal ?? bRes?.rule_based_risk_score ?? 0)
+        : (bRes?.rule_based_risk_score ?? 0);
+
+      return bScore - aScore;
+    });
+  }, [registry, assessment, isFamilyMode]);
+
+  // Default selection to highest-risk condition upon assessment load
+  useEffect(() => {
+    if (sortedDiseases.length > 0) {
+      if (!selectedDiseaseKey || !sortedDiseases.some((d) => d.disease_key === selectedDiseaseKey)) {
+        setSelectedDiseaseKey(sortedDiseases[0].disease_key);
+      }
+    }
+  }, [sortedDiseases, selectedDiseaseKey]);
+
   if (loading) {
     return (
       <Card radius="lg" className="p-8 text-center bg-white dark:bg-[#1E1E1E] border border-[#CBD6D2] dark:border-[#383838]">
@@ -90,7 +127,6 @@ export function HereditaryRiskPanel({ userId }) {
 
   return (
     <div className="space-y-6">
-      
       {/* 1. TOP SECTION: HEALTH SCORE RING & HIGHLIGHTS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left 1-Column: Radial Health Score Widget */}
@@ -102,14 +138,16 @@ export function HereditaryRiskPanel({ userId }) {
           />
         </div>
 
-        {/* Right 2-Columns: Quick Disease Status Summary Cards */}
+        {/* Right 2-Columns: Quick Disease Status Summary Cards (Risk Sorted) */}
         <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {registry.map((d) => {
+          {sortedDiseases.map((d) => {
             const dRes = assessment.diseases[d.disease_key];
             const isSufficient = dRes?.is_sufficient_data !== false;
             const scoreVal = isFamilyMode
               ? (dRes?.heuristic_combined_risk_signal ?? dRes?.combined_risk_signal ?? dRes?.rule_based_risk_score ?? 0)
               : (dRes?.rule_based_risk_score ?? 0);
+
+            const isSelected = selectedDiseaseKey === d.disease_key;
 
             let statusColor = 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60';
             let label = 'Low Risk';
@@ -130,9 +168,16 @@ export function HereditaryRiskPanel({ userId }) {
                 key={d.disease_key}
                 onClick={() => {
                   setSelectedDiseaseKey(d.disease_key);
-                  setActiveTab('signals');
+                  const el = document.getElementById('single-disease-risk-analysis');
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }
                 }}
-                className={`p-3.5 rounded-[8px] border transition-all cursor-pointer hover:shadow-xs flex flex-col justify-between ${statusColor}`}
+                className={`p-3.5 rounded-[8px] border transition-all cursor-pointer hover:shadow-xs flex flex-col justify-between ${statusColor} ${
+                  isSelected
+                    ? 'ring-2 ring-[#1E4D45] dark:ring-[#57BA8E] shadow-sm'
+                    : 'hover:border-[#1E4D45]/50'
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider truncate">
@@ -154,10 +199,13 @@ export function HereditaryRiskPanel({ userId }) {
         </div>
       </div>
 
-      {/* 2. MAIN SECTION: 6-DISEASE RISK OVERVIEW SPECTRUM */}
+      {/* 2. MAIN SECTION: SINGLE-DISEASE RISK OVERVIEW & SEARCH */}
       <DiseaseRiskOverview
         assessment={assessment}
         registry={registry}
+        sortedDiseases={sortedDiseases}
+        selectedDiseaseKey={selectedDiseaseKey}
+        onSelectDiseaseKey={(key) => setSelectedDiseaseKey(key)}
         isFamilyMode={isFamilyMode}
         onToggleFamilyMode={(mode) => setIsFamilyMode(mode)}
         onRefresh={fetchAssessment}
@@ -178,7 +226,7 @@ export function HereditaryRiskPanel({ userId }) {
 
             {/* Disease Selector Pill Bar */}
             <div className="flex flex-wrap gap-1">
-              {registry.map((d) => {
+              {sortedDiseases.map((d) => {
                 const isSelected = selectedDiseaseKey === d.disease_key;
                 return (
                   <button
@@ -204,7 +252,7 @@ export function HereditaryRiskPanel({ userId }) {
               type="button"
               onClick={() => setActiveTab('signals')}
               className={`pb-1 transition-colors cursor-pointer ${
-                activeTab === 'signals'
+                activeTab === 'signals' || activeTab === 'overview'
                   ? 'text-[#1E4D45] dark:text-[#57BA8E] border-b-2 border-[#1E4D45] dark:border-[#57BA8E]'
                   : 'text-[#757575] hover:text-[#171717]'
               }`}
@@ -252,7 +300,7 @@ export function HereditaryRiskPanel({ userId }) {
           )}
 
           {/* TAB 1: SEGREGATED SIGNALS */}
-          {activeTab === 'signals' && selectedDiseaseRes && (
+          {(activeTab === 'signals' || activeTab === 'overview') && selectedDiseaseRes && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* Clinical Rule */}

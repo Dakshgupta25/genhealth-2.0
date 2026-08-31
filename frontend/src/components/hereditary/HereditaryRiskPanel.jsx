@@ -149,6 +149,7 @@ export function HereditaryRiskPanel({ userId }) {
 
             const isSelected = selectedDiseaseKey === d.disease_key;
 
+            const isPedigreeOnly = dRes?.data_sufficiency_status === 'FAMILY_PEDIGREE_ONLY';
             let statusColor = 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60';
             let label = 'Low Risk';
 
@@ -161,6 +162,9 @@ export function HereditaryRiskPanel({ userId }) {
             } else if (scoreVal >= 0.33) {
               statusColor = 'text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60';
               label = 'Moderate';
+            } else if (isPedigreeOnly && scoreVal > 0) {
+              statusColor = 'text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60';
+              label = 'Pedigree Risk';
             }
 
             return (

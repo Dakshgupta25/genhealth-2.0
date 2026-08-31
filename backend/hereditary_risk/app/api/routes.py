@@ -312,16 +312,28 @@ def predict_hereditary_risk(payload: HereditaryRiskAssessmentRequest):
             if not has_anchor:
                 missing_mandatory.append(" or ".join(anchor_group))
 
-        is_sufficient = (len(provided_primary_keys) >= min_required) and (len(missing_mandatory) == 0)
-        data_sufficiency_status = "SUFFICIENT" if is_sufficient else "INSUFFICIENT_DATA"
+        has_personal_primary = (len(provided_primary_keys) >= min_required) and (len(missing_mandatory) == 0)
+        has_family_evidence = agg_res["family_weighted_risk"] > 0 or agg_res["genetic_bump"] > 0
 
-        if not is_sufficient:
+        if has_personal_primary:
+            is_sufficient = True
+            data_sufficiency_status = "SUFFICIENT"
+            sufficiency_msg = None
+        elif has_family_evidence:
+            is_sufficient = True
+            data_sufficiency_status = "FAMILY_PEDIGREE_ONLY"
+            missing_text = f" (add {' and '.join(missing_mandatory)})" if missing_mandatory else ""
+            sufficiency_msg = (
+                f"Inherited predisposition computed from linked family records (+{agg_res['genetic_bump']*100:.1f}%). "
+                f"Personal lab confirmation pending{missing_text}."
+            )
+        else:
+            is_sufficient = False
+            data_sufficiency_status = "INSUFFICIENT_DATA"
             if missing_mandatory:
                 sufficiency_msg = f"Insufficient data — add {' and '.join(missing_mandatory)} to enable {d_meta['display_name']} assessment."
             else:
                 sufficiency_msg = f"Insufficient data — at least {min_required} biomarkers required (currently provided: {len(provided_primary_keys)})."
-        else:
-            sufficiency_msg = None
 
         pop_heritability = d_meta.get("heritability_estimate")
         is_cal = ml_res.get("is_calibrated", False)

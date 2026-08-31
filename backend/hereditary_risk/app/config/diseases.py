@@ -37,7 +37,7 @@ DISEASE_REGISTRY: Dict[str, DiseaseMetadata] = {
         "primary_biomarkers": ["hba1c", "fasting_glucose", "postprandial_glucose", "triglycerides"],
         "ml_feature_biomarkers": ["fasting_glucose", "fasting_insulin", "bmi", "resting_bp", "age"],
         "mandatory_anchors": [["fasting_glucose", "hba1c"]],
-        "min_required_biomarkers": 2,
+        "min_required_biomarkers": 1,
         "description": "Chronic condition affecting glucose metabolism and insulin sensitivity.",
     },
     "dyslipidemia": {

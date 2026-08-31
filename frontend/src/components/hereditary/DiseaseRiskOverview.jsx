@@ -67,6 +67,7 @@ export function DiseaseRiskOverview({
   const h2 = d.population_heritability_reference ?? meta.heritability_estimate ?? 0.5;
 
   // Score Tier Coloring
+  const isPedigreeOnly = d.data_sufficiency_status === 'FAMILY_PEDIGREE_ONLY';
   let tierLabel = 'Low Risk';
   let tierBadgeStatus = 'normal';
   let barColor = 'bg-emerald-600 dark:bg-emerald-500';
@@ -83,6 +84,10 @@ export function DiseaseRiskOverview({
     tierLabel = 'Moderate Risk';
     tierBadgeStatus = 'warning';
     barColor = 'bg-amber-500 dark:bg-amber-400';
+  } else if (isPedigreeOnly && combinedScore > 0) {
+    tierLabel = 'Inherited Predisposition';
+    tierBadgeStatus = 'brand';
+    barColor = 'bg-purple-600 dark:bg-purple-500';
   }
 
   return (
@@ -348,6 +353,31 @@ export function DiseaseRiskOverview({
               <span>100% Critical</span>
             </div>
           </div>
+
+          {/* Pedigree-Only Informational Banner */}
+          {isPedigreeOnly && (
+            <div className="mt-3 p-3 rounded-[6px] bg-purple-50/90 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center space-x-1.5 text-purple-950 dark:text-purple-200">
+                <span>🧬</span>
+                <span className="font-medium">
+                  {d.sufficiency_message ||
+                    `Inherited predisposition computed from linked family history (+${formatPercent(geneticBump)}). Personal lab confirmation pending.`}
+                </span>
+              </div>
+              {d.missing_mandatory_biomarkers?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {d.missing_mandatory_biomarkers.map((bKey, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 rounded-[4px] bg-white dark:bg-[#1E1E1E] border border-purple-300 dark:border-purple-800 text-[10px] font-mono font-bold text-purple-800 dark:text-purple-300 uppercase"
+                    >
+                      Confirm: {bKey}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Insufficient Data Alert / Missing Biomarkers Chip */}
           {!isSufficient && (

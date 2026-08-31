@@ -104,7 +104,11 @@ def aggregate_family_disease_risk(
             "supporting_evidence": fm_eval["evidence"],
         })
 
-        if genetic_flag and weight > 0.0:
+        has_member_data = bool(biomarkers) or (
+            fm_eval["critical_count"] + fm_eval["warning_count"] + fm_eval["normal_count"] > 0
+        )
+
+        if genetic_flag and weight > 0.0 and has_member_data:
             total_family_weight += weight
             weighted_score_sum += (fm_score * weight)
 

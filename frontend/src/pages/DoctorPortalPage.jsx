@@ -1,180 +1,223 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   getDiseaseMappings,
-  getPatientDiseaseSummary,
-  getRelativeDiseaseSummary,
-  getFamilyBiomarkerHistory,
+  getRecentDiseaseMeasurements,
+  getDiseaseTimeline,
+  addMedicalHistoryRecord,
+  deleteMedicalHistoryRecord,
+  getFamilyDiseaseOverview,
 } from '../api/clinical';
-import { getFamilyMembers } from '../api/family';
 import { getTestTrend } from '../api/reports';
 import DoodleIcon from '../components/common/DoodleIcon';
 import TrendChart from '../components/doctor/TrendChart';
-import { Button, Badge, Card, CardHeader, CardTitle, CardDescription, Input, Select } from '../components/ui';
+import DiseaseAutocompleteSearch from '../components/doctor/DiseaseAutocompleteSearch';
+import DiseaseTimelineView from '../components/doctor/DiseaseTimelineView';
+import RelativeDiseaseCard from '../components/doctor/RelativeDiseaseCard';
+import { Button, Badge, Card, CardHeader, CardTitle, CardDescription, Input, Modal, FormField, Select, EmptyState } from '../components/ui';
 
 export function DoctorPortalPage() {
   const { userId } = useAuth();
-  
-  // Patient Context ID (defaults to current user, but doctor can input any target patient UUID)
+
+  // Patient Context ID (defaults to current user, doctor can switch UUID)
   const [patientId, setPatientId] = useState(userId || '');
   const [patientInput, setPatientInput] = useState(userId || '');
-  
-  const [familyMembers, setFamilyMembers] = useState([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState(userId || '');
-  
-  const [diseases, setDiseases] = useState([]);
-  const [selectedDiseaseId, setSelectedDiseaseId] = useState('diabetes');
-  const [diseaseSummaries, setDiseaseSummaries] = useState([]);
-  const [selectedTestName, setSelectedTestName] = useState('Fasting Blood Sugar');
-  
-  const [trendData, setTrendData] = useState([]);
-  const [familyHistory, setFamilyHistory] = useState([]);
-  
-  const [loadingPanel, setLoadingPanel] = useState(false);
-  const [loadingTrend, setLoadingTrend] = useState(false);
-  const [loadingFamily, setLoadingFamily] = useState(false);
-  const [privacyError, setPrivacyError] = useState('');
 
-  // 1. Fetch Disease list on mount
+  // Disease Selection State
+  const [diseases, setDiseases] = useState([]);
+  const [selectedDiseaseId, setSelectedDiseaseId] = useState('type_2_diabetes');
+
+  // Patient Self Data State
+  const [patientMeasurements, setPatientMeasurements] = useState(null);
+  const [patientTimeline, setPatientTimeline] = useState([]);
+  const [selectedBiomarker, setSelectedBiomarker] = useState(null);
+  const [trendData, setTrendData] = useState([]);
+
+  // Family Overview State
+  const [familyOverview, setFamilyOverview] = useState([]);
+
+  // Loading & Error States
+  const [loadingDiseases, setLoadingDiseases] = useState(true);
+  const [loadingPatientData, setLoadingPatientData] = useState(false);
+  const [loadingFamilyData, setLoadingFamilyData] = useState(false);
+  const [loadingTrend, setLoadingTrend] = useState(false);
+
+  // Add Diagnosis Modal State
+  const [diagModalOpen, setDiagModalOpen] = useState(false);
+  const [diagDate, setDiagDate] = useState(new Date().toISOString().split('T')[0]);
+  const [diagRecordType, setDiagRecordType] = useState('confirmed_diagnosis');
+  const [diagStatus, setDiagStatus] = useState('active');
+  const [diagNotes, setDiagNotes] = useState('');
+  const [submittingDiag, setSubmittingDiag] = useState(false);
+
+  // 1. Fetch Disease list from unified registry on mount
   useEffect(() => {
     async function loadDiseases() {
+      setLoadingDiseases(true);
       try {
         const list = await getDiseaseMappings();
-        setDiseases(list);
-        if (list.length > 0) {
-          setSelectedDiseaseId((prev) => (list.some((d) => d.id === prev) ? prev : list[0].id));
+        setDiseases(list || []);
+        if (list && list.length > 0) {
+          setSelectedDiseaseId((prev) => (list.some((d) => d.id === prev || d.disease_key === prev) ? prev : list[0].id));
         }
       } catch (err) {
         console.error('Failed to load disease mappings:', err);
+      } finally {
+        setLoadingDiseases(false);
       }
     }
     loadDiseases();
   }, []);
 
-  // 2. Fetch linked family members for active patient context & set default selection order
-  useEffect(() => {
-    async function loadRelatives() {
-      if (!patientId) return;
-      try {
-        const relatives = await getFamilyMembers(patientId);
-        setFamilyMembers(relatives || []);
+  const activeDisease = useMemo(() => {
+    return diseases.find((d) => d.id === selectedDiseaseId || d.disease_key === selectedDiseaseId) || null;
+  }, [diseases, selectedDiseaseId]);
 
-        // Default selection order: Father if linked -> else Mother if linked -> else Self
-        const father = relatives?.find((r) =>
-          ['father', 'dad'].includes(r.relationship_type?.toLowerCase())
-        );
-        const mother = relatives?.find((r) =>
-          ['mother', 'mom'].includes(r.relationship_type?.toLowerCase())
-        );
+  // 2. Fetch Patient's own measurements (last 5 reports) & Disease Timeline
+  const loadPatientDiseaseData = useCallback(async () => {
+    if (!patientId || !selectedDiseaseId) return;
 
-        if (father) {
-          setSelectedSubjectId(father.relative_id);
-        } else if (mother) {
-          setSelectedSubjectId(mother.relative_id);
-        } else {
-          setSelectedSubjectId(patientId);
-        }
-      } catch (err) {
-        console.error('Failed to load patient relatives:', err);
-        setFamilyMembers([]);
-        setSelectedSubjectId(patientId);
-      }
-    }
-    loadRelatives();
-  }, [patientId]);
-
-  // 3. Fetch Disease summary for active selected subject (patient or linked relative)
-  const loadDiseasePanel = useCallback(async () => {
-    if (!patientId || !selectedSubjectId || !selectedDiseaseId) return;
-    setLoadingPanel(true);
-    setPrivacyError('');
-
+    setLoadingPatientData(true);
     try {
-      let summary;
-      if (selectedSubjectId === patientId) {
-        summary = await getPatientDiseaseSummary(patientId, selectedDiseaseId);
+      const [measData, timelineData] = await Promise.all([
+        getRecentDiseaseMeasurements(patientId, selectedDiseaseId),
+        getDiseaseTimeline(patientId, selectedDiseaseId),
+      ]);
+
+      setPatientMeasurements(measData);
+      setPatientTimeline(timelineData || []);
+
+      // Auto-select first biomarker for longitudinal trend curve
+      if (measData?.biomarker_summaries && measData.biomarker_summaries.length > 0) {
+        setSelectedBiomarker(measData.biomarker_summaries[0]);
+      } else if (activeDisease?.primary_biomarkers_detail && activeDisease.primary_biomarkers_detail.length > 0) {
+        setSelectedBiomarker({
+          canonical_key: activeDisease.primary_biomarkers_detail[0].key,
+          canonical_test_name: activeDisease.primary_biomarkers_detail[0].display_name,
+          unit: activeDisease.primary_biomarkers_detail[0].standard_unit,
+        });
       } else {
-        summary = await getRelativeDiseaseSummary(patientId, selectedSubjectId, selectedDiseaseId);
-      }
-      setDiseaseSummaries(summary || []);
-      
-      // Auto-select first test in disease list
-      const activeDisease = diseases.find((d) => d.id === selectedDiseaseId);
-      if (activeDisease && activeDisease.primary_tests.length > 0) {
-        setSelectedTestName(activeDisease.primary_tests[0]);
+        setSelectedBiomarker(null);
       }
     } catch (err) {
-      console.error('Failed to load disease summary:', err);
-      setDiseaseSummaries([]);
-      if (err.response?.status === 403) {
-        setPrivacyError('Clinical data sharing has been restricted by this relative.');
-      }
+      console.error('Failed to load patient disease measurements/timeline:', err);
+      setPatientMeasurements(null);
+      setPatientTimeline([]);
     } finally {
-      setLoadingPanel(false);
+      setLoadingPatientData(false);
     }
-  }, [patientId, selectedSubjectId, selectedDiseaseId, diseases]);
+  }, [patientId, selectedDiseaseId, activeDisease]);
 
   useEffect(() => {
-    loadDiseasePanel();
-  }, [loadDiseasePanel]);
+    loadPatientDiseaseData();
+  }, [loadPatientDiseaseData]);
 
-  // 4. Fetch longitudinal trend & cross-family history when selectedTestName or selectedSubjectId changes
-  const loadTestTrendAndFamily = useCallback(async () => {
-    if (!selectedSubjectId || !selectedTestName) return;
+  // 3. Fetch Linked Family Members' Disease Overview (with consent enforcement)
+  const loadFamilyDiseaseOverview = useCallback(async () => {
+    if (!patientId || !selectedDiseaseId) return;
+
+    setLoadingFamilyData(true);
+    try {
+      const famData = await getFamilyDiseaseOverview(patientId, selectedDiseaseId);
+      setFamilyOverview(famData || []);
+    } catch (err) {
+      console.error('Failed to load family disease overview:', err);
+      setFamilyOverview([]);
+    } finally {
+      setLoadingFamilyData(false);
+    }
+  }, [patientId, selectedDiseaseId]);
+
+  useEffect(() => {
+    loadFamilyDiseaseOverview();
+  }, [loadFamilyDiseaseOverview]);
+
+  // 4. Fetch Trend Data whenever selected biomarker or patient changes
+  const loadBiomarkerTrend = useCallback(async () => {
+    if (!patientId || !selectedBiomarker) {
+      setTrendData([]);
+      return;
+    }
 
     setLoadingTrend(true);
     try {
-      const points = await getTestTrend(selectedSubjectId, selectedTestName);
+      const testName = selectedBiomarker.canonical_test_name || selectedBiomarker.canonical_key;
+      const points = await getTestTrend(patientId, testName);
       setTrendData(points || []);
     } catch (err) {
-      console.error('Failed to load test trend:', err);
+      console.error('Failed to load biomarker trend:', err);
       setTrendData([]);
     } finally {
       setLoadingTrend(false);
     }
-
-    setLoadingFamily(true);
-    try {
-      const famHistory = await getFamilyBiomarkerHistory(patientId, selectedTestName);
-      setFamilyHistory(famHistory || []);
-    } catch (err) {
-      console.error('Failed to load family history:', err);
-      setFamilyHistory([]);
-    } finally {
-      setLoadingFamily(false);
-    }
-  }, [patientId, selectedSubjectId, selectedTestName]);
+  }, [patientId, selectedBiomarker]);
 
   useEffect(() => {
-    loadTestTrendAndFamily();
-  }, [loadTestTrendAndFamily]);
+    loadBiomarkerTrend();
+  }, [loadBiomarkerTrend]);
 
+  // Doctor Mode UUID Switcher
   const handlePatientSwitch = (e) => {
     e.preventDefault();
     if (patientInput.trim()) {
       setPatientId(patientInput.trim());
-      setSelectedSubjectId(patientInput.trim());
     }
   };
 
-  const activeDisease = diseases.find((d) => d.id === selectedDiseaseId);
-  const selectedRelativeMeta = familyMembers.find((r) => r.relative_id === selectedSubjectId);
-  const isViewingRelative = selectedSubjectId !== patientId;
+  // Add Confirmed Diagnosis Handler
+  const handleAddDiagnosisSubmit = async (e) => {
+    e.preventDefault();
+    if (!patientId || !selectedDiseaseId) return;
 
-  const getAbnormalityMeta = (flag) => {
+    setSubmittingDiag(true);
+    try {
+      await addMedicalHistoryRecord(patientId, {
+        disease_key: selectedDiseaseId,
+        diagnosis_date: diagDate,
+        record_type: diagRecordType,
+        status: diagStatus,
+        notes: diagNotes.trim() || undefined,
+      });
+      setDiagModalOpen(false);
+      setDiagNotes('');
+      // Reload patient timeline
+      const updatedTimeline = await getDiseaseTimeline(patientId, selectedDiseaseId);
+      setPatientTimeline(updatedTimeline || []);
+    } catch (err) {
+      console.error('Failed to add medical history record:', err);
+    } finally {
+      setSubmittingDiag(false);
+    }
+  };
+
+  // Delete Medical History Record Handler
+  const handleDeleteRecord = async (recordId) => {
+    if (!confirm('Are you sure you want to delete this diagnosis record?')) return;
+    try {
+      await deleteMedicalHistoryRecord(patientId, recordId);
+      const updatedTimeline = await getDiseaseTimeline(patientId, selectedDiseaseId);
+      setPatientTimeline(updatedTimeline || []);
+    } catch (err) {
+      console.error('Failed to delete medical history record:', err);
+    }
+  };
+
+  const getAbnormalityBadge = (flag) => {
     switch (flag?.toLowerCase()) {
       case 'high':
-        return { status: 'critical', label: 'High' };
-      case 'low':
-        return { status: 'warning', label: 'Low' };
-      case 'normal':
-        return { status: 'normal', label: 'Normal' };
       case 'critical':
-        return { status: 'critical', label: 'Critical' };
+        return <Badge status="critical" size="sm" dot>High</Badge>;
+      case 'low':
+        return <Badge status="warning" size="sm" dot>Low</Badge>;
+      case 'normal':
+        return <Badge status="normal" size="sm" dot>Normal</Badge>;
       default:
-        return { status: 'neutral', label: flag || 'Review' };
+        return <Badge status="neutral" size="sm">{flag || 'Recorded'}</Badge>;
     }
   };
+
+  const patientSummaries = patientMeasurements?.biomarker_summaries || [];
+  const consentedRelativesCount = familyOverview.filter((r) => !r.consent_restricted).length;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -184,22 +227,22 @@ export function DoctorPortalPage() {
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <span className="text-[11px] font-bold tracking-widest text-[#1E4D45] dark:text-[#57BA8E] uppercase">
-              Clinical Workspace
+              Clinical Diagnostic Portal
             </span>
             <span className="text-[#7E9993]">•</span>
             <span className="text-xs text-[#4E6863] dark:text-[#7E9993]">
-              Patient ID: <code className="font-mono font-semibold text-[#13221F] dark:text-[#EFF5F3]">{patientId ? `${patientId.substring(0, 8)}...` : 'None'}</code>
+              Patient: <code className="font-mono font-semibold text-[#13221F] dark:text-[#EFF5F3]">{patientId ? `${patientId.substring(0, 8)}...` : 'None'}</code>
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#13221F] dark:text-[#EFF5F3]">
-            Clinical Diagnostic Portal
+            Disease-Centric Pedigree Workstation
           </h1>
           <p className="text-xs sm:text-sm text-[#4E6863] dark:text-[#7E9993]">
-            Longitudinal biomarker analytics, disease pathology panels, and cross-family pedigree risk investigation.
+            Cross-reference primary patient pathology with linked biological pedigree history for targeted clinical diagnosis.
           </p>
         </div>
 
-        {/* Patient Context ID Selector */}
+        {/* Doctor Mode Patient UUID Input */}
         <form onSubmit={handlePatientSwitch} className="flex items-center space-x-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-60">
             <Input
@@ -223,243 +266,282 @@ export function DoctorPortalPage() {
         </form>
       </div>
 
-      {/* 2. Disease Pathology Segmented Tabs & Pedigree Subject Selector Bar */}
-      <div className="space-y-3">
+      {/* 2. Disease Autocomplete Live Search & Pathology Registry Selector */}
+      <DiseaseAutocompleteSearch
+        diseases={diseases}
+        selectedDiseaseId={selectedDiseaseId}
+        onSelectDisease={(disease) => setSelectedDiseaseId(disease.id || disease.disease_key)}
+        loading={loadingDiseases}
+      />
+
+      {/* 3. Two-Column Comparative Layout (Patient Self vs Linked Family Members) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
         
-        {/* Disease Tabs */}
-        <div className="flex flex-wrap gap-1.5 border-b border-[#CBD6D2] dark:border-[#2F433E] pb-2">
-          {diseases.map((d) => {
-            const isSelected = selectedDiseaseId === d.id;
-            return (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setSelectedDiseaseId(d.id)}
-                className={`px-3 py-1.5 rounded-[6px] text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-[#1E4D45] text-white shadow-xs dark:bg-[#336E63]'
-                    : 'text-[#4E6863] dark:text-[#7E9993] hover:text-[#13221F] dark:hover:text-[#EFF5F3] hover:bg-[#F4F6F5]'
-                }`}
-              >
-                <span>{d.name}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Pedigree Subject Selector Toolbar */}
-        <div className="p-3 rounded-[8px] bg-[#F4F6F5] dark:bg-[#1C2725] border border-[#CBD6D2] dark:border-[#2F433E] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3] flex items-center space-x-1.5">
-              <DoodleIcon name="tree" className="w-3.5 h-3.5 text-[#1E4D45] dark:text-[#57BA8E]" />
-              <span>Pedigree Subject View:</span>
-            </span>
-
-            {/* Relation Selector Dropdown */}
-            <select
-              value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="p-1 px-2.5 rounded-[6px] text-xs font-semibold bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E] text-[#13221F] dark:text-[#EFF5F3] focus:ring-1 focus:ring-[#1E4D45] cursor-pointer"
-              id="pedigree-subject-select"
-            >
-              <option value={patientId}>Patient (Self)</option>
-              {familyMembers.map((rel) => (
-                <option key={rel.relationship_id} value={rel.relative_id}>
-                  {rel.relationship_type?.toUpperCase()}: {rel.full_name} {rel.is_placeholder ? '(Managed)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Context Badge */}
-          <div className="flex items-center space-x-2 text-xs">
-            {isViewingRelative ? (
-              <Badge status="juniper" size="sm" dot>
-                Viewing Pedigree Risk: {selectedRelativeMeta?.relationship_type?.toUpperCase()} ({selectedRelativeMeta?.full_name})
-              </Badge>
-            ) : (
-              <Badge status="neutral" size="sm">
-                Viewing Primary Patient Records
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Disease Subtitle / Description */}
-        {activeDisease && (
-          <div className="text-xs text-[#4E6863] dark:text-[#7E9993] flex items-center space-x-2">
-            <span className="font-semibold text-[#13221F] dark:text-[#EFF5F3]">{activeDisease.category}:</span>
-            <span>{activeDisease.description}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Privacy Warning Banner if consent is disabled */}
-      {privacyError && (
-        <div className="p-3.5 rounded-[8px] text-xs font-semibold bg-[#FDF0F0] border border-[#F6C4C5] text-[#942728] dark:bg-[#2D1616] dark:border-[#5B292A] dark:text-[#E57373] flex items-center space-x-2">
-          <span>🔒</span>
-          <span>{privacyError}</span>
-        </div>
-      )}
-
-      {/* 3. 2-Column Clinical Workstation Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* LEFT: Disease Primary Biomarkers List (5 Cols) */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#1E4D45] dark:text-[#57BA8E]">
-              Pathology Biomarkers {isViewingRelative ? `(${selectedRelativeMeta?.relationship_type?.toUpperCase()})` : ''}
-            </h3>
-            <span className="text-xs text-[#7E9993] font-mono">
-              {activeDisease?.primary_tests?.length || 0} tests
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {loadingPanel ? (
-              <Card radius="md" className="p-6 text-center space-y-2 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E]">
-                <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1E4D45] dark:border-[#57BA8E] border-t-transparent animate-spin" />
-                <p className="text-xs text-[#7E9993]">Loading pathology markers...</p>
-              </Card>
-            ) : activeDisease?.primary_tests?.map((testName) => {
-              const summary = diseaseSummaries.find((s) => s.canonical_test_name === testName);
-              const isSelected = selectedTestName === testName;
-              const statusMeta = summary ? getAbnormalityMeta(summary.abnormality_flag) : null;
-
-              return (
-                <div
-                  key={testName}
-                  onClick={() => setSelectedTestName(testName)}
-                  className={`p-3.5 rounded-[8px] transition-all cursor-pointer border ${
-                    isSelected
-                      ? 'border-l-[3px] border-l-[#1E4D45] border-t-[#1E4D45] border-r-[#1E4D45] border-b-[#1E4D45] bg-[#E5EFEA]/30 dark:bg-[#1A2C28]/40 dark:border-l-[#57BA8E] shadow-xs'
-                      : 'border-[#CBD6D2] dark:border-[#2F433E] bg-white dark:bg-[#151E1C] hover:border-[#1E4D45]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="text-xs font-semibold text-[#13221F] dark:text-[#EFF5F3] truncate" title={testName}>
-                          {testName}
-                        </h4>
-                        {statusMeta && (
-                          <Badge status={statusMeta.status} size="sm" dot>
-                            {statusMeta.label}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <p className="text-[11px] text-[#4E6863] dark:text-[#7E9993] font-mono">
-                        {summary
-                          ? `Observed: ${summary.latest_value} ${summary.unit || ''} (Ref: ${summary.reference_range || 'N/A'})`
-                          : 'No recorded values for subject'}
-                      </p>
-                    </div>
-
-                    <span className={`text-xs font-semibold shrink-0 ${isSelected ? 'text-[#1E4D45] dark:text-[#57BA8E]' : 'text-[#7E9993]'}`}>
-                      {isSelected ? '● Active' : '→'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RIGHT: Longitudinal Trend Curve & Cross-Family History (7 Cols) */}
-        <div className="lg:col-span-7 space-y-6">
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: Primary Patient Workspace (Col Span 6)                      */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-6 space-y-6">
           
-          {/* Trend Chart Component */}
-          <TrendChart
-            title={`${selectedTestName} (${isViewingRelative ? selectedRelativeMeta?.full_name : 'Patient'})`}
-            unit={trendData[0]?.unit || ''}
-            dataPoints={trendData}
-            loading={loadingTrend}
-          />
-
-          {/* Cross-Family Medical History Table */}
-          <Card radius="lg" className="overflow-hidden space-y-0 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E]">
-            <CardHeader density="compact" className="border-b border-[#E0E7E4] dark:border-[#22312E] pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-[4px] flex items-center justify-center bg-[#E5EFEA] text-[#1E4D45] dark:bg-[#1C2725] dark:text-[#57BA8E]">
-                    <DoodleIcon name="tree" className="w-3.5 h-3.5" />
-                  </div>
-                  <CardTitle density="compact" className="text-[#13221F] dark:text-[#EFF5F3]">
-                    Hereditary Pedigree History: {selectedTestName}
-                  </CardTitle>
-                </div>
-                <Badge status="neutral" size="sm">
-                  {familyHistory.length} {familyHistory.length === 1 ? 'record' : 'records'}
-                </Badge>
+          {/* Section Header */}
+          <div className="flex items-center justify-between pb-2 border-b border-[#CBD6D2] dark:border-[#2F433E]">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-full bg-[#1E4D45] text-white flex items-center justify-center font-mono text-xs font-bold">
+                P
               </div>
-              <CardDescription className="text-xs">
-                Biomarker values recorded across the patient's linked genealogical network
-              </CardDescription>
-            </CardHeader>
+              <div>
+                <h2 className="text-sm font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                  Primary Patient Clinical Data
+                </h2>
+                <p className="text-[11px] text-[#7E9993]">
+                  5 most recent reports filtered to {activeDisease?.name || 'disease'} biomarkers
+                </p>
+              </div>
+            </div>
+            <Badge status="juniper" size="sm">
+              Patient Self View
+            </Badge>
+          </div>
 
-            {loadingFamily ? (
-              <div className="p-8 text-center space-y-2">
+          {/* 1. Patient Recent Measurements Card */}
+          <Card radius="lg" className="p-4 sm:p-5 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E] space-y-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E4D45] dark:text-[#57BA8E] flex items-center space-x-1.5">
+                <DoodleIcon name="heartbeat" className="w-3.5 h-3.5" />
+                <span>Relevant Biomarker Measurements</span>
+              </h3>
+              <span className="text-[11px] font-mono text-[#7E9993]">
+                {patientMeasurements?.total_reports_evaluated || 0} reports evaluated
+              </span>
+            </div>
+
+            {loadingPatientData ? (
+              <div className="p-6 text-center space-y-2">
                 <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1E4D45] dark:border-[#57BA8E] border-t-transparent animate-spin" />
-                <p className="text-xs text-[#7E9993]">Scanning pedigree network...</p>
+                <p className="text-xs text-[#7E9993]">Scanning patient reports for disease biomarkers...</p>
               </div>
-            ) : familyHistory.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-[#E0E7E4] dark:border-[#22312E] bg-[#F4F6F5] dark:bg-[#1C2725] text-[10px] font-semibold uppercase tracking-wider text-[#4E6863] dark:text-[#7E9993]">
-                      <th className="py-2.5 px-3.5 sticky left-0 bg-[#F4F6F5] dark:bg-[#1C2725] z-10 min-w-[150px]">
-                        Relative &amp; Kinship
-                      </th>
-                      <th className="py-2.5 px-3.5 min-w-[110px]">Report Date</th>
-                      <th className="py-2.5 px-3.5 text-right min-w-[110px]">Observed Value</th>
-                      <th className="py-2.5 px-3.5 text-center min-w-[90px]">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#E0E7E4] dark:divide-[#22312E]">
-                    {familyHistory.map((item, idx) => {
-                      const statusMeta = getAbnormalityMeta(item.abnormality_flag);
-                      return (
-                        <tr key={idx} className="hover:bg-[#F4F6F5] dark:hover:bg-[#1C2725] transition-colors h-11">
-                          <td className="py-2.5 px-3.5 sticky left-0 bg-white dark:bg-[#151E1C] z-10">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-semibold text-[#13221F] dark:text-[#EFF5F3] text-xs">
-                                {item.relative_name}
-                              </span>
-                              <Badge status="neutral" size="sm">
-                                {item.relationship_type}
-                              </Badge>
-                            </div>
-                          </td>
-
-                          <td className="py-2.5 px-3.5 font-mono text-[#4E6863] dark:text-[#7E9993] text-xs">
-                            {new Date(item.report_date).toLocaleDateString()}
-                          </td>
-
-                          <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#13221F] dark:text-[#EFF5F3] text-xs">
-                            {item.value} <span className="font-normal text-[#7E9993] text-[11px]">{item.unit || ''}</span>
-                          </td>
-
-                          <td className="py-2.5 px-3.5 text-center">
-                            <Badge status={statusMeta.status} size="sm" dot>
-                              {statusMeta.label}
-                            </Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            ) : patientSummaries.length === 0 ? (
+              <div className="p-6 text-center rounded-[8px] border border-dashed border-[#CBD6D2] dark:border-[#2F433E] bg-[#F4F6F5]/50 dark:bg-[#1C2725]/30 space-y-1.5">
+                <p className="text-xs font-semibold text-[#13221F] dark:text-[#EFF5F3]">
+                  No Recorded Lab Measurements
+                </p>
+                <p className="text-[11px] text-[#7E9993]">
+                  No lab measurements relevant to {activeDisease?.name || 'this condition'} were found in the patient's recent uploaded reports.
+                </p>
               </div>
             ) : (
-              <div className="p-6 text-center text-xs text-[#7E9993]">
-                No linked family members have recorded readings for {selectedTestName}.
+              <div className="space-y-2">
+                <p className="text-[11px] text-[#7E9993]">
+                  Click any biomarker to inspect its longitudinal trend trajectory:
+                </p>
+                <div className="overflow-x-auto rounded-[6px] border border-[#E0E7E4] dark:border-[#22312E]">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-[#F4F6F5] dark:bg-[#1C2725] text-[10px] font-semibold uppercase tracking-wider text-[#4E6863] dark:text-[#7E9993] border-b border-[#E0E7E4] dark:border-[#22312E]">
+                        <th className="py-2 px-3">Biomarker</th>
+                        <th className="py-2 px-3">Latest Value</th>
+                        <th className="py-2 px-3">Ref Range</th>
+                        <th className="py-2 px-3 text-center">Status</th>
+                        <th className="py-2 px-3 text-right">Report Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E0E7E4] dark:divide-[#22312E]">
+                      {patientSummaries.map((m) => {
+                        const isSelected = selectedBiomarker?.canonical_key === m.canonical_key;
+                        return (
+                          <tr
+                            key={m.id || m.canonical_key}
+                            onClick={() => setSelectedBiomarker(m)}
+                            className={`cursor-pointer transition-colors h-10 ${
+                              isSelected
+                                ? 'bg-[#E5EFEA] dark:bg-[#1C2725] font-semibold border-l-3 border-l-[#1E4D45] dark:border-l-[#57BA8E]'
+                                : 'hover:bg-[#F4F6F5] dark:hover:bg-[#1C2725]'
+                            }`}
+                          >
+                            <td className="py-2 px-3 text-[#13221F] dark:text-[#EFF5F3]">
+                              <div className="flex items-center space-x-1.5">
+                                <span>{m.canonical_test_name}</span>
+                                {isSelected && (
+                                  <span className="text-[9px] font-bold text-[#1E4D45] dark:text-[#57BA8E]">• Active</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 font-mono font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                              {m.value} <span className="font-normal text-[#7E9993] text-[10px]">{m.unit || ''}</span>
+                            </td>
+                            <td className="py-2 px-3 font-mono text-[11px] text-[#4E6863] dark:text-[#7E9993]">
+                              {m.reference_range || 'N/A'}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {getAbnormalityBadge(m.abnormality_flag)}
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono text-[11px] text-[#7E9993]">
+                              {m.report_date ? new Date(m.report_date).toLocaleDateString() : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </Card>
+
+          {/* 2. Interactive Longitudinal Trend Curve for Patient */}
+          {selectedBiomarker && (
+            <TrendChart
+              title={`${selectedBiomarker.canonical_test_name || 'Biomarker'} (Patient Long-term Trend)`}
+              unit={selectedBiomarker.unit || ''}
+              dataPoints={trendData}
+              loading={loadingTrend}
+            />
+          )}
+
+          {/* 3. Patient Disease History Timeline */}
+          <Card radius="lg" className="p-4 sm:p-5 bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E] shadow-xs">
+            <DiseaseTimelineView
+              timeline={patientTimeline}
+              loading={loadingPatientData}
+              diseaseName={activeDisease?.name || 'Condition'}
+              subjectName="Patient"
+              onAddDiagnosis={() => setDiagModalOpen(true)}
+              onDeleteRecord={handleDeleteRecord}
+              canAdd={true}
+            />
+          </Card>
         </div>
+
+        {/* ========================================================================= */}
+        {/* RIGHT COLUMN: Linked Family Pedigree Records (Col Span 6)                 */}
+        {/* ========================================================================= */}
+        <div className="lg:col-span-6 space-y-6">
+          
+          {/* Section Header */}
+          <div className="flex items-center justify-between pb-2 border-b border-[#CBD6D2] dark:border-[#2F433E]">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded-full bg-[#E5EFEA] text-[#1E4D45] dark:bg-[#1C2725] dark:text-[#57BA8E] flex items-center justify-center">
+                <DoodleIcon name="tree" className="w-3.5 h-3.5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                  Linked Family Pedigree Records
+                </h2>
+                <p className="text-[11px] text-[#7E9993]">
+                  Hereditary disease measurements &amp; history grouped per relative
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Badge status={consentedRelativesCount > 0 ? 'juniper' : 'neutral'} size="sm">
+                {consentedRelativesCount} of {familyOverview.length} Consented
+              </Badge>
+            </div>
+          </div>
+
+          {/* Family Members List */}
+          {loadingFamilyData ? (
+            <div className="p-8 text-center space-y-2 rounded-[8px] border border-[#CBD6D2] dark:border-[#2F433E] bg-white dark:bg-[#151E1C]">
+              <div className="w-5 h-5 mx-auto rounded-full border-2 border-[#1E4D45] dark:border-[#57BA8E] border-t-transparent animate-spin" />
+              <p className="text-xs text-[#7E9993]">Scanning pedigree network for disease pathology...</p>
+            </div>
+          ) : familyOverview.length === 0 ? (
+            /* Empty State: No Family Members Linked */
+            <EmptyState
+              icon={<DoodleIcon name="tree" className="w-6 h-6 text-[#1E4D45] dark:text-[#57BA8E]" />}
+              title="No Family Members Linked"
+              description="No biological relatives have been linked to this patient's genealogical tree yet."
+            />
+          ) : (
+            <div className="space-y-5">
+              {familyOverview.map((relative) => (
+                <RelativeDiseaseCard
+                  key={relative.relative_id}
+                  relative={relative}
+                  diseaseName={activeDisease?.name || 'Condition'}
+                  activeBiomarkerKey={selectedBiomarker?.canonical_key || ''}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
+
+      {/* 4. Add Confirmed Diagnosis Modal */}
+      <Modal
+        isOpen={diagModalOpen}
+        onClose={() => setDiagModalOpen(false)}
+        title={`Log Diagnosis / Medical History Entry: ${activeDisease?.name || 'Condition'}`}
+      >
+        <form onSubmit={handleAddDiagnosisSubmit} className="space-y-4">
+          <p className="text-xs text-[#7E9993]">
+            Record an explicit clinical diagnosis or documented medical history event for this patient.
+          </p>
+
+          <FormField label="Diagnosis Date" required>
+            <Input
+              type="date"
+              value={diagDate}
+              onChange={(e) => setDiagDate(e.target.value)}
+              required
+            />
+          </FormField>
+
+          <FormField label="Record Type" required>
+            <Select
+              value={diagRecordType}
+              onChange={(e) => setDiagRecordType(e.target.value)}
+            >
+              <option value="confirmed_diagnosis">Physician-Confirmed Diagnosis</option>
+              <option value="self_reported">Patient Self-Reported History</option>
+              <option value="clinical_note">Clinical Chart Note</option>
+            </Select>
+          </FormField>
+
+          <FormField label="Clinical Status" required>
+            <Select
+              value={diagStatus}
+              onChange={(e) => setDiagStatus(e.target.value)}
+            >
+              <option value="active">Active (Under Current Management)</option>
+              <option value="managed">Managed / Controlled</option>
+              <option value="in_remission">In Remission</option>
+              <option value="resolved">Resolved</option>
+            </Select>
+          </FormField>
+
+          <FormField label="Clinical Notes / Medication / Hospital">
+            <textarea
+              rows={3}
+              value={diagNotes}
+              onChange={(e) => setDiagNotes(e.target.value)}
+              placeholder="e.g. Diagnosed at Metro Endocrine Center; initiating Metformin 500mg daily..."
+              className="w-full p-2.5 text-xs rounded-[6px] bg-white dark:bg-[#151E1C] border border-[#CBD6D2] dark:border-[#2F433E] text-[#13221F] dark:text-[#EFF5F3] focus:ring-1 focus:ring-[#1E4D45]"
+            />
+          </FormField>
+
+          <div className="flex items-center justify-end space-x-2 pt-2 border-t border-[#E0E7E4] dark:border-[#22312E]">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setDiagModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={submittingDiag}
+            >
+              {submittingDiag ? 'Saving...' : 'Save Diagnosis Record'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
     </div>
   );
 }

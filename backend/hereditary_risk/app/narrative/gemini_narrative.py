@@ -142,48 +142,8 @@ def generate_clinical_narrative(
     ev_list = rule_evidence if rule_evidence is not None else (evidence or [])
     fb_list = family_breakdown or []
 
-    # 1. Try Gemini LLM if available and API key present and LLM enabled
-    api_key = (
-        getattr(settings, "GEMINI_API_KEY", None)
-        or os.environ.get("GEMINI_API_KEY")
-        or os.environ.get("GOOGLE_API_KEY")
-    )
-    if enable_llm and GENAI_SDK and api_key:
-        try:
-            prompt_context = f"""
-You are an expert clinical geneticist and medical communicator.
-Generate a professional, clear, and empathetic clinical narrative for a patient's hereditary risk report.
-
-STRICT RULES:
-1. Do NOT invent non-existent laboratory values, symptoms, or diagnoses not present in the input.
-2. Ground all statements strictly in the provided data.
-3. Highlight patient biomarkers, family contributions, and the transparent combined risk formula.
-4. You MUST end your report with the exact mandatory disclaimer provided below.
-
-INPUT DATA:
-- Patient Name: {patient_name}
-- Disease Evaluated: {disease_display_name}
-- Computed Risk Level: {risk_label} (Score: {risk_score:.2f})
-- Patient Self Clinical Score: {self_rule_score:.2f}
-- Family Kinship Weighted Risk: {family_weighted_risk:.2f}
-- Transparent Formula: {transparent_formula}
-- Patient Biomarkers: {ev_list}
-- Family Breakdown: {fb_list}
-- Feature Impact (SHAP): {shap_explanation}
-
-MANDATORY DISCLAIMER TO INCLUDE AT THE END:
-"{MANDATORY_DISCLAIMER}"
-"""
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content(prompt_context)
-            if response and response.text:
-                return {
-                    "narrative": response.text.strip(),
-                    "generated_by": "gemini_llm",
-                    "disclaimer": MANDATORY_DISCLAIMER,
-                }
-        except Exception:
-            pass
+    # Note: Gemini LLM narrative calls disabled to preserve API tokens exclusively for lab report extraction.
+    # Runs 100% locally via structured deterministic clinical narrative generator.
 
     # 2. Deterministic Template Fallback
     template_text = _generate_template_narrative(

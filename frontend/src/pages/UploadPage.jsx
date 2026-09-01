@@ -12,6 +12,8 @@ export function UploadPage() {
   const {
     targetProfile,
     setTargetProfile,
+    selectedModel,
+    setSelectedModel,
     uploadTab,
     setUploadTab,
     selectedFile,
@@ -203,6 +205,79 @@ export function UploadPage() {
             </p>
           </div>
 
+          {/* AI VISION ENGINE SELECTOR (Testing & Model Comparison) */}
+          <div className="p-4 rounded-[12px] bg-white dark:bg-[#1E1E1E] border border-[#CBD6D2] dark:border-[#2F433E] shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                  AI Vision Engine
+                </span>
+                <Badge status="neutral" size="sm">Testing Mode</Badge>
+              </div>
+              <span className="text-[11px] text-[#5F6368] dark:text-[#A0A0A0]">
+                Choose which model powers Stage 1 OCR &amp; structured parsing
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Option A: Gemini Flash API */}
+              <div
+                onClick={() => setSelectedModel('gemini')}
+                className={`p-3.5 rounded-[8px] border cursor-pointer transition-all flex flex-col justify-between space-y-2 ${
+                  selectedModel === 'gemini'
+                    ? 'border-[#1E4D45] dark:border-[#57BA8E] bg-[#E5EFEA]/60 dark:bg-[#1C2725] ring-2 ring-[#1E4D45]/20 dark:ring-[#57BA8E]/20'
+                    : 'border-[#E3E3DF] dark:border-[#303030] hover:border-[#1E4D45]/50 dark:hover:border-[#57BA8E]/50 bg-[#FCFCFB] dark:bg-[#181818]'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base">⚡</span>
+                    <div>
+                      <div className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                        Google Gemini API
+                      </div>
+                      <div className="text-[10px] text-[#4E6863] dark:text-[#7E9993] font-mono">
+                        gemini-2.5-flash / 1.5-flash
+                      </div>
+                    </div>
+                  </div>
+                  <Badge status="juniper" size="sm">~2-5s Fast</Badge>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-[#A0A0A0] leading-relaxed">
+                  Ultra-fast cloud vision extraction. Instant results and highest OCR precision for testing.
+                </p>
+              </div>
+
+              {/* Option B: Qwen2.5-VL Local */}
+              <div
+                onClick={() => setSelectedModel('qwen')}
+                className={`p-3.5 rounded-[8px] border cursor-pointer transition-all flex flex-col justify-between space-y-2 ${
+                  selectedModel === 'qwen'
+                    ? 'border-[#1E4D45] dark:border-[#57BA8E] bg-[#E5EFEA]/60 dark:bg-[#1C2725] ring-2 ring-[#1E4D45]/20 dark:ring-[#57BA8E]/20'
+                    : 'border-[#E3E3DF] dark:border-[#303030] hover:border-[#1E4D45]/50 dark:hover:border-[#57BA8E]/50 bg-[#FCFCFB] dark:bg-[#181818]'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base">🔒</span>
+                    <div>
+                      <div className="text-xs font-bold text-[#13221F] dark:text-[#EFF5F3]">
+                        Qwen2.5-VL (Ollama)
+                      </div>
+                      <div className="text-[10px] text-[#4E6863] dark:text-[#7E9993] font-mono">
+                        Local on localhost:11434
+                      </div>
+                    </div>
+                  </div>
+                  <Badge status="neutral" size="sm">100% Private</Badge>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-[#A0A0A0] leading-relaxed">
+                  Zero cloud egress. Runs entirely on your local machine with multithreaded CPU/GPU.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Hidden File Input */}
           <input
             ref={fileInputRef}
@@ -378,7 +453,9 @@ export function UploadPage() {
                   {processingStage >= 3 ? '✓' : '2'}
                 </span>
                 <span className={processingStage >= 2 ? 'font-semibold text-[#171717] dark:text-[#F0F0F0]' : 'text-[#858585]'}>
-                  Stage 1: Gemini OCR &amp; tabular measure parsing
+                  {selectedModel === 'gemini'
+                    ? 'Stage 1: Google Gemini Flash Vision & tabular extraction'
+                    : 'Stage 1: Local Vision AI (Qwen-VL) & tabular parsing'}
                 </span>
               </div>
 

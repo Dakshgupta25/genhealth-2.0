@@ -33,7 +33,7 @@ from app.models.report import Report
 from app.models.report_result import ReportResult
 from app.models.narrative_entity import NarrativeEntity
 from app.models.user import User
-from app.pipeline import gemini_extractor, normalizer, ner_tagger
+from app.pipeline import ollama_extractor, gemini_extractor, normalizer, ner_tagger
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,7 @@ def run_pipeline(
     original_filename: str,
     mime_type: str,
     db: Session,
+    extractor_type: str = "qwen",
 ) -> "dict[str, Any]":
     """
     Full end-to-end ingestion pipeline for a single lab report file.
@@ -65,18 +66,23 @@ def run_pipeline(
     db.commit()
     db.refresh(report)
     report_id = report.id
-    logger.info("Created Report id=%s for user_id=%s", report_id, user_id)
+    logger.info("Created Report id=%s for user_id=%s (extractor=%s)", report_id, user_id, extractor_type)
 
     try:
         # ---------------------------------------------------------------
-        # Stage 1: Extraction (Gemini API)
+        # Stage 1: Extraction (Gemini API vs Local Ollama Qwen2.5-VL)
         # ---------------------------------------------------------------
-        logger.info("[Stage 1] Starting Gemini extraction for report=%s", report_id)
-        extraction_result = gemini_extractor.extract(file_path)
+        extractor_choice = (extractor_type or "qwen").lower().strip()
+        if extractor_choice in ("gemini", "gemini-api", "cloud"):
+            logger.info("[Stage 1] Starting Gemini API extraction for report=%s", report_id)
+            extraction_result = gemini_extractor.extract(file_path)
+        else:
+            logger.info("[Stage 1] Starting local Qwen-VL extraction for report=%s", report_id)
+            extraction_result = ollama_extractor.extract(file_path)
 
         if extraction_result["error"] or extraction_result["parsed"] is None:
             raise RuntimeError(
-                f"Gemini extraction failed: {extraction_result['error']}\n"
+                f"Document extraction failed: {extraction_result['error']}\n"
                 f"Raw response: {extraction_result['raw_text'][:300]}"
             )
 

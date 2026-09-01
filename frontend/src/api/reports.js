@@ -4,14 +4,18 @@ import apiClient from './client';
  * Upload a lab report file (image/PDF) to trigger extraction + normalization + NER.
  * @param {File} file
  * @param {string} userId UUID
+ * @param {string} extractor 'qwen' or 'gemini'
  * @returns {Promise<{ report_id: string, status: string, result_count: number, entity_count: number, model_used: string }>}
  */
-export async function ingestReportFile(file, userId) {
+export async function ingestReportFile(file, userId, extractor = 'qwen') {
   const formData = new FormData();
   formData.append('file', file);
 
   const response = await apiClient.post(`/api/v1/reports/ingest`, formData, {
-    params: { user_id: userId },
+    params: { 
+      user_id: userId,
+      extractor: extractor || 'qwen',
+    },
     headers: {
       'Content-Type': 'multipart/form-data',
     },

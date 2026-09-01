@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
+from app.models import User, Report, ReportResult, NarrativeEntity, FamilyRelationship, ClaimRequest  # noqa: F401
 from app.main import app
 
 # Shared In-memory SQLite database

@@ -10,6 +10,9 @@ export function UploadProvider({ children }) {
   // Target relative profile context (null = uploading for logged in user)
   const [targetProfile, setTargetProfile] = useState(null);
 
+  // Model selection: 'gemini' (Fast Cloud API) | 'qwen' (Local Ollama)
+  const [selectedModel, setSelectedModel] = useState('gemini');
+
   // View modes: 'select' | 'camera' | 'processing' | 'review' | 'success'
   const [viewMode, setViewMode] = useState('select');
   const [uploadTab, setUploadTab] = useState('file'); // 'file' | 'camera' | 'manual'
@@ -25,8 +28,9 @@ export function UploadProvider({ children }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [processingStage, setProcessingStage] = useState(0);
 
-  const processFileUpload = async (file, overrideTargetUserId) => {
+  const processFileUpload = async (file, overrideTargetUserId, overrideModel) => {
     const effectiveUserId = overrideTargetUserId || targetProfile?.id || userId;
+    const effectiveModel = overrideModel || selectedModel || 'gemini';
 
     if (!effectiveUserId) {
       setErrorMessage('User session or target profile not found. Please log in again.');
@@ -51,8 +55,8 @@ export function UploadProvider({ children }) {
     const stageTimer3 = setTimeout(() => setProcessingStage(4), 6500);
 
     try {
-      // Send multipart upload to the real backend ingestion pipeline with effective target user_id
-      const summary = await ingestReportFile(fileToProcess, effectiveUserId);
+      // Send multipart upload to the real backend ingestion pipeline with effective target user_id and model
+      const summary = await ingestReportFile(fileToProcess, effectiveUserId, effectiveModel);
       
       if (summary.status === 'failed' || summary.error) {
         throw new Error(summary.error || 'Pipeline extraction failed.');
@@ -160,6 +164,8 @@ export function UploadProvider({ children }) {
       value={{
         targetProfile,
         setTargetProfile,
+        selectedModel,
+        setSelectedModel,
         viewMode,
         setViewMode,
         uploadTab,

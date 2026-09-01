@@ -12,3 +12,6 @@ python-dotenv
 google-genai
 rapidfuzz
 python-multipart
+httpx
+pypdfium2
+Pillow

@@ -126,6 +126,7 @@ class ManualReportCreateRequest(BaseModel):
 async def ingest_report(
     file: UploadFile = File(..., description="Lab report image or PDF"),
     user_id: uuid.UUID = Query(..., description="UUID of the uploading user"),
+    extractor: str = Query("qwen", description="Extractor to use: 'qwen' (Local Ollama) or 'gemini' (Gemini API)"),
     db: Session = Depends(get_db),
 ) -> IngestionResponse:
     """
@@ -134,7 +135,7 @@ async def ingest_report(
     Steps:
     1. Validate MIME type.
     2. Write upload to a temp file (SDK reads from path).
-    3. Run pipeline, clean up temp file, return summary.
+    3. Run pipeline with selected extractor, clean up temp file, return summary.
 
     Note: user_id is a query param for now because JWT middleware does not
     yet exist in this codebase. Once auth is wired up, extract it from the
@@ -173,6 +174,7 @@ async def ingest_report(
             original_filename=file.filename or "upload",
             mime_type=content_type,
             db=db,
+            extractor_type=extractor,
         )
     finally:
         try:

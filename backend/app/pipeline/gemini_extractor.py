@@ -149,10 +149,19 @@ def extract(file_path: "str | Path") -> "dict[str, Any]":
             "parsed": None,
             "raw_text": "",
             "model": _DEFAULT_MODEL,
-            "error": "google-genai SDK not installed",
+            "error": "google-genai SDK not installed in backend environment",
         }
 
-    client = _build_client()
+    try:
+        client = _build_client()
+    except Exception as client_err:
+        return {
+            "parsed": None,
+            "raw_text": "",
+            "model": _DEFAULT_MODEL,
+            "error": str(client_err),
+        }
+
     mime_type = _detect_mime_type(path)
     file_bytes = path.read_bytes()
 
